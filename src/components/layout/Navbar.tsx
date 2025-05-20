@@ -13,7 +13,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Menu, X, Bell, User, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getInitials } from '@/utils/avatar';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();

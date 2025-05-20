@@ -1,9 +1,11 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { User, UserRole } from '../types';
 import { USERS } from '../data/mockData';
 import { toast } from '../hooks/use-toast';
 import { createContextValue } from './AuthUtils';
+
+// The useAuth hook is imported directly from '../hooks/useAuth' where needed
 
 interface AuthContextType {
   user: User | null;
@@ -39,8 +41,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Mock login function
-  const login = async (email: string, password: string): Promise<boolean> => {
+  // Mock login function wrapped in useCallback to prevent recreation on each render
+  const login = React.useCallback(async (email: string, _password: string): Promise<boolean> => {
     setLoading(true);
     try {
       // Simulate API call delay
@@ -81,10 +83,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Mock register function
-  const register = async (name: string, email: string, role: UserRole, password: string): Promise<boolean> => {
+  // Mock register function wrapped in useCallback to prevent recreation on each render
+  const register = React.useCallback(async (name: string, email: string, role: UserRole, _password: string): Promise<boolean> => {
     setLoading(true);
     try {
       // Simulate API call delay
@@ -137,17 +139,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Logout function
-  const logout = () => {
+  // Logout function wrapped in useCallback to prevent recreation on each render
+  const logout = React.useCallback(() => {
     setUser(null);
     localStorage.removeItem('flextasker_user');
     toast({
       title: "Logged out",
       description: "You have been successfully logged out",
     });
-  };
+  }, []);
 
   // Context value with useMemo for optimization
   const contextValue = useMemo(() => createContextValue(

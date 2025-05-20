@@ -44,8 +44,10 @@ const ChartContainer = React.forwardRef<
   const uniqueId = React.useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
 
+  const contextValue = React.useMemo(() => ({ config }), [config]);
+
   return (
-    <ChartContext.Provider value={{ config }}>
+    <ChartContext.Provider value={contextValue}>
       <div
         data-chart={chartId}
         ref={ref}
@@ -186,7 +188,7 @@ const ChartTooltipContent = React.forwardRef<
           {payload.map((item, index) => {
             const key = `${nameKey || item.name || item.dataKey || "value"}`
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
-            const indicatorColor = color || item.payload.fill || item.color
+            const indicatorColor = color || (item.payload.fill ?? item.color)
 
             return (
               <div
@@ -215,12 +217,10 @@ const ChartTooltipContent = React.forwardRef<
                               "my-0.5": nestLabel && indicator === "dashed",
                             }
                           )}
-                          style={
-                            {
-                              "--color-bg": indicatorColor,
-                              "--color-border": indicatorColor,
-                            } as React.CSSProperties
-                          }
+                          style={{
+                            "--color-bg": indicatorColor,
+                            "--color-border": indicatorColor,
+                          } as React.CSSProperties}
                         />
                       )
                     )}
@@ -350,7 +350,7 @@ function getPayloadConfigFromPayload(
 
   return configLabelKey in config
     ? config[configLabelKey]
-    : config[key as keyof typeof config]
+    : config[key]
 }
 
 export {
