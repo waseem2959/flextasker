@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@/types';
+import { StarRating } from '@/components/ui/StarRating';
 
 interface ProfileSectionProps {
   user: User;
@@ -34,17 +34,10 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ user }) => {
             <h3 className="font-bold text-xl">{user.name}</h3>
             <Badge className="mt-2 capitalize">{user.role}</Badge>
             
-            <div className="flex items-center mt-2">
-              {Array(5).fill(0).map((_, i) => (
-                <Star 
-                  key={`rating-star-${user.id}-${i}`} 
-                  className={`h-4 w-4 ${i < user.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-                />
-              ))}
-              <span className="ml-2 text-sm font-medium">
-                {user.rating} ({user.totalReviews} reviews)
-              </span>
-            </div>
+            <StarRating rating={user.rating} size={4} className="mt-2" />
+            <span className="ml-2 text-sm font-medium">
+              {user.rating} ({user.totalReviews} reviews)
+            </span>
             
             <div className="w-full mt-6 space-y-4">
               <div className="flex justify-between text-sm">
@@ -119,14 +112,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ user }) => {
               <div className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center mb-2">
-                    <div className="flex">
-                      {Array(5).fill(0).map((_, i) => (
-                        <Star 
-                          key={`review-star-user-${user.id}-position-${i}`} 
-                          className={`h-4 w-4 ${i < 5 ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-                        />
-                      ))}
-                    </div>
+                    <StarRating rating={5} size={4} />
                     <span className="ml-2 text-sm font-medium">
                       1 week ago
                     </span>

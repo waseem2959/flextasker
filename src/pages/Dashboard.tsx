@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TASKS } from '../data/mockData';
 import { Task } from '@/types';
@@ -19,7 +19,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const navigate = useNavigate();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
     }
@@ -31,11 +31,16 @@ const Dashboard = () => {
 
   // Filter tasks based on user role
   let myTasks: Task[] = [];
+  console.log('Dashboard: Filtering tasks for user role:', user?.role);
   if (user?.role === 'client') {
+    console.log('Dashboard: Filtering tasks for client ID:', user.id);
     myTasks = TASKS.filter(task => task.clientId === user.id);
+    console.log('Dashboard: Client tasks:', myTasks);
   } else {
     // For workers, show tasks they've bid on
+    console.log('Dashboard: Filtering tasks for worker ID (bids):', user?.id);
     myTasks = TASKS.filter(task => task.bids.some(bid => bid.workerId === user.id));
+    console.log('Dashboard: Worker tasks (based on bids):', myTasks);
   }
 
   return (

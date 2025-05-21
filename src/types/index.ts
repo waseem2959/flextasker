@@ -1,4 +1,3 @@
-
 export type UserRole = 'client' | 'worker' | 'admin';
 
 export interface User {
@@ -98,4 +97,14 @@ export interface TaskFilterParams {
   search?: string;
   sort?: 'newest' | 'oldest' | 'budget-high' | 'budget-low' | 'bids-high' | 'bids-low';
   radius?: number;
+}
+
+export interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  role: UserRole | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  register: (name: string, email: string, role: UserRole, password: string) => Promise<boolean>;
+  loading: boolean;
 }

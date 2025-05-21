@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { toast } from '../hooks/use-toast';
 import { CATEGORIES } from '../data/mockData';
 
@@ -25,7 +25,7 @@ const PostTask = () => {
   const navigate = useNavigate();
 
   // Redirect if not authenticated or not a client
-  React.useEffect(() => {
+  useEffect(() => {
     if (isAuthenticated && user?.role !== 'client') {
       toast({
         title: "Access denied",

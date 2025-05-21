@@ -86,22 +86,43 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border)); /* Apply border color using CSS variable */
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
 
 /* Flextasker Custom Classes */
 @layer components {
   .task-card {
-    @apply flex flex-col border rounded-lg overflow-hidden bg-white shadow-sm transition-all hover:shadow-md;
+    /* Removed @apply utilities */
+    display: flex;
+    flex-direction: column;
+    border-color: hsl(var(--border)); /* Ensure border color is applied */
+    border-width: 1px; /* Apply border width */
+    overflow: hidden;
+    background-color: white; /* Apply background color using standard CSS */
+    border-radius: var(--radius); /* Apply border radius using CSS variable */
+    box-shadow: var(--tw-shadow, 0 1px 2px 0 rgb(0 0 0 / 0.05)); /* Apply shadow-sm */
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+
+    &:hover {
+      box-shadow: var(--tw-shadow, 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)); /* Apply hover:shadow-md */
+    }
   }
   
   .task-card-image {
-    @apply relative w-full h-48 overflow-hidden bg-gray-100;
+    /* Removed @apply utilities */
+    position: relative;
+    width: 100%;
+    height: 12rem;
+    overflow: hidden;
+    background-color: #f3f4f6; /* Equivalent to bg-gray-100 */
   }
   
   .bid-button {

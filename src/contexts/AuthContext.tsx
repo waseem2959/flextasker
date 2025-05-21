@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, { useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { User, UserRole } from '../types';
 import { USERS } from '../data/mockData';
 import { toast } from '../hooks/use-toast';
@@ -17,7 +17,7 @@ interface AuthContextType {
   loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from './context-instance';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -29,10 +29,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Check if user is already logged in
   useEffect(() => {
+    console.log('AuthContext: Checking localStorage for user...');
     const storedUser = localStorage.getItem('flextasker_user');
     if (storedUser) {
+      console.log('AuthContext: Found stored user in localStorage.');
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        console.log('AuthContext: Parsed stored user:', parsedUser);
+        setUser(parsedUser);
       } catch (error) {
         console.error('Failed to parse stored user:', error);
         localStorage.removeItem('flextasker_user');
@@ -42,7 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Mock login function wrapped in useCallback to prevent recreation on each render
-  const login = React.useCallback(async (email: string, _password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, _password: string): Promise<boolean> => {
     setLoading(true);
     try {
       // Simulate API call delay
@@ -57,7 +61,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           foundUser.avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(foundUser.name)}&background=random&color=fff`;
         }
         
+        console.log('AuthContext: User found in mock data:', foundUser);
         setUser(foundUser);
+        console.log('AuthContext: Storing user in localStorage:', foundUser);
         localStorage.setItem('flextasker_user', JSON.stringify(foundUser));
         toast({
           title: "Login successful",
@@ -86,16 +92,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Mock register function wrapped in useCallback to prevent recreation on each render
-  const register = React.useCallback(async (name: string, email: string, role: UserRole, _password: string): Promise<boolean> => {
+  const register = useCallback(async (name: string, email: string, role: UserRole, _password: string): Promise<boolean> => {
     setLoading(true);
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Check if user already exists
+      console.log('AuthContext: Checking if user exists in mock data for registration:', email);
       const userExists = USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
       
       if (userExists) {
+        console.log('AuthContext: User already exists:', userExists);
         toast({
           title: "Registration failed",
           description: "Email already in use",
@@ -119,7 +127,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // In a real app, we'd save this to the backend
       // For demo purposes, we'll just set the user state
+      console.log('AuthContext: New user created (mock):', newUser);
       setUser(newUser);
+      console.log('AuthContext: Storing new user in localStorage:', newUser);
       localStorage.setItem('flextasker_user', JSON.stringify(newUser));
       
       toast({
@@ -142,7 +152,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Logout function wrapped in useCallback to prevent recreation on each render
-  const logout = React.useCallback(() => {
+  const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem('flextasker_user');
     toast({

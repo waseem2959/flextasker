@@ -119,7 +119,8 @@ export const USERS: User[] = [
     rating: 5.0,
     totalReviews: 0,
     createdAt: '2023-01-01T00:00:00.000Z',
-    verified: true
+    verified: true,
+    location: undefined // Add missing optional property for consistency
   }
 ];
 
