@@ -1,4 +1,4 @@
-import { UserRole, User } from '../types';
+import { User, UserRole } from '../types';
 
 // Helper function for authentication related utilities
 export const createContextValue = (
@@ -10,7 +10,7 @@ export const createContextValue = (
 ) => ({
   user, 
   isAuthenticated: !!user, 
-  role: user?.role || null,
+  role: user?.role ?? null,
   login, 
   logout, 
   register,

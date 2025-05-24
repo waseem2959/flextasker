@@ -1,13 +1,12 @@
-import { useEffect } from 'react';
-import React from 'react';
-import { Layout } from '../components/layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from '../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
-import { getInitials } from '../utils/avatar';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StarRating } from '@/components/ui/StarRating';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Layout } from '../components/layout/Layout';
+import { useAuth } from '../hooks/useAuth';
+import { getInitials } from '../utils/avatar';
 
 const Profile = () => {
   const { user, isAuthenticated } = useAuth();
@@ -51,7 +50,7 @@ const Profile = () => {
 
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Location:</span>
-                    <span className="font-medium">{user.location?.address || 'Not provided'}</span>
+                    <span className="font-medium">{user.location?.address ?? 'Not provided'}</span>
                   </div>
 
                   <div className="flex justify-between text-sm">

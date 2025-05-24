@@ -1,18 +1,18 @@
 
-import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Layout } from '../components/layout/Layout';
-import { getTaskWithBids, getTaskWithClient, createBid } from '../data/mockData';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useAuth } from '../hooks/useAuth';
+import { format, formatDistanceToNow } from 'date-fns';
+import { ArrowLeft, Calendar, Clock, MapPin } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Layout } from '../components/layout/Layout';
+import { createBid, getTaskWithBids, getTaskWithClient } from '../data/mockData';
 import { toast } from '../hooks/use-toast';
-import { MapPin, Calendar, Clock, ArrowLeft } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import { useAuth } from '../hooks/useAuth';
 import { Bid } from '../types';
 
 import { getInitials } from '../utils/avatar';
@@ -254,7 +254,7 @@ const TaskDetail = () => {
                       <p className="font-semibold">{client?.name}</p>
                       <div className="flex items-center text-sm">
                         <span className="flex items-center">
-                          <StarRating rating={client?.rating || 0} size={4} />
+                          <StarRating rating={client?.rating ?? 0} size={4} />
                           <span className="ml-1">{client?.rating}</span>
                         </span>
                         <span className="mx-2">•</span>

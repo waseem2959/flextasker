@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
 import { db } from '@/utils/database';
 import { logger } from '@/utils/logger';
+import { NextFunction, Request, Response } from 'express';
 
 export const auditLog = (action: string, resource: string) => {
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
@@ -13,7 +13,7 @@ export const auditLog = (action: string, resource: string) => {
       setImmediate(async () => {
         try {
           const userId = req.user?.id;
-          const resourceId = req.params.id || req.body.id;
+          const resourceId = req.params.id ?? req.body.id;
           
           await db.auditLog.create({
             data: {
