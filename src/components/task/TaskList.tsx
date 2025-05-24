@@ -33,7 +33,7 @@ export const TaskList: React.FC<TaskListProps> = ({
 
   const handleCategorySelect = (category: string | null) => {
     setSelectedCategory(category);
-    setFilters({ ...filters, category: category || undefined });
+    setFilters({ ...filters, category: category ?? undefined });
   };
 
   const handleSortChange = (option: string) => {
@@ -56,7 +56,7 @@ export const TaskList: React.FC<TaskListProps> = ({
   if (filters.search) {
     const searchLower = filters.search.toLowerCase();
     filteredTasks = filteredTasks.filter(task => 
-      task.title.toLowerCase().includes(searchLower) || 
+      task.title.toLowerCase().includes(searchLower) ?? 
       task.description.toLowerCase().includes(searchLower)
     );
   }
@@ -71,10 +71,10 @@ export const TaskList: React.FC<TaskListProps> = ({
         filteredTasks.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         break;
       case 'budget-high':
-        filteredTasks.sort((a, b) => (b.budget?.max || 0) - (a.budget?.max || 0));
+        filteredTasks.sort((a, b) => (b.budget?.max ?? 0) - (a.budget?.max ?? 0));
         break;
       case 'budget-low':
-        filteredTasks.sort((a, b) => (a.budget?.min || 0) - (b.budget?.min || 0));
+        filteredTasks.sort((a, b) => (a.budget?.min ?? 0) - (b.budget?.min ?? 0));
         break;
       case 'bids-high':
         filteredTasks.sort((a, b) => b.bids.length - a.bids.length);

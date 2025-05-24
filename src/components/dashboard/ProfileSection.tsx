@@ -47,7 +47,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ user }) => {
               
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Phone:</span>
-                <span className="font-medium">{user.phone || 'Not provided'}</span>
+                <span className="font-medium">{user.phone ?? 'Not provided'}</span>
               </div>
               
               <div className="flex justify-between text-sm">
@@ -82,7 +82,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ user }) => {
           <div className="mb-6">
             <h4 className="font-medium mb-2">Bio</h4>
             <p className="text-gray-600">
-              {user.bio || 'No bio provided yet.'}
+              {user.bio ?? 'No bio provided yet.'}
             </p>
           </div>
           
@@ -102,7 +102,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ user }) => {
           <div>
             <h4 className="font-medium mb-2">Location</h4>
             <p className="text-gray-600">
-              {user.location?.address || 'No location provided yet.'}
+              {user.location?.address ?? 'No location provided yet.'}
             </p>
           </div>
           

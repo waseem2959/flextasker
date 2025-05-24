@@ -26,7 +26,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     <Card className="task-card h-full">
       <div className="task-card-image">
         <img 
-          src={images[0] || 'https://images.unsplash.com/photo-1531685250784-7569952593d2?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8d29ya3xlbnwwfHwwfHx8MA%3D%3D'} 
+          src={images[0] ?? 'https://images.unsplash.com/photo-1531685250784-7569952593d2?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8d29ya3xlbnwwfHwwfHx8MA%3D%3D'} 
           alt={title}
           className="w-full h-full object-cover"
         />
