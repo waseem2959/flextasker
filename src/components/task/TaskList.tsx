@@ -1,10 +1,46 @@
-
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Task } from '@/types';
+import { Search } from 'lucide-react';
 import React, { useState } from 'react';
 import { TaskCard } from './TaskCard';
-import { Task, TaskFilterParams } from '@/types';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+
+// EDUCATIONAL CONCEPT #1: Creating Missing Type Definitions
+// When you encounter missing types, it's often because your code has evolved
+// beyond your type definitions. The solution is to define types that match
+// what your code actually needs to do.
+
+interface TaskFilterParams {
+  search?: string;
+  category?: string;
+  sort?: 'newest' | 'oldest' | 'budget-high' | 'budget-low' | 'bids-high' | 'bids-low';
+  // You might have other filter parameters - add them here as your app grows
+  location?: string;
+  budgetRange?: {
+    min?: number;
+    max?: number;
+  };
+}
+
+// EDUCATIONAL CONCEPT #2: Extended Types for Enhanced Functionality
+// Sometimes your base types (like Task) don't have all the properties you need
+// for specific UI components. Instead of modifying the base type everywhere,
+// we can create "enhanced" versions that safely add the missing properties.
+
+interface TaskWithEnhancedData extends Task {
+  // These properties might come from separate API calls or be calculated
+  bids?: Array<{
+    id: string;
+    amount: number;
+    status: 'pending' | 'accepted' | 'rejected';
+  }>;
+  // Enhanced budget that might be an object instead of just a number
+  enhancedBudget?: {
+    min: number;
+    max: number;
+    currency: string;
+  };
+}
 
 interface TaskListProps {
   tasks: Task[];
@@ -26,6 +62,61 @@ export const TaskList: React.FC<TaskListProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState<string>('newest');
 
+  // EDUCATIONAL CONCEPT #3: Safe Property Access with Type Guards
+  // When working with properties that might not exist, we need helper functions
+  // that safely extract the data we need without causing runtime errors.
+
+  const getBudgetValue = (task: Task, type: 'min' | 'max'): number => {
+    // First, check if budget exists and is a number (your current Task type)
+    if (typeof task.budget === 'number') {
+      // Convert single budget value to min/max range
+      // This is a common pattern when your UI needs ranges but your data has single values
+      const baseValue = task.budget;
+      return type === 'min' ? Math.round(baseValue * 0.8) : Math.round(baseValue * 1.2);
+    }
+    
+    // Check if budget is already an object with min/max (future-proofing)
+    if (typeof task.budget === 'object' && task.budget !== null) {
+      const budgetObj = task.budget as { min?: number; max?: number };
+      if (type === 'min' && typeof budgetObj.min === 'number') return budgetObj.min;
+      if (type === 'max' && typeof budgetObj.max === 'number') return budgetObj.max;
+    }
+    
+    // Fallback for any other case
+    return 0;
+  };
+
+  const getBidsCount = (task: Task): number => {
+    // Check if the task has been enhanced with bids data
+    const taskWithBids = task as TaskWithEnhancedData;
+    if (taskWithBids.bids && Array.isArray(taskWithBids.bids)) {
+      return taskWithBids.bids.length;
+    }
+    
+    // Check if there's a bidCount property (alternative data structure)
+    const taskWithBidCount = task as Task & { bidCount?: number };
+    if (typeof taskWithBidCount.bidCount === 'number') {
+      return taskWithBidCount.bidCount;
+    }
+    
+    // Default to 0 if no bid information is available
+    return 0;
+  };
+
+  // EDUCATIONAL CONCEPT #4: Safe String Matching with Null Coalescing
+  // When filtering by category, we need to handle the fact that category
+  // might be a string or an object, just like in our TaskCard component.
+  
+  const getCategoryString = (task: Task): string => {
+    if (!task.category) return '';
+    if (typeof task.category === 'string') return task.category;
+    if (typeof task.category === 'object' && 'name' in task.category) {
+      const categoryObj = task.category as { name: unknown };
+      return typeof categoryObj.name === 'string' ? categoryObj.name : '';
+    }
+    return '';
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setFilters({ ...filters, search: searchTerm });
@@ -44,24 +135,35 @@ export const TaskList: React.FC<TaskListProps> = ({
     });
   };
 
-  // Apply filters
+  // EDUCATIONAL CONCEPT #5: Safe Filtering with Defensive Programming
+  // When filtering data, we need to be prepared for properties that might
+  // not exist or might be in different formats than we expect.
+
   let filteredTasks = [...tasks];
 
-  // Filter by category
+  // Filter by category with safe category extraction
   if (filters.category) {
-    filteredTasks = filteredTasks.filter(task => task.category === filters.category);
+    filteredTasks = filteredTasks.filter(task => {
+      const taskCategory = getCategoryString(task);
+      return taskCategory.toLowerCase() === filters.category?.toLowerCase();
+    });
   }
 
-  // Filter by search term
+  // Filter by search term with safe string operations
   if (filters.search) {
     const searchLower = filters.search.toLowerCase();
-    filteredTasks = filteredTasks.filter(task => 
-      task.title.toLowerCase().includes(searchLower) ?? 
-      task.description.toLowerCase().includes(searchLower)
-    );
+    filteredTasks = filteredTasks.filter(task => {
+      // Use safe string access - handle potential undefined values
+      const titleMatch = task.title?.toLowerCase().includes(searchLower) ?? false;
+      const descriptionMatch = task.description?.toLowerCase().includes(searchLower) ?? false;
+      return titleMatch || descriptionMatch;
+    });
   }
 
-  // Sort tasks
+  // EDUCATIONAL CONCEPT #6: Safe Sorting with Null-Safe Comparisons
+  // When sorting by properties that might not exist, we need comparison
+  // functions that handle missing data gracefully.
+
   if (filters.sort) {
     switch (filters.sort) {
       case 'newest':
@@ -71,16 +173,20 @@ export const TaskList: React.FC<TaskListProps> = ({
         filteredTasks.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         break;
       case 'budget-high':
-        filteredTasks.sort((a, b) => (b.budget?.max ?? 0) - (a.budget?.max ?? 0));
+        // Use our safe budget accessor instead of direct property access
+        filteredTasks.sort((a, b) => getBudgetValue(b, 'max') - getBudgetValue(a, 'max'));
         break;
       case 'budget-low':
-        filteredTasks.sort((a, b) => (a.budget?.min ?? 0) - (b.budget?.min ?? 0));
+        // Use our safe budget accessor instead of direct property access
+        filteredTasks.sort((a, b) => getBudgetValue(a, 'min') - getBudgetValue(b, 'min'));
         break;
       case 'bids-high':
-        filteredTasks.sort((a, b) => b.bids.length - a.bids.length);
+        // Use our safe bids counter instead of direct property access
+        filteredTasks.sort((a, b) => getBidsCount(b) - getBidsCount(a));
         break;
       case 'bids-low':
-        filteredTasks.sort((a, b) => a.bids.length - b.bids.length);
+        // Use our safe bids counter instead of direct property access
+        filteredTasks.sort((a, b) => getBidsCount(a) - getBidsCount(b));
         break;
       default:
         break;

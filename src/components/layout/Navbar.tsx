@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,9 +8,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Menu, X, Bell, User, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Bell, LogOut, Menu, Settings, User, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -29,6 +29,24 @@ export const Navbar: React.FC = () => {
       .map((part) => part[0])
       .join('')
       .toUpperCase();
+  };
+
+  // Helper function to determine if user is a client
+  // This bridges the gap between your data model (USER/TASKER) and UI logic (client/tasker)
+  // It's a semantic adapter that makes your component logic more readable
+  const isUserClient = (): boolean => {
+    // Map your actual UserRole enum values to the business logic
+    // USER role in your system represents clients who post tasks
+    return user?.role === 'USER';
+  };
+
+  // Helper function to safely handle avatar URLs that might be null
+  // This converts null to undefined to match the AvatarImage component's expectations
+  // It demonstrates defensive programming - handling edge cases gracefully
+  const getAvatarSrc = (avatarUrl: string | null | undefined): string | undefined => {
+    // Convert null to undefined since AvatarImage expects string | undefined
+    // This is a common pattern when interfacing between different type expectations
+    return avatarUrl ?? undefined;
   };
 
   return (
@@ -58,7 +76,9 @@ export const Navbar: React.FC = () => {
               
               {isAuthenticated && (
                 <>
-                  {user?.role === 'client' && (
+                  {/* FIXED: Use semantic helper function instead of direct string comparison */}
+                  {/* This makes the code more maintainable and self-documenting */}
+                  {isUserClient() && (
                     <NavLink 
                       to="/post-task" 
                       className={({isActive}) => cn(
@@ -111,7 +131,9 @@ export const Navbar: React.FC = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user?.avatar} alt={user?.name} />
+                        {/* FIXED: Use helper function to safely convert null to undefined */}
+                        {/* This ensures type compatibility with the AvatarImage component */}
+                        <AvatarImage src={getAvatarSrc(user?.avatar)} alt={user?.name} />
                         <AvatarFallback>{user?.name ? getInitials(user.name) : 'U'}</AvatarFallback>
                       </Avatar>
                     </Button>
@@ -193,7 +215,9 @@ export const Navbar: React.FC = () => {
           
           {isAuthenticated && (
             <>
-              {user?.role === 'client' && (
+              {/* FIXED: Apply the same semantic helper function pattern here */}
+              {/* This ensures consistency across both desktop and mobile navigation */}
+              {isUserClient() && (
                 <NavLink
                   to="/post-task"
                   className={({ isActive }) =>
@@ -249,7 +273,9 @@ export const Navbar: React.FC = () => {
               <div className="flex items-center px-4">
                 <div className="flex-shrink-0">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.avatar} alt={user?.name} />
+                    {/* FIXED: Apply the same avatar src fix in the mobile menu */}
+                    {/* This ensures consistent behavior across all avatar instances */}
+                    <AvatarImage src={getAvatarSrc(user?.avatar)} alt={user?.name} />
                     <AvatarFallback>{user?.name ? getInitials(user.name) : 'U'}</AvatarFallback>
                   </Avatar>
                 </div>
