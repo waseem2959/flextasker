@@ -1,13 +1,13 @@
 
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Layout } from '../components/layout/Layout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Lock, User } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Layout } from '../components/layout/Layout';
 import { useAuth } from '../hooks/useAuth';
-import { User, Lock } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -29,7 +29,7 @@ const Login = () => {
     setLoading(true);
     
     try {
-      const success = await login(email, password);
+      const success = await login({ email, password });
       if (success) {
         navigate('/dashboard');
       } else {

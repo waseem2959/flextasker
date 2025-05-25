@@ -1,57 +1,74 @@
-
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Layout } from '../components/layout/Layout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useAuth } from '../hooks/useAuth';
-import { UserRole } from '../types';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Layout } from "../components/layout/Layout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useAuth } from "../hooks/useAuth";
+import { UserRole } from "../types";
 
 const Register = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('worker');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<UserRole>("USER");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name || !email || !password || !confirmPassword) {
-      setError('Please fill in all fields');
+
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      setError("Please fill in all fields");
       return;
     }
-    
+
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
-    
+
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError("Password must be at least 6 characters");
       return;
     }
-    
-    setError('');
+
+    setError("");
     setLoading(true);
-    
+
     try {
-      const success = await register(name, email, role, password);
+      const success = await register({
+        firstName,
+        lastName,
+        email,
+        role,
+        password,
+      });
       if (success) {
-        navigate('/dashboard');
+        navigate("/dashboard");
       } else {
-        setError('Registration failed. Please try again.');
+        setError("Registration failed. Please try again.");
       }
     } catch (err) {
-      console.error('Registration error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred. Please try again.');
+      console.error("Registration error:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An error occurred. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -63,7 +80,9 @@ const Register = () => {
         <div className="w-full max-w-md">
           <Card className="border-0 shadow-lg animate-fade-in">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
+              <CardTitle className="text-2xl font-bold text-center">
+                Create an account
+              </CardTitle>
               <CardDescription className="text-center">
                 Enter your details to create your FlexTasker account
               </CardDescription>
@@ -76,13 +95,24 @@ const Register = () => {
               )}
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">First Name</Label>
                   <Input
                     id="name"
                     type="text"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    placeholder="John"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    placeholder="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     required
                   />
                 </div>
@@ -120,10 +150,14 @@ const Register = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label>I want to join as</Label>
-                  <RadioGroup defaultValue="worker" value={role} onValueChange={(value) => setRole(value as UserRole)}>
+                  <RadioGroup
+                    defaultValue="worker"
+                    value={role}
+                    onValueChange={(value) => setRole(value as UserRole)}
+                  >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="client" id="client" />
                       <Label htmlFor="client">Client (post tasks)</Label>
@@ -134,16 +168,19 @@ const Register = () => {
                     </div>
                   </RadioGroup>
                 </div>
-                
+
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Creating Account...' : 'Create Account'}
+                  {loading ? "Creating Account..." : "Create Account"}
                 </Button>
               </form>
             </CardContent>
             <CardFooter className="flex flex-col">
               <div className="text-sm text-gray-500 text-center mt-2">
-                Already have an account?{' '}
-                <Link to="/login" className="text-flextasker-600 hover:text-flextasker-700 font-medium">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="text-flextasker-600 hover:text-flextasker-700 font-medium"
+                >
                   Sign in
                 </Link>
               </div>
