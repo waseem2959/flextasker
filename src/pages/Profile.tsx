@@ -5,7 +5,7 @@ import { StarRating } from '@/components/ui/StarRating';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { getInitials } from '../utils/avatar';
 
 const Profile = () => {
@@ -31,15 +31,15 @@ const Profile = () => {
             <CardContent>
               <div className="flex flex-col items-center">
                 <Avatar className="h-24 w-24 mb-4">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
                   <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                 </Avatar>
                 <h3 className="font-bold text-xl">{user.name}</h3>
                 <Badge className="mt-2 capitalize">{user.role}</Badge>
 
-                <StarRating rating={user.rating} size={4} className="mt-2" />
+                <StarRating rating={user.averageRating ?? 0} size={4} className="mt-2" />
                 <span className="ml-2 text-sm font-medium">
-                  {user.rating} ({user.totalReviews} reviews)
+                  {user.averageRating ?? 0} ({user.totalReviews ?? 0} reviews)
                 </span>
 
                 <div className="w-full mt-6 space-y-4">
@@ -50,7 +50,9 @@ const Profile = () => {
 
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Location:</span>
-                    <span className="font-medium">{user.location?.address ?? 'Not provided'}</span>
+                    <span className="font-medium">
+                      {[user.city, user.state, user.country].filter(Boolean).join(', ') || 'Not provided'}
+                    </span>
                   </div>
 
                   <div className="flex justify-between text-sm">

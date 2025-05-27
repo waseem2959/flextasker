@@ -20,3 +20,8 @@ dist-ssr
 *.suo
 *.sln
 *.sw?
+.env
+.env.local
+.env.example
+
+

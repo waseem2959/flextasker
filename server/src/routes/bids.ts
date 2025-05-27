@@ -1,9 +1,44 @@
 import { authenticateToken } from '@/middleware/auth';
 import { validate } from '@/middleware/validation';
 import { BidService } from '@/services/bid';
-import { sendSuccess } from '@/utils/response';
+import { sendSuccess, sendError } from '@/utils/response';
 import { NextFunction, Request, Response, Router } from 'express';
 import { body, param, query } from 'express-validator';
+import { AppError } from '@/utils/errors';
+
+// Define BidStatus enum locally since we can't import from @/types/enums
+enum BidStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  REJECTED = 'REJECTED',
+  WITHDRAWN = 'WITHDRAWN'
+}
+
+// Define interfaces for request/response types to enhance type safety
+interface CreateBidRequest {
+  taskId: string;
+  amount: number;
+  description: string;
+  timeline: string;
+}
+
+interface UpdateBidRequest {
+  amount?: number;
+  description?: string;
+  timeline?: string;
+}
+
+interface SearchBidsRequest {
+  taskId?: string;
+  bidderId?: string;
+  status?: BidStatus;
+  minAmount?: number;
+  maxAmount?: number;
+  page?: number;
+  limit?: number;
+}
+
+// Removed unused interfaces: GetTaskBidStatisticsRequest and GetMyBidsRequest
 
 /**
  * Bid routes - these are like different windows at an employment agency
@@ -14,27 +49,25 @@ import { body, param, query } from 'express-validator';
 const router = Router();
 const bidService = new BidService();
 
-// Define proper types for bid-related enums to replace 'any' usage
-// This creates a contract that ensures only valid values can be used
-type BidStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
-
 /**
  * Helper function to validate and convert bid status from request parameters
  * This replaces unsafe 'as any' casting with proper type validation
  * 
- * Think of this as a quality control checkpoint that ensures only valid
- * bid statuses make it through to your business logic
+ * @param status - The status value to validate
+ * @returns The validated status as a BidStatus enum or undefined if invalid
+ * @throws AppError if the status is not valid and shouldThrow is true
  */
-function validateBidStatus(status: unknown): BidStatus | undefined {
-  const validStatuses: BidStatus[] = ['PENDING', 'ACCEPTED', 'REJECTED', 'WITHDRAWN'];
-  
-  if (typeof status === 'string' && validStatuses.includes(status as BidStatus)) {
+function validateBidStatus(status: unknown, shouldThrow = false): BidStatus | undefined {
+  if (typeof status === 'string' && Object.values(BidStatus).includes(status as BidStatus)) {
     return status as BidStatus;
+  }
+  
+  if (shouldThrow) {
+    throw new AppError(`Invalid bid status: ${status}. Must be one of: ${Object.values(BidStatus).join(', ')}`, 400);
   }
   
   return undefined;
 }
-
 
 /**
  * Create New Bid
@@ -64,12 +97,22 @@ router.post('/',
       .isLength({ min: 5, max: 200 })
       .withMessage('Timeline must be between 5 and 200 characters'),
   ]),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request<{}, {}, CreateBidRequest>, res: Response, next: NextFunction) => {
     try {
-      const bid = await bidService.createBid(req.user!.id, req.body);
+      const { taskId, amount, description, timeline } = req.body;
+      
+      // Better approach: Explicitly pass only the needed fields rather than the entire req.body
+      const bid = await bidService.createBid(req.user!.id, {
+        taskId,
+        amount,
+        description,
+        timeline
+      });
       
       sendSuccess(res, bid, 'Bid submitted successfully', 201);
     } catch (error) {
+      // Log error for monitoring but don't expose sensitive details to client
+      console.error('Error creating bid:', error);
       next(error);
     }
   }
@@ -89,12 +132,17 @@ router.get('/:id',
       .notEmpty()
       .withMessage('Bid ID is required'),
   ]),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request<{id: string}>, res: Response, next: NextFunction) => {
     try {
       const bid = await bidService.getBidById(req.params.id, req.user!.id);
       
+      if (!bid) {
+        return sendError(res, 'Bid not found', 404);
+      }
+      
       sendSuccess(res, bid, 'Bid retrieved successfully');
     } catch (error) {
+      console.error('Error retrieving bid:', error);
       next(error);
     }
   }
@@ -131,12 +179,24 @@ router.put('/:id',
       .isLength({ min: 5, max: 200 })
       .withMessage('Timeline must be between 5 and 200 characters'),
   ]),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request<{ id: string }, any, UpdateBidRequest, never>, res: Response, next: NextFunction) => {
     try {
-      const bid = await bidService.updateBid(req.params.id, req.user!.id, req.body);
+      // Explicit destructuring to ensure only valid fields are passed
+      const { amount, description, timeline } = req.body;
+      
+      const bid = await bidService.updateBid(req.params.id, req.user!.id, {
+        amount,
+        description,
+        timeline
+      });
+      
+      if (!bid) {
+        return sendError(res, 'Bid not found or you do not have permission to update it', 404);
+      }
       
       sendSuccess(res, bid, 'Bid updated successfully');
     } catch (error) {
+      console.error('Error updating bid:', error);
       next(error);
     }
   }
@@ -156,12 +216,17 @@ router.post('/:id/accept',
       .notEmpty()
       .withMessage('Bid ID is required'),
   ]),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request<{id: string}>, res: Response, next: NextFunction) => {
     try {
       const result = await bidService.acceptBid(req.params.id, req.user!.id);
       
+      if (!result) {
+        return sendError(res, 'Bid not found or you do not have permission to accept it', 404);
+      }
+      
       sendSuccess(res, result, 'Bid accepted successfully');
     } catch (error) {
+      console.error('Error accepting bid:', error);
       next(error);
     }
   }
@@ -181,12 +246,16 @@ router.post('/:id/reject',
       .notEmpty()
       .withMessage('Bid ID is required'),
   ]),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request<{id: string}>, res: Response, next: NextFunction) => {
     try {
+      // Store the result in a variable
       await bidService.rejectBid(req.params.id, req.user!.id);
+      
+      // Don't check void return value - if there was an error, it would have thrown
       
       sendSuccess(res, null, 'Bid rejected successfully');
     } catch (error) {
+      console.error('Error rejecting bid:', error);
       next(error);
     }
   }
@@ -206,7 +275,7 @@ router.post('/:id/withdraw',
       .notEmpty()
       .withMessage('Bid ID is required'),
   ]),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request<any, any, any, SearchBidsRequest>, res: Response, next: NextFunction) => {
     try {
       await bidService.withdrawBid(req.params.id, req.user!.id);
       
@@ -262,26 +331,23 @@ router.get('/search',
       .isInt({ min: 1, max: 50 })
       .withMessage('Limit must be between 1 and 50'),
   ]),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request<any, any, any, SearchBidsRequest>, res: Response, next: NextFunction) => {
     try {
       // Use proper type validation instead of unsafe 'as any' casting
       // This ensures that only valid enum values make it to your business logic
       const validatedStatus = validateBidStatus(req.query.status);
       
-      const filters = {
-        taskId: req.query.taskId as string,
-        bidderId: req.query.bidderId as string,
-        status: validatedStatus, // Now properly typed as BidStatus | undefined
-        minAmount: req.query.minAmount ? parseFloat(req.query.minAmount as string) : undefined,
-        maxAmount: req.query.maxAmount ? parseFloat(req.query.maxAmount as string) : undefined,
-        submittedAfter: req.query.submittedAfter ? new Date(req.query.submittedAfter as string) : undefined,
-        submittedBefore: req.query.submittedBefore ? new Date(req.query.submittedBefore as string) : undefined,
+      const searchParams: SearchBidsRequest = {
+        taskId: req.query.taskId,
+        bidderId: req.query.bidderId,
+        status: validatedStatus,
+        minAmount: req.query.minAmount ? Number(req.query.minAmount) : undefined,
+        maxAmount: req.query.maxAmount ? Number(req.query.maxAmount) : undefined,
+        page: req.query.page ? Number(req.query.page) : 1,
+        limit: req.query.limit ? Number(req.query.limit) : 10
       };
 
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-
-      const result = await bidService.searchBids(filters, req.user!.id, page, limit);
+      const result = await bidService.searchBids(searchParams, req.user!.id);
       
       sendSuccess(res, result, 'Bid search completed');
     } catch (error) {
@@ -304,7 +370,7 @@ router.get('/task/:taskId/stats',
       .notEmpty()
       .withMessage('Task ID is required'),
   ]),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request<any, any, any, SearchBidsRequest>, res: Response, next: NextFunction) => {
     try {
       const stats = await bidService.getTaskBidStatistics(req.params.taskId, req.user!.id);
       
@@ -340,7 +406,7 @@ router.get('/my',
       .isInt({ min: 1, max: 50 })
       .withMessage('Limit must be between 1 and 50'),
   ]),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request<any, any, any, SearchBidsRequest>, res: Response, next: NextFunction) => {
     try {
       // Use proper type validation for the status filter
       const validatedStatus = validateBidStatus(req.query.status);
@@ -350,8 +416,8 @@ router.get('/my',
         status: validatedStatus, // Now properly typed instead of using 'as any'
       };
 
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const page = req.query.page ? Number(req.query.page) : 1;
+      const limit = req.query.limit ? Number(req.query.limit) : 10;
 
       const result = await bidService.searchBids(filters, req.user!.id, page, limit);
       

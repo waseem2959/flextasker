@@ -1,0 +1,156 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Main data models
+
+model User {
+  id             String     @id @default(uuid())
+  email          String     @unique
+  passwordHash   String
+  firstName      String
+  lastName       String
+  role           String     // Using UserRole enum from shared types
+  averageRating  Float?
+  trustScore     Int?
+  phoneVerified  Boolean    @default(false)
+  emailVerified  Boolean    @default(false)
+  city           String?
+  state          String?
+  country        String?
+  bio            String?
+  avatar         String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  // Relations
+  ownedTasks     Task[]     @relation("TaskOwner")
+  assignedTasks  Task[]     @relation("TaskAssignee")
+  bids           Bid[]
+  reviewsGiven   Review[]   @relation("ReviewGiver")
+  reviewsReceived Review[]  @relation("ReviewReceiver")
+  notifications  Notification[]
+  messages       Message[]
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  icon        String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  tasks       Task[]
+}
+
+model Task {
+  id           String    @id @default(uuid())
+  title        String
+  description  String
+  ownerId      String
+  categoryId   String
+  assigneeId   String?
+  status       String    // Using TaskStatus enum from shared types
+  priority     String    // Using TaskPriority enum from shared types
+  budget       Float
+  budgetType   String    // Using BudgetType enum from shared types
+  isRemote     Boolean   @default(false)
+  location     String?
+  latitude     Float?
+  longitude    Float?
+  deadline     DateTime?
+  tags         String[]  @default([])
+  requirements String[]  @default([])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  owner        User      @relation("TaskOwner", fields: [ownerId], references: [id])
+  assignee     User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  category     Category  @relation(fields: [categoryId], references: [id])
+  bids         Bid[]
+  reviews      Review[]
+  attachments  Attachment[]
+}
+
+model Bid {
+  id          String    @id @default(uuid())
+  taskId      String
+  bidderId    String
+  amount      Float
+  description String
+  timeline    String
+  status      String    // Using BidStatus enum from shared types
+  submittedAt DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  task        Task      @relation(fields: [taskId], references: [id])
+  bidder      User      @relation(fields: [bidderId], references: [id])
+}
+
+model Review {
+  id          String    @id @default(uuid())
+  taskId      String
+  reviewerId  String
+  revieweeId  String
+  rating      Int
+  title       String?
+  comment     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  task        Task      @relation(fields: [taskId], references: [id])
+  reviewer    User      @relation("ReviewGiver", fields: [reviewerId], references: [id])
+  reviewee    User      @relation("ReviewReceiver", fields: [revieweeId], references: [id])
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  type      String    // Using NotificationType enum from shared types
+  message   String
+  relatedId String?
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model Message {
+  id         String    @id @default(uuid())
+  senderId   String
+  receiverId String
+  content    String
+  isRead     Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  // Relations
+  sender     User      @relation(fields: [senderId], references: [id])
+}
+
+model Attachment {
+  id          String    @id @default(uuid())
+  taskId      String
+  fileName    String
+  fileUrl     String
+  contentType String
+  size        Int
+  uploadedAt  DateTime  @default(now())
+
+  // Relations
+  task        Task      @relation(fields: [taskId], references: [id])
+}

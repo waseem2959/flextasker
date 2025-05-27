@@ -7,16 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ArrowLeft, Calendar, Clock, MapPin } from 'lucide-react';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
-import { createBid, getTaskWithBids, getTaskWithClient } from '../data/mockData';
-import { toast } from '../hooks/use-toast';
-import { useAuth } from '../hooks/useAuth';
-import { Bid } from '../types';
-
-import { getInitials } from '../utils/avatar';
-
+import { toast } from '@/hooks/use-toast';
+import { useAuth, useTask, useCreateBid } from '@/hooks';
+import { Bid } from '@/types';
+import { TaskStatus } from '@/types/enums';
+import { isOpenTask, isCompletedTask, isInProgressTask, isCancelledTask } from '@/utils/type-guards';
+import { getInitials } from '@/utils/avatar';
 import { StarRating } from '@/components/ui/StarRating';
 const TaskDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,11 +26,31 @@ const TaskDetail = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
-  // Get task with populated data
-  const task = id ? getTaskWithBids(id) : null;
-  const taskWithClient = id ? getTaskWithClient(id) : null;
+  // Get task using consolidated hook with type discrimination
+  const { 
+    data: taskResponse, 
+    isLoading: isTaskLoading,
+    error: taskError
+  } = useTask(id || '');
   
-  if (!task || !taskWithClient) {
+  // Create bid mutation
+  const createBidMutation = useCreateBid();
+  
+  // Handle loading state
+  if (isTaskLoading) {
+    return (
+      <Layout>
+        <div className="py-10 px-4 text-center">
+          <div className="flex items-center justify-center h-40">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+  
+  // Handle error state
+  if (taskError || !taskResponse?.data) {
     return (
       <Layout>
         <div className="py-10 px-4 text-center">
@@ -43,7 +62,13 @@ const TaskDetail = () => {
       </Layout>
     );
   }
+  
+  // Extract task data with proper typing
+  const task = taskResponse.data;
 
+  // Type guard to ensure safe access to properties
+  if (!task) return null;
+  
   const { 
     title, 
     description, 
@@ -51,13 +76,15 @@ const TaskDetail = () => {
     status, 
     budget, 
     location, 
-    images, 
     createdAt, 
-    deadline,
-    bids
+    deadline
   } = task;
   
-  const client = taskWithClient.client;
+  // In our consolidated type system, the owner property contains the task creator
+  const owner = task.owner;
+  
+  // Use TaskBase's attachments property - it may not exist in all Task union types
+  const attachments = 'attachments' in task ? task.attachments : [];
 
   const handleSubmitBid = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +98,7 @@ const TaskDetail = () => {
       navigate('/login');
       return;
     }
-    
+
     if (!bidAmount) {
       toast({
         title: "Bid amount required",
@@ -92,26 +119,44 @@ const TaskDetail = () => {
       return;
     }
     
+    if (!id || !user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to submit a bid.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    // Create bid and update the UI
-    setTimeout(() => {
-      if (user) {
-        const newBid = createBid(task.id, user.id, amount, bidMessage);
-        setMyBid(newBid);
-        
-        toast({
-          title: "Bid submitted successfully",
-          description: "The client will be notified of your bid",
-        });
-      }
+    try {
+      // Use enhanced mutation with proper typing
+      await createBidMutation.mutateAsync({
+        taskId: id,
+        amount: amount,
+        description: bidMessage,
+        timeline: "1 week" // This would typically come from a form field
+      });
       
-      setIsSubmitting(false);
+      // Reset form fields after successful submission
       setBidAmount('');
       setBidMessage('');
-    }, 1000);
+      
+      toast({
+        title: "Bid Submitted",
+        description: "Your bid has been submitted successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "There was an error submitting your bid.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
 
   return (
     <Layout>
@@ -130,7 +175,7 @@ const TaskDetail = () => {
               <Card className="mb-6">
                 <div className="aspect-[16/9] w-full overflow-hidden">
                   <img 
-                    src={images[0] || 'https://images.unsplash.com/photo-1531685250784-7569952593d2'} 
+                    src={attachments?.[0]?.url || 'https://images.unsplash.com/photo-1531685250784-7569952593d2'} 
                     alt={title}
                     className="w-full h-full object-cover"
                   />

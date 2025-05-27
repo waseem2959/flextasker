@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks';
+import { useTasks } from '@/hooks/use-tasks';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TASKS } from '../data/mockData';
+import { UserRole } from '@/types/enums';
 import { Task } from '@/types';
+import { isAdmin, isTasker, isRegularUser } from '@/utils/type-guards';
 
 // Import dashboard components
 import { DashboardStats } from '../components/dashboard/DashboardStats';
@@ -29,26 +31,33 @@ const Dashboard = () => {
     return null; // Redirect handled above
   }
 
-  // Filter tasks based on user role
-  let myTasks: Task[] = [];
-  console.log('Dashboard: Filtering tasks for user role:', user?.role);
-  if (user?.role === 'client') {
-    console.log('Dashboard: Filtering tasks for client ID:', user.id);
-    myTasks = TASKS.filter(task => task.clientId === user.id);
-    console.log('Dashboard: Client tasks:', myTasks);
-  } else {
-    // For workers, show tasks they've bid on
-    console.log('Dashboard: Filtering tasks for worker ID (bids):', user?.id);
-    myTasks = TASKS.filter(task => task.bids.some(bid => bid.workerId === user.id));
-    console.log('Dashboard: Worker tasks (based on bids):', myTasks);
-  }
+  // Get tasks using our hooks based on user role
+  const {
+    data: tasksResponse,
+    isLoading: isTasksLoading
+  } = useTasks(
+    // Pass appropriate params based on user role
+    user ? {
+      ...(user.role === UserRole.USER ? { ownerId: user.id } : {}),
+      ...(user.role === UserRole.TASKER ? { assigneeId: user.id } : {}),
+      ...(user.role === UserRole.ADMIN ? {} : {}),
+    } : {}
+  );
+  
+  // Extract tasks array from response using proper type safety
+  const myTasks = tasksResponse?.data || [];
 
   return (
     <Layout>
       <div className="py-8 bg-gray-50 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Dashboard</h1>
+          <div className="container mx-auto py-6 max-w-7xl">
+          {isTasksLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : null}
+          <h1 className="text-2xl font-bold mb-4">Welcome, {user.firstName}!</h1>
             <p className="mt-1 text-gray-500">
               Welcome back, {user.name}
             </p>
@@ -59,7 +68,7 @@ const Dashboard = () => {
             <TabsList className="mb-8">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="tasks">
-                {user.role === 'client' ? 'My Tasks' : 'My Bids'}
+                {user.role === 'USER' ? 'My Tasks' : 'My Bids'}
               </TabsTrigger>
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="messages">Messages</TabsTrigger>

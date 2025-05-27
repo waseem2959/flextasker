@@ -1,18 +1,36 @@
-// types/index.ts
-// This file defines the core types for your FlexTasker frontend application
-// These types are designed to match your backend API structure
+/**
+ * FlexTasker Type System with TypeScript Improvements
+ * 
+ * This file serves as the central export point for all type definitions,
+ * providing a clean and organized type system throughout the application.
+ */
 
-// User role enum - matches your backend enum values
-export type UserRole = 'USER' | 'TASKER' | 'ADMIN';
+// Re-export all enums from the central enums file
+export * from './enums';
 
-// Task status enum - matches your backend
-export type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+// Re-export all error types from the errors file
+export * from './errors';
 
-// Task priority enum - matches your backend  
-export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+// Re-export domain models
+export * from './models';
 
-// Budget type enum - matches your backend
-export type BudgetType = 'FIXED' | 'HOURLY' | 'NEGOTIABLE';
+// Re-export task-related types with discriminated unions
+export * from './task';
+
+// Re-export category types
+export type { Category } from './category';
+
+// Re-export button-specific types
+export * from './button';
+
+// For backward compatibility with existing code, we maintain type aliases
+// These will be deprecated in future versions in favor of using the enums directly
+import { UserRole, TaskStatus, TaskPriority, BudgetType, BidStatus } from './enums';
+export type UserRoleType = UserRole;
+export type TaskStatusType = TaskStatus;
+export type TaskPriorityType = TaskPriority;
+export type BudgetTypeType = BudgetType;
+export type BidStatusType = BidStatus;
 
 // Core User interface - matches your backend User model
 export interface User {
@@ -50,25 +68,24 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  budget: number;
-  budgetType: BudgetType;
-  status: TaskStatus;
-  priority: TaskPriority;
-  isRemote: boolean;
-  location?: string;
-  deadline?: Date;
-  estimatedHours?: number;
-  tags: string[];
-  requirements: string[];
-  createdAt: Date;
-  
-  // Related entities
   category: {
     id: string;
     name: string;
   };
+  status: TaskStatus;
+  priority: TaskPriority;
+  budget: number;
+  budgetType: BudgetType;
+  isRemote: boolean;
+  location: string;
+  tags: string[];
+  requirements: string[];
+  createdAt: Date;
+  deadline?: Date;
+  startDate?: Date;
+  completedAt?: Date;
   owner: User;
-  assignee?: User;
+  assignee?: User | null;
   bidCount: number;
 }
 
@@ -80,7 +97,7 @@ export interface Bid {
   amount: number;
   description: string;
   timeline: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
+  status: BidStatus;
   submittedAt: Date;
   
   // Related entities

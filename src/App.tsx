@@ -2,8 +2,8 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ReactQueryProvider } from "@/lib/query-provider";
 
 // Pages
 import Index from "./pages/Index";
@@ -18,17 +18,15 @@ import HowItWorks from "./pages/HowItWorks";
 import Profile from "./pages/Profile";
 
 // Contexts
-import { AuthProvider } from "./contexts/AuthContext";
-
-const queryClient = new QueryClient();
+import { EnhancedAuthProvider } from "./contexts";
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+  <BrowserRouter>
+    <ReactQueryProvider>
+      <EnhancedAuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
@@ -41,10 +39,10 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+        </TooltipProvider>
+      </EnhancedAuthProvider>
+    </ReactQueryProvider>
+  </BrowserRouter>
 );
 
 export default App;

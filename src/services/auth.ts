@@ -1,6 +1,19 @@
-// src/services/auth.ts
-import { ApiResponse, AuthResult, LoginCredentials, User } from '@/types';
-import { apiClient, tokenManager } from './api/client';
+/**
+ * Authentication Service with TypeScript Improvements
+ * 
+ * This file provides a consolidated service for authentication-related operations
+ * with improved TypeScript typing and error handling.
+ */
+
+import { ApiResponse, LoginCredentials, User } from '@/types';
+import { apiClient } from './api/base-client';
+import tokenManager from './api/token-manager';
+
+// Define the AuthResult interface for authentication responses
+interface AuthResult {
+  token: string;
+  user: User;
+}
 
 export const authService = {
   async register(data: {

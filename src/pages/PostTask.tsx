@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { toast } from '../hooks/use-toast';
 import { CATEGORIES } from '../data/mockData';
+import { UserRole } from '@/types/enums';
 
 const PostTask = () => {
   const [title, setTitle] = useState('');
@@ -26,10 +27,10 @@ const PostTask = () => {
 
   // Redirect if not authenticated or not a client
   useEffect(() => {
-    if (isAuthenticated && user?.role !== 'client') {
+    if (isAuthenticated && user?.role !== UserRole.USER) {
       toast({
         title: "Access denied",
-        description: "Only clients can post tasks",
+        description: "Only users can post tasks",
         variant: "destructive",
       });
       navigate('/dashboard');

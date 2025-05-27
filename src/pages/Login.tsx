@@ -7,7 +7,7 @@ import { Lock, User } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/layout/Layout';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 
 const Login = () => {
   const [email, setEmail] = useState('');

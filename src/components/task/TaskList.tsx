@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Task } from '@/types';
-import { Search } from 'lucide-react';
-import React, { useState } from 'react';
+import { TaskStatus, TaskPriority } from '@/types/enums';
+import { Search, Filter } from 'lucide-react';
+import { useState } from 'react';
 import { TaskCard } from './TaskCard';
 
 // EDUCATIONAL CONCEPT #1: Creating Missing Type Definitions
@@ -10,16 +11,22 @@ import { TaskCard } from './TaskCard';
 // beyond your type definitions. The solution is to define types that match
 // what your code actually needs to do.
 
+/**
+ * Enhanced task filter parameters with proper enum typing
+ */
 interface TaskFilterParams {
   search?: string;
   category?: string;
+  status?: TaskStatus | TaskStatus[];
+  priority?: TaskPriority;
   sort?: 'newest' | 'oldest' | 'budget-high' | 'budget-low' | 'bids-high' | 'bids-low';
-  // You might have other filter parameters - add them here as your app grows
   location?: string;
   budgetRange?: {
     min?: number;
     max?: number;
   };
+  ownerId?: string; // For filtering tasks created by a specific user
+  assigneeId?: string; // For filtering tasks assigned to a specific user
 }
 
 // EDUCATIONAL CONCEPT #2: Extended Types for Enhanced Functionality
@@ -139,26 +146,63 @@ export const TaskList: React.FC<TaskListProps> = ({
   // When filtering data, we need to be prepared for properties that might
   // not exist or might be in different formats than we expect.
 
-  let filteredTasks = [...tasks];
-
-  // Filter by category with safe category extraction
-  if (filters.category) {
-    filteredTasks = filteredTasks.filter(task => {
-      const taskCategory = getCategoryString(task);
-      return taskCategory.toLowerCase() === filters.category?.toLowerCase();
+  const filterTasks = (tasks: Task[], filters: TaskFilterParams): Task[] => {
+    return tasks.filter(task => {
+      // Search filter - check both title and description
+      if (filters.search && 
+          !task.title.toLowerCase().includes(filters.search.toLowerCase()) && 
+          !task.description.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+      
+      // Category filter
+      if (filters.category && filters.category !== 'all' && 
+          task.category.name.toLowerCase() !== filters.category.toLowerCase()) {
+        return false;
+      }
+      
+      // Status filter (can be single status or array of statuses)
+      if (filters.status) {
+        if (Array.isArray(filters.status)) {
+          if (!filters.status.includes(task.status)) {
+            return false;
+          }
+        } else if (task.status !== filters.status) {
+          return false;
+        }
+      }
+      
+      // Priority filter
+      if (filters.priority && task.priority !== filters.priority) {
+        return false;
+      }
+      
+      // Creator/owner filter
+      if (filters.ownerId && task.owner.id !== filters.ownerId) {
+        return false;
+      }
+      
+      // Assignee filter
+      if (filters.assigneeId && 
+          (!task.assignee || task.assignee.id !== filters.assigneeId)) {
+        return false;
+      }
+      
+      // Budget range filter
+      if (filters.budgetRange) {
+        if (filters.budgetRange.min !== undefined && task.budget < filters.budgetRange.min) {
+          return false;
+        }
+        if (filters.budgetRange.max !== undefined && task.budget > filters.budgetRange.max) {
+          return false;
+        }
+      }
+      
+      return true;
     });
-  }
+  };
 
-  // Filter by search term with safe string operations
-  if (filters.search) {
-    const searchLower = filters.search.toLowerCase();
-    filteredTasks = filteredTasks.filter(task => {
-      // Use safe string access - handle potential undefined values
-      const titleMatch = task.title?.toLowerCase().includes(searchLower) ?? false;
-      const descriptionMatch = task.description?.toLowerCase().includes(searchLower) ?? false;
-      return titleMatch || descriptionMatch;
-    });
-  }
+  let filteredTasks = filterTasks(tasks, filters);
 
   // EDUCATIONAL CONCEPT #6: Safe Sorting with Null-Safe Comparisons
   // When sorting by properties that might not exist, we need comparison

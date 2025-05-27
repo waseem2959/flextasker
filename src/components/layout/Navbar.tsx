@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { Bell, LogOut, Menu, Settings, User, X } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
