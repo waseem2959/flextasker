@@ -5,7 +5,7 @@
  */
 
 import { Request, Response } from 'express';
-import { TaskController } from '@/controllers/task.controller';
+import { TaskController } from '@/controllers/task-controller';
 import { createMockRequest } from '@/tests/mocks/mock-request';
 import { createMockResponse } from '@/tests/mocks/mock-response';
 import { mockTasks } from '@/tests/mocks/mock-data';

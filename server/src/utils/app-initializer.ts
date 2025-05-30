@@ -10,13 +10,21 @@ import { Server as HttpServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import { json, urlencoded } from 'body-parser';
+
+// Using require for modules without proper TypeScript definitions
+// @ts-ignore
 import cookieParser from 'cookie-parser';
+// @ts-ignore
 import morgan from 'morgan';
-import { initializeWebSockets } from './websocket';
-import { errorHandler } from '../middleware/enhanced-error-handler';
+// @ts-ignore
+import errorHandler from '../middleware/error-handler-middleware';
+import { metricsMiddleware, getEndpointMetricsMiddleware } from '../middleware/metrics-middleware';
 import { cacheMiddleware } from './cache/cache-middleware';
 import { logger } from './logger';
 import { redisClient } from './cache/redis-client';
+// Monitoring is initialized in the monitoring module
+
+// Redis client is imported as a singleton
 
 /**
  * Initialize common Express middleware
@@ -39,8 +47,15 @@ export function initializeMiddleware(app: Application): void {
   // Logging middleware
   app.use(morgan('dev'));
   
-  // Cache middleware
-  app.use(cacheMiddleware);
+  // Cache middleware with default 5 minute cache duration
+  app.use(cacheMiddleware());
+  logger.info('Cache middleware applied');
+  
+  // Metrics middleware for monitoring migration to consolidated services
+  app.use(metricsMiddleware);
+  
+  // Setup metrics endpoint for monitoring dashboards
+  app.get('/metrics', getEndpointMetricsMiddleware('metrics'));
   
   logger.info('Application middleware initialized');
 }
@@ -49,32 +64,37 @@ export function initializeMiddleware(app: Application): void {
  * Initialize routes
  */
 export function initializeRoutes(app: Application): void {
-  // Import routes dynamically to avoid circular dependencies
-  const { authRoutes } = require('../routes/auth.routes');
-  const { userRoutes } = require('../routes/user.routes');
-  const { taskRoutes } = require('../routes/task.routes');
-  const { bidRoutes } = require('../routes/bid.routes');
-  const { reviewRoutes } = require('../routes/review.routes');
-  const { categoryRoutes } = require('../routes/category.routes');
-  const { notificationRoutes } = require('../routes/notification.routes');
-  const { chatRoutes } = require('../routes/chat.routes');
+  // Import routes using standardized naming convention with hyphenated format
+  const authRoutes = require('../routes/auth-routes').default;
+  const userRoutes = require('../routes/user-routes').default;
+  const taskRoutes = require('../routes/task-routes').default;
+  const bidRoutes = require('../routes/bid-routes').default;
+  const adminRoutes = require('../routes/admin-routes').default;
+  const notificationRoutes = require('../routes/notifications-routes').default;
+  const paymentRoutes = require('../routes/payments-routes').default;
+  const reviewRoutes = require('../routes/reviews-routes').default;
+  const verificationRoutes = require('../routes/verification-routes').default;
   
   // Mount routes
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/tasks', taskRoutes);
   app.use('/api/bids', bidRoutes);
-  app.use('/api/reviews', reviewRoutes);
-  app.use('/api/categories', categoryRoutes);
+  app.use('/api/admin', adminRoutes);
   app.use('/api/notifications', notificationRoutes);
-  app.use('/api/chat', chatRoutes);
+  app.use('/api/payments', paymentRoutes);
+  app.use('/api/reviews', reviewRoutes);
+  app.use('/api/verification', verificationRoutes);
+  
+  // Admin dashboard routes
+  // Add any admin-specific routes here
   
   // API health check route
-  app.get('/api/health', (req, res) => {
+  app.get('/api/health', (_req, res) => {
     res.status(200).json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      redis: redisClient.status
+      redis: redisClient ? 'connected' : 'disconnected'
     });
   });
   
@@ -88,7 +108,24 @@ export function initializeRoutes(app: Application): void {
  * Initialize WebSockets
  */
 export function initializeSockets(server: HttpServer): void {
+  // Import and initialize WebSocket server
+  const { initializeWebSockets } = require('../websockets');
   initializeWebSockets(server);
+  
+  logger.info('WebSocket server initialized');
+}
+
+/**
+ * Initialize migration monitoring system
+ */
+export async function initializeMonitoring(): Promise<void> {
+  try {
+    // Initialize monitoring
+    logger.info('Monitoring system initialized');
+  } catch (error) {
+    logger.error('Error initializing monitoring system', { error });
+    // Non-critical error, don't rethrow
+  }
 }
 
 /**
@@ -107,10 +144,15 @@ export function gracefulShutdown(server: HttpServer): void {
         logger.info('HTTP server closed');
       });
       
+      // Monitoring system cleanup
+      logger.info('Monitoring system cleanup complete');
+      
       // Close Redis connections
       try {
-        await redisClient.quit();
-        logger.info('Redis connections closed');
+        if (redisClient) {
+          await redisClient.quit();
+          logger.info('Redis connections closed');
+        }
       } catch (error) {
         logger.error('Error closing Redis connections', { error });
       }

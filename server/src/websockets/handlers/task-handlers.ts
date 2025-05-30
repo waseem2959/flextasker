@@ -5,20 +5,369 @@
  * real-time updates for task status changes, bids, and comments.
  */
 
+import { PrismaClient } from '@prisma/client';
 import { Socket } from 'socket.io';
+import {
+  BidStatus,
+  NotificationType,
+  TaskStatus
+} from '../../../../shared/types/enums';
 import { logger } from '../../utils/logger';
 import { monitorError } from '../../utils/monitoring';
 import { SocketManager } from '../socket-manager';
-import { PrismaClient } from '@prisma/client';
 import { createNotification } from './notification-handlers';
-import { 
-  NotificationType, 
-  TaskStatus, 
-  BidStatus 
-} from '../../../../shared/types/enums';
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
+
+/**
+ * Validate bid submission data
+ */
+function validateBidData(data: any): { isValid: boolean; message?: string } {
+  const { taskId, amount, description, timeline } = data;
+  
+  if (!taskId || !amount || !description || !timeline) {
+    return { isValid: false, message: 'Invalid bid data' };
+  }
+  
+  return { isValid: true };
+}
+
+/**
+ * Check if user can bid on task
+ */
+async function canUserBidOnTask(taskId: string, userId: string): Promise<{ canBid: boolean; message?: string; task?: any }> {
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: { 
+      id: true, 
+      status: true, 
+      ownerId: true,
+      title: true
+    }
+  });
+  
+  if (!task) {
+    return { canBid: false, message: 'Task not found' };
+  }
+  
+  if (task.status !== TaskStatus.OPEN) {
+    return { canBid: false, message: 'This task is no longer accepting bids' };
+  }
+  
+  const hasExistingBid = await checkExistingBid(taskId, userId);
+  if (hasExistingBid) {
+    return { canBid: false, message: 'You have already submitted a bid for this task' };
+  }
+  
+  return { canBid: true, task };
+}
+
+/**
+ * Check if user has existing bid for task
+ */
+async function checkExistingBid(taskId: string, userId: string): Promise<boolean> {
+  const existingBid = await prisma.bid.findFirst({
+    where: { taskId, bidderId: userId }
+  });
+  return !!existingBid;
+}
+
+/**
+ * Validate status update authorization
+ */
+async function validateStatusUpdateAuth(taskId: string, userId: string): Promise<{ isAuthorized: boolean; message?: string; task?: any; isOwner?: boolean; isAssignee?: boolean }> {
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: { 
+      id: true, 
+      status: true, 
+      ownerId: true,
+      assigneeId: true,
+      title: true
+    }
+  });
+  
+  if (!task) {
+    return { isAuthorized: false, message: 'Task not found' };
+  }
+  
+  const isOwner = task.ownerId === userId;
+  const isAssignee = task.assigneeId === userId;
+  
+  if (!isOwner && !isAssignee) {
+    return { isAuthorized: false, message: 'You are not authorized to update this task' };
+  }
+  
+  return { 
+    isAuthorized: true, 
+    task, 
+    isOwner: isOwner || false, 
+    isAssignee: isAssignee || false 
+  };
+}
+
+/**
+ * Handle status change notifications
+ */
+async function handleStatusChangeNotifications(
+  socketManager: SocketManager,
+  task: any,
+  status: string,
+  userId: string,
+  taskId: string
+): Promise<void> {
+  if (status === TaskStatus.IN_PROGRESS && task.assigneeId) {
+    await createNotification(
+      socketManager,
+      task.ownerId,
+      NotificationType.TASK_UPDATED,
+      `Task has been started: ${task.title}`,
+      taskId
+    );
+  } else if (status === TaskStatus.COMPLETED) {
+    await handleCompletionNotifications(socketManager, task, userId, taskId);
+  } else if (status === TaskStatus.CANCELLED) {
+    const isOwner = task.ownerId === userId;
+    if (isOwner) {
+      await handleOwnerTaskCancellation(socketManager, task);
+    } else {
+      await handleAssigneeTaskCancellation(socketManager, task);
+    }
+  }
+}
+
+/**
+ * Handle task completion notifications
+ */
+async function handleCompletionNotifications(
+  socketManager: SocketManager,
+  task: any,
+  userId: string,
+  taskId: string
+): Promise<void> {
+  if (task.ownerId && task.assigneeId) {
+    // Notify owner that task is completed
+    if (task.ownerId !== userId) {
+      await createNotification(
+        socketManager,
+        task.ownerId,
+        NotificationType.TASK_COMPLETED,
+        `Task has been marked as completed: ${task.title}`,
+        taskId
+      );
+    }
+    
+    // Notify assignee if owner marked it complete
+    if (task.assigneeId !== userId) {
+      await createNotification(
+        socketManager,
+        task.assigneeId,
+        NotificationType.TASK_COMPLETED,
+        `Task has been marked as completed: ${task.title}`,
+        taskId
+      );
+    }
+  }
+}
+
+/**
+ * Handle task cancellation by owner
+ */
+async function handleOwnerTaskCancellation(
+  socketManager: SocketManager, 
+  task: any
+): Promise<void> {
+  if (task.assigneeId) {
+    await createNotification(
+      socketManager,
+      task.assigneeId,
+      NotificationType.TASK_UPDATED, // Using TASK_UPDATED as fallback for TASK_CANCELLED
+      `Task has been cancelled: ${task.title}`,
+      task.id
+    );
+  }
+}
+
+/**
+ * Handle task cancellation by assignee
+ */
+async function handleAssigneeTaskCancellation(
+  socketManager: SocketManager, 
+  task: any
+): Promise<void> {
+  if (task.ownerId) {
+    await createNotification(
+      socketManager,
+      task.ownerId,
+      NotificationType.TASK_UPDATED, // Using TASK_UPDATED as fallback for TASK_CANCELLED
+      `Task has been cancelled by the assignee: ${task.title}`,
+      task.id
+    );
+  }
+}
+
+/**
+ * Validate bid acceptance authorization
+ */
+async function validateBidAcceptanceAuth(bidId: string, userId: string): Promise<{ isAuthorized: boolean; message?: string; bid?: any }> {
+  const bid = await prisma.bid.findUnique({
+    where: { id: bidId },
+    include: {
+      task: {
+        select: {
+          id: true,
+          ownerId: true,
+          status: true,
+          title: true
+        }
+      },
+      bidder: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true
+        }
+      }
+    }
+  });
+  
+  if (!bid) {
+    return { isAuthorized: false, message: 'Bid not found' };
+  }
+  
+  if (bid.task.ownerId !== userId) {
+    return { isAuthorized: false, message: 'You are not authorized to accept bids for this task' };
+  }
+  
+  if (bid.task.status !== TaskStatus.OPEN) {
+    return { isAuthorized: false, message: 'This task is no longer accepting bids' };
+  }
+  
+  return { isAuthorized: true, bid };
+}
+
+/**
+ * Process bid acceptance transaction
+ */
+async function processBidAcceptance(bidId: string, bid: any): Promise<any> {
+  const [updatedBid] = await prisma.$transaction([
+    // Update bid status
+    prisma.bid.update({
+      where: { id: bidId },
+      data: { status: BidStatus.ACCEPTED },
+      include: {
+        bidder: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            averageRating: true,
+            avatar: true
+          }
+        }
+      }
+    }),
+    
+    // Update task status and assignee
+    prisma.task.update({
+      where: { id: bid.task.id },
+      data: {
+        status: TaskStatus.IN_PROGRESS,
+        assigneeId: bid.bidderId
+      }
+    }),
+    
+    // Reject all other bids for this task
+    prisma.bid.updateMany({
+      where: {
+        taskId: bid.task.id,
+        id: { not: bidId },
+        status: BidStatus.PENDING
+      },
+      data: {
+        status: BidStatus.REJECTED
+      }
+    })
+  ]);
+  
+  return updatedBid;
+}
+
+/**
+ * Process task status update
+ */
+async function processTaskStatusUpdate(
+  socketManager: SocketManager,
+  taskId: string,
+  status: string,
+  userId: string,
+  callback: Function
+): Promise<void> {
+  // Validate authorization
+  const authCheck = await validateStatusUpdateAuth(taskId, userId);
+  if (!authCheck.isAuthorized) {
+    return callback({
+      success: false,
+      message: authCheck.message
+    });
+  }
+
+  const { task, isOwner, isAssignee } = authCheck;
+
+  // Ensure boolean values (fix TypeScript error)
+  const ownerFlag = Boolean(isOwner);
+  const assigneeFlag = Boolean(isAssignee);
+
+  // Validate status transition
+  const isValidTransition = validateStatusTransition(task.status, status, ownerFlag, assigneeFlag);
+  if (!isValidTransition) {
+    return callback({
+      success: false,
+      message: 'Invalid status transition'
+    });
+  }
+
+  // Update task in database
+  const updatedTask = await prisma.task.update({
+    where: { id: taskId },
+    data: { status },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true
+        }
+      },
+      assignee: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true
+        }
+      },
+      category: true
+    }
+  });
+
+  // Handle notifications
+  await handleStatusChangeNotifications(socketManager, task, status, userId, taskId);
+
+  // Broadcast status update to task room
+  socketManager.sendToTask(taskId, 'task:statusUpdated', {
+    taskId,
+    status,
+    updatedBy: userId,
+    updatedAt: new Date()
+  });
+
+  // Execute callback with updated task
+  callback({
+    success: true,
+    data: updatedTask
+  });
+}
 
 /**
  * Registers task-related event handlers for a socket
@@ -50,8 +399,8 @@ export function registerTaskHandlers(socket: Socket, socketManager: SocketManage
       
       logger.debug('User joined task room', { userId: user.id, taskId });
     } catch (error) {
-      monitorError(error, { 
-        component: 'TaskHandlers.join', 
+      monitorError(error as Error, { 
+        component: 'TaskHandlers.joinTask', 
         userId: user.id,
         taskId
       });
@@ -67,69 +416,33 @@ export function registerTaskHandlers(socket: Socket, socketManager: SocketManage
   // Submit a bid
   socket.on('task:submitBid', async (data, callback) => {
     try {
-      const { taskId, amount, description, timeline } = data;
-      
       logger.debug('Socket task:submitBid', { 
         userId: user.id, 
-        taskId,
-        amount
+        taskId: data?.taskId,
+        amount: data?.amount
       });
       
       // Validate input
-      if (!taskId || !amount || !description || !timeline) {
+      const validation = validateBidData(data);
+      if (!validation.isValid) {
         if (typeof callback === 'function') {
           return callback({
             success: false,
-            message: 'Invalid bid data'
+            message: validation.message
           });
         }
         return;
       }
       
-      // Validate task exists and is open
-      const task = await prisma.task.findUnique({
-        where: { id: taskId },
-        select: { 
-          id: true, 
-          status: true, 
-          ownerId: true,
-          title: true
-        }
-      });
+      const { taskId, amount, description, timeline } = data;
       
-      if (!task) {
+      // Check if user can bid on this task
+      const bidCheck = await canUserBidOnTask(taskId, user.id);
+      if (!bidCheck.canBid) {
         if (typeof callback === 'function') {
           return callback({
             success: false,
-            message: 'Task not found'
-          });
-        }
-        return;
-      }
-      
-      if (task.status !== TaskStatus.OPEN) {
-        if (typeof callback === 'function') {
-          return callback({
-            success: false,
-            message: 'This task is no longer accepting bids'
-          });
-        }
-        return;
-      }
-      
-      // Check if user has already submitted a bid
-      const existingBid = await prisma.bid.findFirst({
-        where: {
-          taskId,
-          bidderId: user.id
-        }
-      });
-      
-      if (existingBid) {
-        if (typeof callback === 'function') {
-          return callback({
-            success: false,
-            message: 'You have already submitted a bid for this task'
+            message: bidCheck.message
           });
         }
         return;
@@ -161,9 +474,9 @@ export function registerTaskHandlers(socket: Socket, socketManager: SocketManage
       // Notify task owner about new bid
       await createNotification(
         socketManager,
-        task.ownerId,
+        bidCheck.task!.ownerId,
         NotificationType.BID_RECEIVED,
-        `You received a new bid on your task: ${task.title}`,
+        `You received a new bid on your task: ${bidCheck.task!.title}`,
         bid.id
       );
       
@@ -178,7 +491,7 @@ export function registerTaskHandlers(socket: Socket, socketManager: SocketManage
         });
       }
     } catch (error) {
-      monitorError(error, { 
+      monitorError(error as Error, { 
         component: 'TaskHandlers.submitBid', 
         userId: user.id,
         taskId: data?.taskId
@@ -216,149 +529,12 @@ export function registerTaskHandlers(socket: Socket, socketManager: SocketManage
         return;
       }
       
-      // Validate task exists and user is authorized to update it
-      const task = await prisma.task.findUnique({
-        where: { id: taskId },
-        select: { 
-          id: true, 
-          status: true, 
-          ownerId: true,
-          assigneeId: true,
-          title: true
-        }
-      });
+      // Process status update using helper function
+      await processTaskStatusUpdate(socketManager, taskId, status, user.id, callback);
       
-      if (!task) {
-        if (typeof callback === 'function') {
-          return callback({
-            success: false,
-            message: 'Task not found'
-          });
-        }
-        return;
-      }
-      
-      // Check if user is authorized to update task status
-      const isOwner = task.ownerId === user.id;
-      const isAssignee = task.assigneeId === user.id;
-      
-      if (!isOwner && !isAssignee) {
-        if (typeof callback === 'function') {
-          return callback({
-            success: false,
-            message: 'You are not authorized to update this task'
-          });
-        }
-        return;
-      }
-      
-      // Validate status transition
-      const isValidTransition = validateStatusTransition(task.status, status, isOwner, isAssignee);
-      
-      if (!isValidTransition) {
-        if (typeof callback === 'function') {
-          return callback({
-            success: false,
-            message: 'Invalid status transition'
-          });
-        }
-        return;
-      }
-      
-      // Update task in database
-      const updatedTask = await prisma.task.update({
-        where: { id: taskId },
-        data: { status },
-        include: {
-          owner: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true
-            }
-          },
-          assignee: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true
-            }
-          },
-          category: true
-        }
-      });
-      
-      // Create notifications based on status change
-      if (status === TaskStatus.IN_PROGRESS && task.assigneeId) {
-        // Notify owner that task has started
-        await createNotification(
-          socketManager,
-          task.ownerId,
-          NotificationType.TASK_STARTED,
-          `Task has been started: ${task.title}`,
-          taskId
-        );
-      } else if (status === TaskStatus.COMPLETED && task.ownerId && task.assigneeId) {
-        // Notify owner that task is completed
-        if (task.ownerId !== user.id) {
-          await createNotification(
-            socketManager,
-            task.ownerId,
-            NotificationType.TASK_COMPLETED,
-            `Task has been marked as completed: ${task.title}`,
-            taskId
-          );
-        }
-        
-        // Notify assignee if owner marked it complete
-        if (task.assigneeId !== user.id) {
-          await createNotification(
-            socketManager,
-            task.assigneeId,
-            NotificationType.TASK_COMPLETED,
-            `Task has been marked as completed: ${task.title}`,
-            taskId
-          );
-        }
-      } else if (status === TaskStatus.CANCELLED) {
-        // Notify appropriate party about cancellation
-        if (isOwner && task.assigneeId) {
-          await createNotification(
-            socketManager,
-            task.assigneeId,
-            NotificationType.TASK_CANCELLED,
-            `Task has been cancelled: ${task.title}`,
-            taskId
-          );
-        } else if (isAssignee && task.ownerId) {
-          await createNotification(
-            socketManager,
-            task.ownerId,
-            NotificationType.TASK_CANCELLED,
-            `Task has been cancelled by the assignee: ${task.title}`,
-            taskId
-          );
-        }
-      }
-      
-      // Broadcast status update to task room
-      socketManager.sendToTask(taskId, 'task:statusUpdated', {
-        taskId,
-        status,
-        updatedBy: user.id,
-        updatedAt: new Date()
-      });
-      
-      // Execute callback with updated task
-      if (typeof callback === 'function') {
-        callback({
-          success: true,
-          data: updatedTask
-        });
-      }
     } catch (error) {
-      monitorError(error, { 
-        component: 'TaskHandlers.updateStatus', 
+      monitorError(error as Error, { 
+        component: 'TaskHandlers.updateTaskStatus', 
         userId: user.id,
         taskId: data?.taskId,
         status: data?.status
@@ -395,100 +571,22 @@ export function registerTaskHandlers(socket: Socket, socketManager: SocketManage
         return;
       }
       
-      // Validate bid exists
-      const bid = await prisma.bid.findUnique({
-        where: { id: bidId },
-        include: {
-          task: {
-            select: {
-              id: true,
-              ownerId: true,
-              status: true,
-              title: true
-            }
-          },
-          bidder: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true
-            }
-          }
-        }
-      });
-      
-      if (!bid) {
+      // Validate bid acceptance authorization
+      const authCheck = await validateBidAcceptanceAuth(bidId, user.id);
+      if (!authCheck.isAuthorized) {
         if (typeof callback === 'function') {
           return callback({
             success: false,
-            message: 'Bid not found'
+            message: authCheck.message
           });
         }
         return;
       }
       
-      // Check if user is the task owner
-      if (bid.task.ownerId !== user.id) {
-        if (typeof callback === 'function') {
-          return callback({
-            success: false,
-            message: 'You are not authorized to accept bids for this task'
-          });
-        }
-        return;
-      }
+      const { bid } = authCheck;
       
-      // Check if task is still open
-      if (bid.task.status !== TaskStatus.OPEN) {
-        if (typeof callback === 'function') {
-          return callback({
-            success: false,
-            message: 'This task is no longer accepting bids'
-          });
-        }
-        return;
-      }
-      
-      // Begin transaction to update bid and task
-      const [updatedBid, updatedTask] = await prisma.$transaction([
-        // Update bid status
-        prisma.bid.update({
-          where: { id: bidId },
-          data: { status: BidStatus.ACCEPTED },
-          include: {
-            bidder: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                averageRating: true,
-                avatar: true
-              }
-            }
-          }
-        }),
-        
-        // Update task status and assignee
-        prisma.task.update({
-          where: { id: bid.task.id },
-          data: {
-            status: TaskStatus.ASSIGNED,
-            assigneeId: bid.bidderId
-          }
-        }),
-        
-        // Reject all other bids for this task
-        prisma.bid.updateMany({
-          where: {
-            taskId: bid.task.id,
-            id: { not: bidId },
-            status: BidStatus.PENDING
-          },
-          data: {
-            status: BidStatus.REJECTED
-          }
-        })
-      ]);
+      // Process bid acceptance transaction
+      const updatedBid = await processBidAcceptance(bidId, bid);
       
       // Notify bidder that their bid was accepted
       await createNotification(
@@ -515,7 +613,7 @@ export function registerTaskHandlers(socket: Socket, socketManager: SocketManage
         });
       }
     } catch (error) {
-      monitorError(error, { 
+      monitorError(error as Error, { 
         component: 'TaskHandlers.acceptBid', 
         userId: user.id,
         bidId: data?.bidId
@@ -545,12 +643,8 @@ function validateStatusTransition(
   // Define allowed transitions for owner and assignee
   const allowedTransitions: Record<string, Record<string, string[]>> = {
     [TaskStatus.OPEN]: {
-      owner: [TaskStatus.CANCELLED, TaskStatus.ASSIGNED],
+      owner: [TaskStatus.CANCELLED, TaskStatus.IN_PROGRESS],
       assignee: []
-    },
-    [TaskStatus.ASSIGNED]: {
-      owner: [TaskStatus.CANCELLED],
-      assignee: [TaskStatus.IN_PROGRESS, TaskStatus.CANCELLED]
     },
     [TaskStatus.IN_PROGRESS]: {
       owner: [TaskStatus.COMPLETED, TaskStatus.CANCELLED],

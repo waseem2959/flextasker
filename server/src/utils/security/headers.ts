@@ -6,7 +6,6 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../logger';
 
 /**
  * Middleware to set security headers
@@ -80,7 +79,7 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
  * @param allowedOrigins Array of allowed origins
  */
 export function corsHeaders(allowedOrigins: string[] = ['http://localhost:3000']) {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, res: Response, next: NextFunction): Response | void => {
     const origin = req.headers.origin;
     
     // Check if the origin is allowed
@@ -99,7 +98,8 @@ export function corsHeaders(allowedOrigins: string[] = ['http://localhost:3000']
     
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
-      return res.status(204).end();
+      res.status(204).end();
+      return;
     }
     
     next();

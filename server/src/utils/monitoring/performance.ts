@@ -204,8 +204,10 @@ export function performanceMonitoringMiddleware(req: Request, res: Response, nex
   recordMemoryUsage(`request:${path}`);
   
   // Handle response
-  const originalEnd = res.end;
-  res.end = function(...args) {
+  const originalEnd = res.end.bind(res);
+  
+  // Override the end method to track response time
+  res.end = ((...args: any[]) => {
     // Calculate response time
     const duration = performance.now() - startTime;
     
@@ -224,8 +226,8 @@ export function performanceMonitoringMiddleware(req: Request, res: Response, nex
     res.setHeader('X-Response-Time', `${Math.round(duration)}ms`);
     
     // Call original end function
-    return originalEnd.apply(this, args);
-  };
+    return originalEnd(...args);
+  }) as typeof res.end;
   
   next();
 }

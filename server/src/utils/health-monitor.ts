@@ -232,9 +232,7 @@ function checkSystemHealth(): {
     
     let status = HealthStatus.UP;
     
-    if (isHighLoad && isHighMemory) {
-      status = HealthStatus.DEGRADED;
-    } else if (isHighLoad || isHighMemory) {
+    if (isHighLoad || isHighMemory) {
       status = HealthStatus.DEGRADED;
     }
     

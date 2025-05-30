@@ -1,301 +1,156 @@
 /**
  * Cache Service
  * 
- * This module provides a high-level API for caching operations.
- * It abstracts Redis operations and provides typed methods for common caching patterns.
+ * This service provides a simple interface for caching data in Redis
+ * with typesafe get/set operations and automatic serialization/deserialization.
  */
 
-import { logger } from '../logger';
-import { monitorError } from '../monitoring';
-import redisClient, { isRedisConnected } from './redis-client';
+import { redisClient } from './redis-client';
+import { logger } from '@/utils/logger';
 
-// Default cache expiration time: 1 hour (in seconds)
-const DEFAULT_CACHE_TTL = 60 * 60;
-
-/**
- * Cache key prefixes to prevent collisions
- */
-export enum CachePrefix {
-  USER = 'user:',
-  TASK = 'task:',
-  BID = 'bid:',
-  NOTIFICATION = 'notification:',
-  CONVERSATION = 'conversation:',
-  MESSAGE = 'message:',
-  SEARCH = 'search:',
-  LIST = 'list:',
-  QUERY = 'query:'
-}
+// Default cache durations
+const DEFAULT_CACHE_DURATION = 60 * 15; // 15 minutes
+const LONG_CACHE_DURATION = 60 * 60 * 24; // 24 hours
 
 /**
- * Cache service for Redis operations
+ * Generic cache service for data storage and retrieval
  */
 export class CacheService {
-  private initialized = false;
-  
   /**
-   * Initialize the cache service
+   * Store a value in cache
+   * 
+   * @param key - Cache key
+   * @param data - Data to cache (will be JSON serialized)
+   * @param expireSeconds - Cache duration in seconds
    */
-  public async initialize(): Promise<void> {
-    if (this.initialized) {
-      logger.debug('Cache service already initialized');
-      return;
-    }
-    
-    logger.info('Initializing cache service');
-    
+  static async set<T>(key: string, data: T, expireSeconds: number = DEFAULT_CACHE_DURATION): Promise<void> {
     try {
-      // Check Redis connection
-      if (!isRedisConnected()) {
-        logger.warn('Redis not connected during cache service initialization');
-      } else {
-        logger.info('Redis connection verified');
-        
-        // Clear any stale system keys (but not user data)
-        await this.deletePattern('system:*');
-        logger.debug('Cleared stale system cache keys');
-      }
+      // Prefix key to avoid conflicts
+      const prefixedKey = this.formatKey(key);
       
-      this.initialized = true;
-      logger.info('Cache service initialized successfully');
+      // Store serialized data with expiration
+      await redisClient.setEx(
+        prefixedKey,
+        expireSeconds,
+        JSON.stringify(data)
+      );
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      logger.error('Failed to initialize cache service', { error: err });
-      // Continue without failing - application can work without cache
-    }
-  }
-  /**
-   * Set a value in the cache
-   * @param key Cache key
-   * @param value Data to cache (will be JSON stringified)
-   * @param ttl Time to live in seconds (defaults to 1 hour)
-   */
-  public async set<T>(key: string, value: T, ttl: number = DEFAULT_CACHE_TTL): Promise<void> {
-    if (!isRedisConnected()) return;
-
-    try {
-      const serializedValue = JSON.stringify(value);
-      await redisClient.set(key, serializedValue, 'EX', ttl);
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      monitorError(err, { component: 'CacheService.set', key });
-      logger.error('Failed to set cache value', { key, error: err });
+      logger.warn('Failed to set cache', { key, error });
+      // Don't throw - cache failures shouldn't break functionality
     }
   }
 
   /**
-   * Get a value from the cache
-   * @param key Cache key
+   * Retrieve a value from cache
+   * 
+   * @param key - Cache key
    * @returns The cached value or null if not found
    */
-  public async get<T>(key: string): Promise<T | null> {
-    if (!isRedisConnected()) return null;
-
+  static async get<T>(key: string): Promise<T | null> {
     try {
-      const value = await redisClient.get(key);
+      // Prefix key to avoid conflicts
+      const prefixedKey = this.formatKey(key);
       
-      if (!value) return null;
+      // Get cached data
+      const data = await redisClient.get(prefixedKey);
       
-      return JSON.parse(value) as T;
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      monitorError(err, { component: 'CacheService.get', key });
-      logger.error('Failed to get cache value', { key, error: err });
-      return null;
-    }
-  }
-
-  /**
-   * Delete a value from the cache
-   * @param key Cache key
-   */
-  public async delete(key: string): Promise<void> {
-    if (!isRedisConnected()) return;
-
-    try {
-      await redisClient.del(key);
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      monitorError(err, { component: 'CacheService.delete', key });
-      logger.error('Failed to delete cache value', { key, error: err });
-    }
-  }
-
-  /**
-   * Delete multiple values matching a pattern
-   * @param pattern Key pattern to match (e.g., "user:*")
-   */
-  public async deletePattern(pattern: string): Promise<void> {
-    if (!isRedisConnected()) return;
-
-    try {
-      const keys = await redisClient.keys(pattern);
-      
-      if (keys.length > 0) {
-        await redisClient.del(...keys);
-        logger.debug(`Deleted ${keys.length} cached items matching ${pattern}`);
-      }
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      monitorError(err, { component: 'CacheService.deletePattern', pattern });
-      logger.error('Failed to delete cache pattern', { pattern, error: err });
-    }
-  }
-
-  /**
-   * Set a hash field in the cache
-   * @param key Cache key
-   * @param field Hash field
-   * @param value Value to cache
-   * @param ttl Time to live in seconds (defaults to 1 hour)
-   */
-  public async hset<T>(key: string, field: string, value: T, ttl: number = DEFAULT_CACHE_TTL): Promise<void> {
-    if (!isRedisConnected()) return;
-
-    try {
-      const serializedValue = JSON.stringify(value);
-      
-      await redisClient.hset(key, field, serializedValue);
-      await redisClient.expire(key, ttl);
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      monitorError(err, { component: 'CacheService.hset', key, field });
-      logger.error('Failed to set hash field', { key, field, error: err });
-    }
-  }
-
-  /**
-   * Get a hash field from the cache
-   * @param key Cache key
-   * @param field Hash field
-   * @returns The cached value or null if not found
-   */
-  public async hget<T>(key: string, field: string): Promise<T | null> {
-    if (!isRedisConnected()) return null;
-
-    try {
-      const value = await redisClient.hget(key, field);
-      
-      if (!value) return null;
-      
-      return JSON.parse(value) as T;
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      monitorError(err, { component: 'CacheService.hget', key, field });
-      logger.error('Failed to get hash field', { key, field, error: err });
-      return null;
-    }
-  }
-
-  /**
-   * Get all hash fields from the cache
-   * @param key Cache key
-   * @returns Object with all hash fields or null if not found
-   */
-  public async hgetall<T>(key: string): Promise<Record<string, T> | null> {
-    if (!isRedisConnected()) return null;
-
-    try {
-      const hash = await redisClient.hgetall(key);
-      
-      if (!hash || Object.keys(hash).length === 0) return null;
-      
-      // Parse each value in the hash
-      const result: Record<string, T> = {};
-      for (const field in hash) {
-        result[field] = JSON.parse(hash[field]) as T;
+      if (!data) {
+        return null;
       }
       
-      return result;
+      // Parse and return cached data
+      return JSON.parse(data) as T;
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      monitorError(err, { component: 'CacheService.hgetall', key });
-      logger.error('Failed to get all hash fields', { key, error: err });
+      logger.warn('Failed to get from cache', { key, error });
       return null;
     }
   }
 
   /**
-   * Delete a hash field from the cache
-   * @param key Cache key
-   * @param field Hash field
+   * Get data from cache or fetch from source if not cached
+   * 
+   * @param key - Cache key
+   * @param fetchFn - Function to call if data not in cache
+   * @param expireSeconds - Cache duration in seconds
    */
-  public async hdel(key: string, field: string): Promise<void> {
-    if (!isRedisConnected()) return;
-
+  static async getOrFetch<T>(
+    key: string,
+    fetchFn: () => Promise<T>,
+    expireSeconds: number = DEFAULT_CACHE_DURATION
+  ): Promise<T> {
     try {
-      await redisClient.hdel(key, field);
+      // Try to get from cache first
+      const cachedData = await this.get<T>(key);
+      
+      if (cachedData !== null) {
+        return cachedData;
+      }
+      
+      // If not in cache, fetch fresh data
+      const freshData = await fetchFn();
+      
+      // Store in cache for future requests
+      await this.set(key, freshData, expireSeconds);
+      
+      return freshData;
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      monitorError(err, { component: 'CacheService.hdel', key, field });
-      logger.error('Failed to delete hash field', { key, field, error: err });
+      // If cache fails, just fetch the data directly
+      logger.warn('Cache service error in getOrFetch', { key, error });
+      return fetchFn();
     }
   }
 
   /**
-   * Increment a numeric value in the cache
-   * @param key Cache key
-   * @param increment Amount to increment by (defaults to 1)
-   * @param ttl Time to live in seconds (defaults to 1 hour)
-   * @returns The new value
+   * Remove a specific item from cache
+   * 
+   * @param key - Cache key to invalidate
    */
-  public async increment(key: string, increment: number = 1, ttl: number = DEFAULT_CACHE_TTL): Promise<number> {
-    if (!isRedisConnected()) return 0;
-
+  static async invalidate(key: string): Promise<void> {
     try {
-      const newValue = await redisClient.incrby(key, increment);
-      await redisClient.expire(key, ttl);
-      return newValue;
+      await redisClient.del(this.formatKey(key));
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      monitorError(err, { component: 'CacheService.increment', key });
-      logger.error('Failed to increment cache value', { key, increment, error: err });
+      logger.warn('Failed to invalidate cache', { key, error });
+    }
+  }
+
+  /**
+   * Remove multiple items matching a pattern
+   * 
+   * @param pattern - Pattern to match (e.g., "user:*")
+   */
+  static async invalidatePattern(pattern: string): Promise<number> {
+    try {
+      // Find all keys matching the pattern
+      const keys = await redisClient.keys(this.formatKey(pattern));
+      
+      if (keys.length === 0) {
+        return 0;
+      }
+      
+      // Delete all matched keys
+      await redisClient.del(keys);
+      return keys.length;
+    } catch (error) {
+      logger.warn('Failed to invalidate cache pattern', { pattern, error });
       return 0;
     }
   }
 
   /**
-   * Add a member to a sorted set with a score
-   * @param key Cache key
-   * @param member Member to add
-   * @param score Score for the member
-   * @param ttl Time to live in seconds (defaults to 1 hour)
+   * Format a key with consistent prefix
+   * 
+   * @param key - Original key
+   * @returns Prefixed key
    */
-  public async zadd(key: string, score: number, member: string, ttl: number = DEFAULT_CACHE_TTL): Promise<void> {
-    if (!isRedisConnected()) return;
-
-    try {
-      await redisClient.zadd(key, score, member);
-      await redisClient.expire(key, ttl);
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      monitorError(err, { component: 'CacheService.zadd', key });
-      logger.error('Failed to add member to sorted set', { key, member, score, error: err });
-    }
-  }
-
-  /**
-   * Get members from a sorted set by score range
-   * @param key Cache key
-   * @param min Minimum score (inclusive)
-   * @param max Maximum score (inclusive)
-   * @returns Array of members
-   */
-  public async zrangebyscore(key: string, min: number, max: number): Promise<string[]> {
-    if (!isRedisConnected()) return [];
-
-    try {
-      return await redisClient.zrangebyscore(key, min, max);
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      monitorError(err, { component: 'CacheService.zrangebyscore', key });
-      logger.error('Failed to get members from sorted set', { key, min, max, error: err });
-      return [];
-    }
+  private static formatKey(key: string): string {
+    return `flextasker:cache:${key}`;
   }
 }
 
-// Export singleton instance
-export const cacheService = new CacheService();
-
-export default cacheService;
+// Export individual durations
+export const CACHE_DURATION = {
+  DEFAULT: DEFAULT_CACHE_DURATION,
+  LONG: LONG_CACHE_DURATION,
+  SHORT: 60 * 5, // 5 minutes
+  VERY_SHORT: 60, // 1 minute
+};

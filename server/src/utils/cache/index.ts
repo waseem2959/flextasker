@@ -1,51 +1,47 @@
 /**
- * Cache Module Index
+ * Cache Module
  * 
- * This module exports all cache-related functionality for easy access.
+ * This module provides a centralized cache system with Redis
  */
 
 // Import and re-export cache service
-import cacheService, { CachePrefix } from './cache-service';
+import { CacheService, CACHE_DURATION } from './cache-service';
 
 // Import and re-export cache middleware
 import {
   cacheMiddleware,
-  invalidateCacheMiddleware,
-  invalidateTaskCache,
-  invalidateUserCache,
-  invalidateBidCache,
-  invalidateNotificationCache
+  invalidateCache
 } from './cache-middleware';
 
 // Import and re-export Redis client
-import redisClient, {
-  getRedisClient, 
-  isRedisConnected, 
-  closeRedisConnection 
-} from './redis-client';
+import { redisClient } from './redis-client';
 
-// Import and re-export constants
-import { 
-  DEFAULT_CACHE_TTL, 
-  DEFAULT_CACHE_OPTIONS, 
-  MAX_CACHE_LIST_SIZE 
-} from './constants';
+// Create convenience methods that delegate to CacheService
+const getCache = <T>(key: string): Promise<T | null> => CacheService.get<T>(key);
+const setCache = <T>(key: string, data: T, expireSeconds?: number): Promise<void> => 
+  CacheService.set<T>(key, data, expireSeconds);
+const deleteCache = (key: string): Promise<void> => CacheService.invalidate(key);
 
-// Export everything
+// Extract constants for backward compatibility
+const DEFAULT_CACHE_DURATION = CACHE_DURATION.DEFAULT;
+const LONG_CACHE_DURATION = CACHE_DURATION.LONG;
+
 export {
-  cacheService,
+  // Cache service functions
+  getCache,
+  setCache,
+  deleteCache,
+  CacheService,
+  CACHE_DURATION,
+  
+  // Cache middleware
   cacheMiddleware,
-  invalidateCacheMiddleware,
-  invalidateTaskCache,
-  invalidateUserCache,
-  invalidateBidCache,
-  invalidateNotificationCache,
+  invalidateCache,
+  
+  // Redis client
   redisClient,
-  getRedisClient,
-  isRedisConnected,
-  closeRedisConnection,
-  CachePrefix,
-  DEFAULT_CACHE_TTL,
-  DEFAULT_CACHE_OPTIONS,
-  MAX_CACHE_LIST_SIZE
+  
+  // Constants
+  DEFAULT_CACHE_DURATION,
+  LONG_CACHE_DURATION
 };

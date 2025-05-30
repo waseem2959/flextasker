@@ -11,13 +11,13 @@ import { existsSync } from 'fs';
 import { Request } from 'express';
 import multer, { FileFilterCallback } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
-import { ValidationError } from './enhanced-errors';
+import { ValidationError } from './error-utils';
 import { logger } from './logger';
-import { getRequestId } from '../middleware/request-context';
+import { requestContextUtils } from '../middleware/request-context-middleware';
 
 // Define file upload configuration
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
-const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '5242880', 10); // 5MB default
+const UPLOAD_DIR = process.env.UPLOAD_DIR ?? './uploads';
+const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE ?? '5242880', 10); // 5MB default
 const ALLOWED_MIME_TYPES = {
   image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
   document: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
@@ -70,23 +70,27 @@ function fileFilter(
 /**
  * Create a multer instance for handling file uploads
  */
-export function createUploader(options: {
+interface UploaderOptions {
   fieldName?: string;
   fileTypes?: 'image' | 'document' | 'archive' | string[];
   maxFileSize?: number;
   maxFiles?: number;
-}) {
+}
+
+export function createUploader(options: UploaderOptions = {}) {
   const {
-    fieldName = 'file',
     fileTypes = 'image',
     maxFileSize = MAX_FILE_SIZE,
     maxFiles = 1
   } = options;
   
+  // Field name is not used in this implementation but kept for compatibility
+  // with the multer interface
+  
   // Determine allowed file types
   let allowedTypes: string[];
   if (typeof fileTypes === 'string') {
-    allowedTypes = ALLOWED_MIME_TYPES[fileTypes as keyof typeof ALLOWED_MIME_TYPES] || [];
+    allowedTypes = ALLOWED_MIME_TYPES[fileTypes] ?? [];
   } else {
     allowedTypes = fileTypes;
   }
@@ -109,10 +113,17 @@ export async function deleteFile(filename: string): Promise<boolean> {
   try {
     const filePath = path.join(UPLOAD_DIR, filename);
     await fs.unlink(filePath);
-    logger.info('File deleted successfully', { filename, requestId: getRequestId() });
+    logger.info('File deleted successfully', { 
+      filename, 
+      requestId: requestContextUtils.getRequestId({} as any) 
+    });
     return true;
   } catch (error) {
-    logger.error('Failed to delete file', { filename, error, requestId: getRequestId() });
+    logger.error('Failed to delete file', { 
+      filename, 
+      error, 
+      requestId: requestContextUtils.getRequestId({} as any) 
+    });
     return false;
   }
 }
@@ -121,7 +132,7 @@ export async function deleteFile(filename: string): Promise<boolean> {
  * Get public URL for a file
  */
 export function getFileUrl(filename: string): string {
-  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+  const baseUrl = process.env.BASE_URL ?? 'http://localhost:3000';
   return `${baseUrl}/uploads/${filename}`;
 }
 
@@ -151,7 +162,7 @@ export async function moveFile(
       sourceFilename,
       targetDirectory,
       targetFilename,
-      requestId: getRequestId()
+      requestId: requestContextUtils.getRequestId({} as any)
     });
     
     // Return relative path to the file
@@ -161,7 +172,7 @@ export async function moveFile(
       sourceFilename,
       targetDirectory,
       error,
-      requestId: getRequestId()
+      requestId: requestContextUtils.getRequestId({} as any)
     });
     throw error;
   }

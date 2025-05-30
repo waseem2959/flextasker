@@ -9,9 +9,12 @@ export * from './performance';
 export * from './health';
 
 // Import types
-import { HealthStatus } from './health';
-import { Request, Response, NextFunction } from 'express';
+import type { HealthStatus } from './health';
+import type { Request, Response, NextFunction } from 'express';
 import { logger } from '../logger';
+
+// Re-export HealthStatus for consumers
+export type { HealthStatus };
 
 /**
  * Initialize all monitoring systems
@@ -42,7 +45,7 @@ export function initializeMonitoring(app: any): void {
 /**
  * Security monitoring middleware to detect suspicious activities
  */
-export function securityMonitoringMiddleware(req: Request, res: Response, next: NextFunction): void {
+export function securityMonitoringMiddleware(req: Request, _res: Response, next: NextFunction): void {
   // Log suspicious headers or query parameters
   const suspiciousPatterns = [
     /select.*from/i,

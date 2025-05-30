@@ -5,7 +5,7 @@ import {
   SIDEBAR_KEYBOARD_SHORTCUT,
   SidebarContext,
   useSidebar,
-} from "@/lib/sidebar-utils"
+} from "@/lib/sidebarUtils"
 import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"

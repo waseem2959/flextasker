@@ -38,7 +38,7 @@ function generateCsrfToken(): string {
  */
 export function setCsrfToken(req: Request, res: Response, next: NextFunction): void {
   // Skip for non-browser requests
-  const userAgent = req.get('user-agent') || '';
+  const userAgent = req.get('user-agent') ?? '';
   const isBrowser = userAgent.includes('Mozilla') || userAgent.includes('Chrome') || userAgent.includes('Safari');
   
   if (!isBrowser) {
@@ -58,7 +58,7 @@ export function setCsrfToken(req: Request, res: Response, next: NextFunction): v
   });
   
   // Store token in request for other middleware to use
-  req.csrfToken = token;
+  (req as any).csrfToken = token;
   
   next();
 }
@@ -66,7 +66,7 @@ export function setCsrfToken(req: Request, res: Response, next: NextFunction): v
 /**
  * Middleware to validate CSRF token
  */
-export function validateCsrfToken(req: Request, res: Response, next: NextFunction): void {
+export function validateCsrfToken(req: Request, res: Response, next: NextFunction): Response | void {
   // Skip validation for safe methods
   if (SAFE_METHODS.includes(req.method)) {
     return next();
@@ -92,12 +92,13 @@ export function validateCsrfToken(req: Request, res: Response, next: NextFunctio
       user: req.user?.id
     });
     
-    // Return 403 Forbidden
-    return res.status(403).json({
+    // Return 403 Forbidden and stop further middleware execution
+    res.status(403).json({
       success: false,
       message: 'CSRF validation failed',
       timestamp: new Date().toISOString()
     });
+    return;
   }
   
   next();
@@ -111,21 +112,31 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
     // For GET requests, only set the token
     if (SAFE_METHODS.includes(req.method)) {
       setCsrfToken(req, res, next);
-    } else {
-      // For unsafe methods, validate token first
-      validateCsrfToken(req, res, (err?: any) => {
-        if (err) return next(err);
-        
-        // After validation, refresh the token
-        setCsrfToken(req, res, next);
-      });
+      return;
+    }
+    
+    // For unsafe methods, validate token first
+    const validationResult = validateCsrfToken(req, res, (err?: unknown) => {
+      if (err) {
+        next(err as Error);
+        return;
+      }
+      
+      // After validation, refresh the token
+      setCsrfToken(req, res, next);
+    });
+    
+    // If validation returned a response, don't call next()
+    if (validationResult) {
+      return;
     }
   } catch (error) {
-    monitorError(error, { 
+    const errorObj = error instanceof Error ? error : new Error(String(error));
+    monitorError(errorObj, { 
       component: 'csrfProtection',
       path: req.path,
       method: req.method
     });
-    next(error);
+    next(errorObj);
   }
 }

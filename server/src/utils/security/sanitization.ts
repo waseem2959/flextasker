@@ -5,16 +5,16 @@
  * to prevent security vulnerabilities like injection attacks.
  */
 
-import { Request, Response, NextFunction } from 'express';
-import { logger } from '../logger';
-import { ValidationError } from '../enhanced-errors';
-import { ValidationErrorDetail } from '../../../shared/types/errors';
+import type { Request, NextFunction } from 'express'; // Removed unused Response import
+import { ValidationError } from '../error-utils';
 import DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 
-// Create DOMPurify instance with jsdom
-const window = new JSDOM('').window as any;
-const purify = DOMPurify(window);
+// Initialize JSDOM and DOMPurify
+const { window } = new JSDOM('');
+const purify = DOMPurify(window as unknown as Window & typeof globalThis);
+
+
 
 /**
  * Sanitizes HTML content to prevent XSS attacks
@@ -24,23 +24,58 @@ const purify = DOMPurify(window);
 export function sanitizeHtml(html: string): string {
   if (!html) return '';
   
-  // Configure DOMPurify options
-  const options = {
+  // Configure DOMPurify options with proper typing
+  const options: DOMPurify.Config = {
+    // Allowed HTML tags
     ALLOWED_TAGS: [
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
       'p', 'br', 'ul', 'ol', 'li',
       'b', 'i', 'strong', 'em', 'strike', 'code', 'hr',
       'a', 'span'
     ],
-    ALLOWED_ATTR: ['href', 'target', 'class', 'id', 'style', 'title'],
-    FORBID_TAGS: ['script', 'style', 'iframe', 'form', 'input', 'button'],
-    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
+    
+    // Allowed HTML attributes
+    ALLOWED_ATTR: ['href', 'title', 'class', 'style', 'target', 'rel'],
+    
+    // Forbidden HTML tags
+    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
+    
+    // Forbidden HTML attributes
+    FORBID_ATTR: ['onclick', 'onerror', 'onload', 'onmouseover', 'onmouseout'],
+    
+    // Additional attributes to allow
+    ADD_ATTR: ['target', 'rel'],
+    
+    // Security settings
+    KEEP_CONTENT: false,
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false,
+    FORCE_BODY: false,
+    SANITIZE_DOM: true,
+    IN_PLACE: false,
     ALLOW_DATA_ATTR: false,
-    USE_PROFILES: { html: true }
+    WHOLE_DOCUMENT: false,
+    RETURN_TRUSTED_TYPE: false,
+    FORBID_CONTENTS: [],
+    ALLOW_ARIA_ATTR: true,
+    
+    // Custom URI validation using ALLOWED_URI_REGEXP with type assertion
+    ALLOWED_URI_REGEXP: /^(https?:\/\/|\/|#|mailto:|tel:)/i as unknown as RegExp,
+    
+    // Custom element handling - disable custom elements for security
+    CUSTOM_ELEMENT_HANDLING: {
+      tagNameCheck: null,
+      attributeNameCheck: null,
+      allowCustomizedBuiltInElements: false
+    }
   };
-  
-  // Sanitize HTML
-  return purify.sanitize(html, options);
+
+  try {
+    return purify.sanitize(html, options);
+  } catch (error) {
+    console.error('Error sanitizing HTML:', error);
+    return '';
+  }
 }
 
 /**
@@ -72,30 +107,40 @@ export function sanitizeObject(obj: any, htmlFields: string[] = []): any {
   const sanitized: any = {};
   
   for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const value = obj[key];
-      
-      if (typeof value === 'string') {
-        // Check if this field should be sanitized as HTML
-        if (htmlFields.includes(key)) {
-          sanitized[key] = sanitizeHtml(value);
-        } else {
-          sanitized[key] = sanitizeText(value);
-        }
-      } else if (Array.isArray(value)) {
-        // Recursively sanitize arrays
-        sanitized[key] = value.map(item => 
-          typeof item === 'object' ? sanitizeObject(item, htmlFields) : 
-          typeof item === 'string' ? sanitizeText(item) : item
-        );
-      } else if (value !== null && typeof value === 'object') {
-        // Recursively sanitize nested objects
-        sanitized[key] = sanitizeObject(value, htmlFields);
-      } else {
-        // Keep non-string values as is
-        sanitized[key] = value;
-      }
+    if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+    
+    const value = obj[key];
+    
+    // Handle string values
+    if (typeof value === 'string') {
+      sanitized[key] = htmlFields.includes(key) 
+        ? sanitizeHtml(value) 
+        : sanitizeText(value);
+      continue;
     }
+    
+    // Handle arrays
+    if (Array.isArray(value)) {
+      sanitized[key] = value.map(item => {
+        if (typeof item === 'object') {
+          return sanitizeObject(item, htmlFields);
+        }
+        if (typeof item === 'string') {
+          return sanitizeText(item);
+        }
+        return item;
+      });
+      continue;
+    }
+    
+    // Handle objects
+    if (value !== null && typeof value === 'object') {
+      sanitized[key] = sanitizeObject(value, htmlFields);
+      continue;
+    }
+    
+    // Keep non-string values as is
+    sanitized[key] = value;
   }
   
   return sanitized;
@@ -106,8 +151,8 @@ export function sanitizeObject(obj: any, htmlFields: string[] = []): any {
  * @param htmlFields Fields that should be sanitized as HTML
  */
 export function sanitizeBody(htmlFields: string[] = []) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (req.body && typeof req.body === 'object') {
+  return (req: Request, _res: unknown, next: NextFunction): void => {
+    if (req.body) {
       req.body = sanitizeObject(req.body, htmlFields);
     }
     next();
@@ -118,9 +163,9 @@ export function sanitizeBody(htmlFields: string[] = []) {
  * Middleware to sanitize request query parameters
  */
 export function sanitizeQuery() {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (req.query && typeof req.query === 'object') {
-      req.query = sanitizeObject(req.query);
+  return (req: Request, _res: unknown, next: NextFunction): void => {
+    if (req.query) {
+      req.query = sanitizeObject(req.query as Record<string, unknown>);
     }
     next();
   };
@@ -131,13 +176,14 @@ export function sanitizeQuery() {
  * @param requiredFields Fields that must be present and non-empty
  */
 export function validateRequiredFields(requiredFields: string[]) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const missingFields: ValidationErrorDetail[] = [];
+  return (req: Request, _res: unknown, next: NextFunction): void => {
+    const errors: Array<{ field: string; message: string; code?: string }> = [];
     
     for (const field of requiredFields) {
       // Check if field exists and is not empty
-      if (!req.body || req.body[field] === undefined || req.body[field] === null || req.body[field] === '') {
-        missingFields.push({
+      const fieldValue = req.body?.[field];
+      if (fieldValue === undefined || fieldValue === null || fieldValue === '') {
+        errors.push({
           field,
           message: 'This field is required',
           code: `MISSING_${field.toUpperCase()}`
@@ -145,8 +191,8 @@ export function validateRequiredFields(requiredFields: string[]) {
       }
     }
     
-    if (missingFields.length > 0) {
-      const error = ValidationError.fromFieldErrors(missingFields);
+    if (errors.length > 0) {
+      const error = new ValidationError('Validation failed', { errors });
       return next(error);
     }
     
@@ -159,21 +205,20 @@ export function validateRequiredFields(requiredFields: string[]) {
  * @param emailField Name of the email field
  */
 export function validateEmail(emailField: string = 'email') {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, _res: unknown, next: NextFunction): void => {
     const email = req.body?.[emailField];
+    if (!email) return next();
     
-    if (email) {
-      // Basic email validation regex
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      
-      if (!emailRegex.test(email)) {
-        const error = ValidationError.fromFieldErrors([{
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      const error = new ValidationError('Invalid email format', {
+        errors: [{
           field: emailField,
-          message: 'Invalid email format',
-          code: 'INVALID_EMAIL_FORMAT'
-        }]);
-        return next(error);
-      }
+          message: 'Please enter a valid email address',
+          code: 'INVALID_EMAIL'
+        }]
+      });
+      return next(error);
     }
     
     next();
@@ -185,51 +230,53 @@ export function validateEmail(emailField: string = 'email') {
  * @param passwordField Name of the password field
  * @param minLength Minimum password length
  */
+function createPasswordError(field: string, message: string, code: string) {
+  return new ValidationError('Password validation failed', {
+    errors: [{
+      field,
+      message,
+      code
+    }]
+  });
+}
+
 export function validatePassword(passwordField: string = 'password', minLength: number = 8) {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return (req: Request, _res: unknown, next: NextFunction): void => {
     const password = req.body?.[passwordField];
     
-    if (password) {
-      const errors: ValidationErrorDetail[] = [];
-      
-      // Check length
-      if (password.length < minLength) {
-        errors.push({
-          field: passwordField,
-          message: `Password must be at least ${minLength} characters long`,
-          code: 'PASSWORD_TOO_SHORT'
-        });
-      }
-      
-      // Check complexity
-      if (!/[A-Z]/.test(password)) {
-        errors.push({
-          field: passwordField,
-          message: 'Password must contain at least one uppercase letter',
-          code: 'PASSWORD_NO_UPPERCASE'
-        });
-      }
-      
-      if (!/[a-z]/.test(password)) {
-        errors.push({
-          field: passwordField,
-          message: 'Password must contain at least one lowercase letter',
-          code: 'PASSWORD_NO_LOWERCASE'
-        });
-      }
-      
-      if (!/[0-9]/.test(password)) {
-        errors.push({
-          field: passwordField,
-          message: 'Password must contain at least one number',
-          code: 'PASSWORD_NO_NUMBER'
-        });
-      }
-      
-      if (errors.length > 0) {
-        const error = ValidationError.fromFieldErrors(errors);
-        return next(error);
-      }
+    if (!password) {
+      return next(createPasswordError(
+        passwordField,
+        'Password is required',
+        'PASSWORD_REQUIRED'
+      ));
+    }
+    
+    // Check password length
+    if (password.length < minLength) {
+      return next(createPasswordError(
+        passwordField,
+        `Password must be at least ${minLength} characters long`,
+        'PASSWORD_TOO_SHORT'
+      ));
+    }
+    
+    // Check for at least one number
+    if (!/\d/.test(password)) {
+      return next(createPasswordError(
+        passwordField,
+        'Password must contain at least one number',
+        'PASSWORD_MISSING_NUMBER'
+      ));
+    }
+    
+    // Check for at least one letter
+    if (!/[a-zA-Z]/.test(password)) {
+      return next(createPasswordError(
+        passwordField,
+        'Password must contain at least one letter',
+        'PASSWORD_MISSING_LETTER'
+      ));
     }
     
     next();

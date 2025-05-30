@@ -213,7 +213,7 @@ export function generatePaginationLinks(
  * @param params Query parameters
  * @returns Paginated result
  */
-export async function paginatedQuery<T extends any>(
+export async function paginatedQuery<T>(
   model: string,
   params: {
     page: number;
@@ -231,10 +231,10 @@ export async function paginatedQuery<T extends any>(
     // Use Promise.all to run both queries in parallel
     const [totalItems, items] = await Promise.all([
       // Count query
-      (prisma as any)[model].count({ where }),
+      prisma[model as keyof typeof prisma].count({ where }),
       
       // Data query
-      (prisma as any)[model].findMany({
+      prisma[model as keyof typeof prisma].findMany({
         where,
         orderBy,
         include,
@@ -295,7 +295,7 @@ export function createCursorPagination<T>(
       }
       
       // Execute query
-      const items = await (prisma as any)[model].findMany(queryParams);
+      const items = await prisma[model as keyof typeof prisma].findMany(queryParams);
       
       // Check if there are more items
       const hasMore = items.length > limit;
@@ -365,10 +365,10 @@ export async function getPaginatedData<T>(
     select?: any;
   }
 ): Promise<PaginationResult<T>> {
-  const model = prisma[modelName] as any;
+  const model = prisma[modelName];
   
   if (!model) {
-    throw new Error(`Invalid model name: ${modelName}`);
+    throw new Error(`Invalid model name: ${String(modelName)}`);
   }
   
   const { page, limit, where, orderBy, include, select } = options;
@@ -395,7 +395,7 @@ export async function getPaginatedData<T>(
       limit
     );
   } catch (error) {
-    logger.error(`Error executing paginated query on ${modelName}`, { error });
+    logger.error(`Error executing paginated query on ${String(modelName)}`, { error });
     throw error;
   }
 }

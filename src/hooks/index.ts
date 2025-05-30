@@ -1,33 +1,36 @@
 /**
- * Hooks Index with TypeScript Improvements
+ * Hooks Index
  * 
  * This file provides a central export point for all hooks
- * with improved TypeScript typing and organization.
+ * with consistent naming conventions and organization.
  */
 
-// Export core API hooks
-export * from './use-api';
-export * from './use-api-enhanced';
+// Authentication hooks
+export { default as useAuth } from './useAuth';
 
-// Export authentication hooks
-export * from './use-auth';
+// Socket/Realtime hooks
+export { default as useSocket } from './useSocket';
+export { useSocketEvent } from './useSocket';
 
-// Export domain-specific hooks with standard implementations
-export * from './use-tasks';
-export * from './use-bids';
-export * from './use-users';
+// Task-related hooks
+export { default as useTask, useTaskList } from './useTask';
+export * from './useTasks';
 
-// Export domain-specific hooks with enhanced implementations
-// These include optimistic updates, background refresh, and offline support
-export * from './use-tasks-enhanced';
-export * from './use-bids-enhanced';
-export * from './use-users-enhanced';
-export * from './use-reviews-enhanced';
-export * from './use-notifications-enhanced';
+// Chat/Messaging hooks
+export { default as useChat } from './useChat';
 
-// Export UI-related hooks
-export * from './use-form-field';
-export * from './use-form-validation';
-export * from './use-mobile';
-export * from './use-sidebar';
-export * from './use-toast';
+// Toast notifications
+export { default as useToast, toast } from './useToast';
+
+// API hooks
+export * from './useApi';
+
+// Domain-specific hooks
+export * from './useBids';
+export * from './useUsers';
+export * from './useNotifications';
+
+// UI and form-related hooks
+export * from './useForm';
+export * from './useMobile';
+export * from './useSidebar';

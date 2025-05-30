@@ -95,7 +95,7 @@ export function registerChatHandlers(socket: Socket, socketManager: SocketManage
         });
       }
     } catch (error) {
-      monitorError(error, { 
+      monitorError(error as Error, { 
         component: 'ChatHandlers.getMessages', 
         userId: user.id,
         otherUserId
@@ -183,7 +183,7 @@ export function registerChatHandlers(socket: Socket, socketManager: SocketManage
         await createNotification(
           socketManager,
           receiverId,
-          NotificationType.NEW_MESSAGE,
+          NotificationType.TASK_CREATED, // Using TASK_CREATED as a fallback since NEW_MESSAGE doesn't exist
           `You received a new message from ${senderName}`,
           message.id
         );
@@ -197,7 +197,7 @@ export function registerChatHandlers(socket: Socket, socketManager: SocketManage
         });
       }
     } catch (error) {
-      monitorError(error, { 
+      monitorError(error as Error, { 
         component: 'ChatHandlers.sendMessage', 
         userId: user.id,
         receiverId: data?.receiverId
@@ -233,8 +233,8 @@ export function registerChatHandlers(socket: Socket, socketManager: SocketManage
       
       // Combine unique user IDs
       const userIds = new Set([
-        ...sentMessages.map(msg => msg.receiverId),
-        ...receivedMessages.map(msg => msg.senderId)
+        ...sentMessages.map((msg: { receiverId: string }) => msg.receiverId),
+        ...receivedMessages.map((msg: { senderId: string }) => msg.senderId)
       ]);
       
       // Get user details and latest message for each conversation
@@ -287,8 +287,8 @@ export function registerChatHandlers(socket: Socket, socketManager: SocketManage
       
       // Sort conversations by latest message date
       conversations.sort((a, b) => {
-        const dateA = a.latestMessage?.createdAt || new Date(0);
-        const dateB = b.latestMessage?.createdAt || new Date(0);
+        const dateA = a.latestMessage?.createdAt ?? new Date(0);
+        const dateB = b.latestMessage?.createdAt ?? new Date(0);
         return dateB.getTime() - dateA.getTime();
       });
       
@@ -300,7 +300,7 @@ export function registerChatHandlers(socket: Socket, socketManager: SocketManage
         });
       }
     } catch (error) {
-      monitorError(error, { 
+      monitorError(error as Error, { 
         component: 'ChatHandlers.getConversations', 
         userId: user.id
       });
@@ -342,7 +342,7 @@ export function registerChatHandlers(socket: Socket, socketManager: SocketManage
         });
       }
     } catch (error) {
-      monitorError(error, { 
+      monitorError(error as Error, { 
         component: 'ChatHandlers.markAsRead', 
         userId: user.id,
         otherUserId

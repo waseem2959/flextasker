@@ -61,11 +61,12 @@ export async function performHealthCheck(): Promise<HealthCheckResult> {
   try {
     await prisma.$queryRaw`SELECT 1`;
     components.database = { status: HealthStatus.UP };
-  } catch (error) {
-    logger.error('Database health check failed', { error });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Database health check failed', { error: errorMessage });
     components.database = { 
       status: HealthStatus.DOWN,
-      details: { message: 'Database connection failed', error: error.message }
+      details: { message: 'Database connection failed', error: errorMessage }
     };
     overallStatus = HealthStatus.DOWN;
   }
@@ -75,11 +76,12 @@ export async function performHealthCheck(): Promise<HealthCheckResult> {
     const fs = require('fs');
     fs.accessSync(process.cwd(), fs.constants.R_OK | fs.constants.W_OK);
     components.fileSystem = { status: HealthStatus.UP };
-  } catch (error) {
-    logger.error('File system health check failed', { error });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('File system health check failed', { error: errorMessage });
     components.fileSystem = {
       status: HealthStatus.DOWN,
-      details: { message: 'File system access failed', error: error.message }
+      details: { message: 'File system access failed', error: errorMessage }
     };
     overallStatus = HealthStatus.DOWN;
   }
@@ -136,7 +138,7 @@ export async function performHealthCheck(): Promise<HealthCheckResult> {
     status: overallStatus,
     uptime,
     timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '1.0.0',
+    version: process.env.npm_package_version ?? '1.0.0',
     components,
     systemInfo: {
       cpuUsage: normalizedCpuUsage,
@@ -156,18 +158,12 @@ export async function performHealthCheck(): Promise<HealthCheckResult> {
 /**
  * Express route handler for health check endpoint
  */
-export async function healthCheckHandler(req: Request, res: Response): Promise<void> {
+export async function healthCheckHandler(_req: Request, res: Response): Promise<void> {
   try {
     const result = await performHealthCheck();
     
     // Set appropriate status code based on health status
-    let statusCode = 200;
-    if (result.status === HealthStatus.DEGRADED) {
-      statusCode = 200; // Still available but with degraded performance
-    } else if (result.status === HealthStatus.DOWN) {
-      statusCode = 503; // Service unavailable
-    }
-    
+    const statusCode = result.status === HealthStatus.DOWN ? 503 : 200;
     res.status(statusCode).json(result);
   } catch (error) {
     logger.error('Health check failed', { error });
@@ -182,7 +178,7 @@ export async function healthCheckHandler(req: Request, res: Response): Promise<v
 /**
  * Simple readiness probe that just checks if the application is running
  */
-export function readinessProbeHandler(req: Request, res: Response): void {
+export function readinessProbeHandler(_req: Request, res: Response): void {
   res.status(200).json({
     status: HealthStatus.UP,
     timestamp: new Date().toISOString()

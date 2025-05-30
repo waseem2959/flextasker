@@ -1,12 +1,47 @@
 /**
  * Error Service
  * 
- * This is the main entry point for the error handling service.
- * It provides unified error handling for both API requests and UI notifications.
+ * This module provides comprehensive error handling functionality for the application.
+ * It includes error classification, formatting, notification integration, and utilities
+ * for handling API errors consistently.
  */
 
-// Re-export everything from the API errors module
-export * from './api-errors';
+// Export all functionality from the main error handler implementation
+export {
+  // Error types
+  ErrorType,
+  
+  // Error classes
+  AppError,
+  NetworkError,
+  AuthError,
+  ValidationError,
+  NotFoundError,
+  PermissionError,
+  ServerError,
+  TimeoutError,
+  
+  // Error handling functions
+  isAppError,
+  classifyError,
+  createError,
+  createErrorResponse,
+  handleApiError,
+  
+  // Notification functions
+  showSuccessNotification,
+  showErrorNotification,
+  showInfoNotification,
+  showWarningNotification,
+} from './errorHandler';
 
-// Re-export everything from the UI notifications module
-export * from './ui-notifications';
+// Export the error handler factory as the default export
+import { createErrorHandler } from './errorHandler';
+export { createErrorHandler };
+export default createErrorHandler;
+
+// Import toast from our hooks
+import { toast } from '@/hooks/use-toast';
+
+// Export toast for convenience
+export { toast };

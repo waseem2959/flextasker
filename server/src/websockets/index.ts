@@ -1,7 +1,9 @@
 /**
  * WebSockets Module
  * 
- * This module exports all WebSocket-related functionality.
+ * This module exports all WebSocket-related functionality in a consolidated approach.
+ * It provides utilities for real-time communication including notifications, chat,
+ * task updates, and user presence features.
  */
 
 // Export WebSocket initialization and manager
@@ -10,10 +12,13 @@ export { SocketManager } from './socket-manager';
 
 // Export event handlers
 export { createNotification } from './handlers/notification-handlers';
+export { updateUserOnlineStatus } from './handlers/user-handlers';
+export { registerChatHandlers } from './handlers/chat-handlers';
+export { registerTaskHandlers } from './handlers/task-handlers';
 
 // Export utility to create WebSocket events in other parts of the application
 import { getSocketManager } from './init';
-import { NotificationType } from '../../../shared/types/enums';
+import { NotificationType, BidStatus } from '../../../shared/types/enums';
 
 /**
  * Utility functions to emit WebSocket events from anywhere in the application
@@ -51,17 +56,44 @@ export const socketEvents = {
   },
   
   /**
-   * Emits a bid update to a task room
+   * Emits a bid update to relevant users and rooms
    */
-  emitBidUpdate: (taskId: string, bidId: string, status: string) => {
+  emitBidUpdate: (taskId: string, bidId: string, status: BidStatus, bidderId: string, taskOwnerId: string) => {
     try {
       const socketManager = getSocketManager();
-      socketManager.sendToTask(taskId, 'task:bidUpdated', {
-        taskId,
+      
+      // Emit to the task room
+      socketManager.sendToTask(taskId, 'bid:updated', {
         bidId,
         status,
-        timestamp: new Date()
+        updatedAt: new Date().toISOString()
       });
+      
+      // Emit to specific users based on status
+      switch(status) {
+        case BidStatus.ACCEPTED:
+          socketManager.sendToUser(bidderId, 'bid:accepted', {
+            bidId,
+            taskId,
+            acceptedAt: new Date().toISOString()
+          });
+          break;
+        case BidStatus.REJECTED:
+          socketManager.sendToUser(bidderId, 'bid:rejected', {
+            bidId,
+            taskId,
+            rejectedAt: new Date().toISOString()
+          });
+          break;
+        case BidStatus.WITHDRAWN:
+          socketManager.sendToUser(taskOwnerId, 'bid:withdrawn', {
+            bidId,
+            taskId,
+            bidderId,
+            withdrawnAt: new Date().toISOString()
+          });
+          break;
+      }
     } catch (error) {
       console.error('Failed to emit bid update', error);
     }

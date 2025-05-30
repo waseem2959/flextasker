@@ -50,6 +50,20 @@ const configSchema = z.object({
   // Logging
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'debug']).default('info'),
   
+  // OAuth Providers
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  FACEBOOK_CLIENT_ID: z.string().optional(),
+  FACEBOOK_CLIENT_SECRET: z.string().optional(),
+  GITHUB_CLIENT_ID: z.string().optional(),
+  GITHUB_CLIENT_SECRET: z.string().optional(),
+  
+  // OAuth Callback URLs
+  OAUTH_CALLBACK_BASE_URL: z.string().url().default('http://localhost:3000/api/auth'),
+  
+  // Database features
+  DB_SUPPORTS_TRANSACTIONAL_DDL: z.string().default('false').transform(val => val === 'true'),
+  
   // Rate limiting
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60 * 1000), // 1 minute

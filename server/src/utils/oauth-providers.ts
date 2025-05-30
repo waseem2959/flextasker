@@ -6,15 +6,31 @@
  * working with different OAuth providers.
  */
 
-import { Request } from 'express';
-import passport from 'passport';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { Strategy as FacebookStrategy } from 'passport-facebook';
-import { Strategy as GithubStrategy } from 'passport-github2';
 import { PrismaClient } from '@prisma/client';
+import { Request } from 'express';
+import passport, { AuthenticateOptions } from 'passport';
+import { Strategy as FacebookStrategy, Profile as FacebookProfile } from 'passport-facebook';
+import { Strategy as GithubStrategy, Profile as GithubProfile } from 'passport-github2';
+import { Profile as GoogleProfile, Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from './logger';
 import { config } from './config';
+import { logger } from './logger';
+
+// Type for user returned from Prisma
+type User = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  [key: string]: any; // Allow additional properties
+};
+
+// Type for OAuth verify callback - now used consistently
+type OAuthVerifyCallback = (error: Error | null, user?: User | false, info?: any) => void;
+
+// Type for passport authenticate callback
+type AuthenticateCallback = (err: Error | null, user?: Express.User | false, info?: any) => void;
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
@@ -108,22 +124,22 @@ function getEnabledProviders(): Record<OAuthProvider, OAuthProviderConfig> {
   
   return {
     [OAuthProvider.GOOGLE]: {
-      clientID: config.GOOGLE_CLIENT_ID || '',
-      clientSecret: config.GOOGLE_CLIENT_SECRET || '',
+      clientID: config.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: config.GOOGLE_CLIENT_SECRET ?? '',
       callbackURL: `${baseUrl}/api/auth/google/callback`,
       scope: ['profile', 'email'],
       enabled: Boolean(config.GOOGLE_CLIENT_ID && config.GOOGLE_CLIENT_SECRET)
     },
     [OAuthProvider.FACEBOOK]: {
-      clientID: config.FACEBOOK_CLIENT_ID || '',
-      clientSecret: config.FACEBOOK_CLIENT_SECRET || '',
+      clientID: config.FACEBOOK_CLIENT_ID ?? '',
+      clientSecret: config.FACEBOOK_CLIENT_SECRET ?? '',
       callbackURL: `${baseUrl}/api/auth/facebook/callback`,
       scope: ['email', 'public_profile'],
       enabled: Boolean(config.FACEBOOK_CLIENT_ID && config.FACEBOOK_CLIENT_SECRET)
     },
     [OAuthProvider.GITHUB]: {
-      clientID: config.GITHUB_CLIENT_ID || '',
-      clientSecret: config.GITHUB_CLIENT_SECRET || '',
+      clientID: config.GITHUB_CLIENT_ID ?? '',
+      clientSecret: config.GITHUB_CLIENT_SECRET ?? '',
       callbackURL: `${baseUrl}/api/auth/github/callback`,
       scope: ['user:email'],
       enabled: Boolean(config.GITHUB_CLIENT_ID && config.GITHUB_CLIENT_SECRET)
@@ -135,33 +151,58 @@ function getEnabledProviders(): Record<OAuthProvider, OAuthProviderConfig> {
  * Setup Google OAuth strategy
  */
 function setupGoogleStrategy(config: OAuthProviderConfig): void {
-  passport.use(new GoogleStrategy({
-    clientID: config.clientID,
-    clientSecret: config.clientSecret,
-    callbackURL: config.callbackURL
-  }, async (accessToken, refreshToken, profile, done) => {
-    try {
-      // Extract profile data
-      const userProfile: OAuthUserProfile = {
-        provider: OAuthProvider.GOOGLE,
-        providerUserId: profile.id,
-        email: profile.emails?.[0]?.value || '',
-        firstName: profile.name?.givenName || '',
-        lastName: profile.name?.familyName || '',
-        displayName: profile.displayName,
-        profilePictureUrl: profile.photos?.[0]?.value,
-        accessToken,
-        refreshToken
-      };
-      
-      // Find or create user
-      const user = await findOrCreateOAuthUser(userProfile);
-      done(null, user);
-    } catch (error) {
-      logger.error('Google OAuth error', { error, profileId: profile.id });
-      done(error, null);
+  // Skip setup if required config is missing
+  if (!config.clientID || !config.clientSecret) {
+    logger.warn('Google OAuth is not properly configured. Missing client ID or secret.');
+    return;
+  }
+
+  // Configure Google OAuth strategy
+  const googleStrategy = new GoogleStrategy(
+    {
+      clientID: config.clientID,
+      clientSecret: config.clientSecret,
+      callbackURL: config.callbackURL,
+      scope: config.scope,
+      passReqToCallback: false
+    },
+    async (
+      accessToken: string,
+      refreshToken: string,
+      profile: GoogleProfile,
+      done: OAuthVerifyCallback
+    ) => {
+      try {
+        // Extract profile data with proper null checks
+        const userProfile: OAuthUserProfile = {
+          provider: OAuthProvider.GOOGLE,
+          providerUserId: profile.id,
+          email: profile.emails?.[0]?.value ?? '',
+          firstName: profile.name?.givenName ?? '',
+          lastName: profile.name?.familyName ?? '',
+          displayName: profile.displayName ?? profile.emails?.[0]?.value?.split('@')[0] ?? 'User',
+          profilePictureUrl: profile.photos?.[0]?.value,
+          accessToken,
+          refreshToken: refreshToken || undefined
+        };
+        
+        // Find or create user in database
+        const user = await findOrCreateOAuthUser(userProfile);
+        return done(null, user);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to process OAuth user';
+        logger.error('Google OAuth error', { 
+          error: errorMessage, 
+          profileId: profile.id,
+          provider: OAuthProvider.GOOGLE 
+        });
+        return done(error instanceof Error ? error : new Error(errorMessage), false);
+      }
     }
-  }));
+  );
+
+  // Register the strategy with Passport
+  passport.use(googleStrategy);
 }
 
 /**
@@ -173,27 +214,39 @@ function setupFacebookStrategy(config: OAuthProviderConfig): void {
     clientSecret: config.clientSecret,
     callbackURL: config.callbackURL,
     profileFields: ['id', 'emails', 'name', 'displayName', 'photos']
-  }, async (accessToken, refreshToken, profile, done) => {
+  }, async (
+    accessToken: string, 
+    refreshToken: string, 
+    profile: FacebookProfile, 
+    done: OAuthVerifyCallback
+  ) => {
     try {
       // Extract profile data
       const userProfile: OAuthUserProfile = {
         provider: OAuthProvider.FACEBOOK,
         providerUserId: profile.id,
-        email: profile.emails?.[0]?.value || '',
-        firstName: profile.name?.givenName || '',
-        lastName: profile.name?.familyName || '',
-        displayName: profile.displayName,
+        email: profile.emails?.[0]?.value ?? '',
+        firstName: profile.name?.givenName ?? '',
+        lastName: profile.name?.familyName ?? '',
+        displayName: profile.displayName ?? '',
         profilePictureUrl: profile.photos?.[0]?.value,
         accessToken,
         refreshToken
       };
       
       // Find or create user
-      const user = await findOrCreateOAuthUser(userProfile);
-      done(null, user);
+      try {
+        const user = await findOrCreateOAuthUser(userProfile);
+        done(null, user);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to process OAuth user';
+        logger.error('Facebook OAuth error', { error: errorMessage, profileId: profile.id });
+        done(error instanceof Error ? error : new Error(errorMessage), false);
+      }
     } catch (error) {
-      logger.error('Facebook OAuth error', { error, profileId: profile.id });
-      done(error, null);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process OAuth user';
+      logger.error('Facebook OAuth error', { error: errorMessage, profileId: profile.id });
+      done(error instanceof Error ? error : new Error(errorMessage), false);
     }
   }));
 }
@@ -207,30 +260,42 @@ function setupGithubStrategy(config: OAuthProviderConfig): void {
     clientSecret: config.clientSecret,
     callbackURL: config.callbackURL,
     scope: config.scope
-  }, async (accessToken, refreshToken, profile, done) => {
+  }, async (
+    accessToken: string, 
+    refreshToken: string, 
+    profile: GithubProfile, 
+    done: OAuthVerifyCallback
+  ) => {
     try {
       // Extract profile data
-      const email = profile.emails?.[0]?.value || `${profile.username}@github.com`;
-      const nameParts = (profile.displayName || profile.username || '').split(' ');
+      const email = profile.emails?.[0]?.value ?? `${profile.username}@github.com`;
+      const nameParts = (profile.displayName ?? profile.username ?? '').split(' ');
       
       const userProfile: OAuthUserProfile = {
         provider: OAuthProvider.GITHUB,
         providerUserId: profile.id,
         email,
-        firstName: nameParts[0] || '',
-        lastName: nameParts.slice(1).join(' ') || '',
-        displayName: profile.displayName || profile.username || '',
+        firstName: nameParts[0] ?? '',
+        lastName: nameParts.slice(1).join(' ') ?? '',
+        displayName: profile.displayName ?? profile.username ?? '',
         profilePictureUrl: profile.photos?.[0]?.value,
         accessToken,
         refreshToken
       };
       
       // Find or create user
-      const user = await findOrCreateOAuthUser(userProfile);
-      done(null, user);
+      try {
+        const user = await findOrCreateOAuthUser(userProfile);
+        done(null, user);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to process OAuth user';
+        logger.error('GitHub OAuth error', { error: errorMessage, profileId: profile.id });
+        done(error instanceof Error ? error : new Error(errorMessage), false);
+      }
     } catch (error) {
-      logger.error('GitHub OAuth error', { error, profileId: profile.id });
-      done(error, null);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process OAuth user';
+      logger.error('GitHub OAuth error', { error: errorMessage, profileId: profile.id });
+      done(error instanceof Error ? error : new Error(errorMessage), false);
     }
   }));
 }
@@ -238,7 +303,7 @@ function setupGithubStrategy(config: OAuthProviderConfig): void {
 /**
  * Find or create a user from OAuth profile
  */
-async function findOrCreateOAuthUser(profile: OAuthUserProfile): Promise<any> {
+async function findOrCreateOAuthUser(profile: OAuthUserProfile): Promise<User> {
   try {
     // Check if we already have this OAuth account linked
     const existingOAuth = await prisma.oauthAccount.findUnique({
@@ -357,17 +422,20 @@ export function getAvailableProviders(): OAuthProvider[] {
 /**
  * Handle OAuth callback
  */
-export function handleOAuthCallback(provider: OAuthProvider, req: Request): Promise<any> {
+export async function handleOAuthCallback(provider: OAuthProvider, req: Request): Promise<User> {
   return new Promise((resolve, reject) => {
-    passport.authenticate(provider, { session: false }, (err, user) => {
+    const authenticateCallback: AuthenticateCallback = (err: Error | null, user?: Express.User | false, info?: any) => {
       if (err) {
-        return reject(err);
+        reject(err);
+      } else if (!user) {
+        reject(new Error(info?.message ?? 'Authentication failed'));
+      } else {
+        resolve(user as User);
       }
-      if (!user) {
-        return reject(new Error('Authentication failed'));
-      }
-      resolve(user);
-    })(req);
+    };
+    
+    const options: AuthenticateOptions = { session: false, failWithError: true };
+    passport.authenticate(provider, options, authenticateCallback)(req, req.res!, () => {});
   });
 }
 

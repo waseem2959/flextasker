@@ -227,10 +227,11 @@ export async function applyPendingMigrations(): Promise<boolean> {
   try {
     // Using transactions for migrations can be risky with certain DDL statements
     // Some databases don't support transactional DDL
-    const useTransactions = config.DB_SUPPORTS_TRANSACTIONAL_DDL === 'true';
+    const useTransactions = config.DB_SUPPORTS_TRANSACTIONAL_DDL;
     
     if (useTransactions) {
-      await withTransaction(async (tx) => {
+      // The transaction parameter is intentionally unused when we're just executing migrations in sequence
+      await withTransaction(async () => {
         for (const migration of pendingMigrations) {
           const result = await applyMigration(migration);
           if (!result) {
@@ -343,7 +344,8 @@ export async function discoverNewMigrations(): Promise<Migration[]> {
     
     for (const [name, content] of Object.entries(scripts)) {
       // Extract version from name (e.g. "20230101000000_initial")
-      const versionMatch = name.match(/^(\d+)_/);
+      const versionRegex = /^(\d+)_/;
+      const versionMatch = versionRegex.exec(name);
       
       if (!versionMatch) {
         logger.warn(`Invalid migration name format: ${name}`);

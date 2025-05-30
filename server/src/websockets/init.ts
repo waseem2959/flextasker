@@ -24,9 +24,10 @@ export function initializeWebSockets(server: HttpServer): SocketManager {
     
     return socketManager;
   } catch (error) {
-    monitorError(error, { component: 'initializeWebSockets' });
-    logger.error('Failed to initialize WebSocket server', { error });
-    throw error;
+    const errorObj = error instanceof Error ? error : new Error(String(error));
+    monitorError(errorObj, { component: 'initializeWebSockets' });
+    logger.error('Failed to initialize WebSocket server', { error: errorObj });
+    throw errorObj;
   }
 }
 

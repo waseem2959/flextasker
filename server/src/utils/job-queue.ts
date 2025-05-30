@@ -1,26 +1,34 @@
 /**
- * Job Queue System
+ * Job Queue System - Minimal Fixes Applied
  * 
  * This module implements a background job processing system using Redis-based queues.
  * It handles asynchronous tasks like email sending, notifications, and data processing.
  */
 
-import { Queue, Worker, Job, QueueScheduler } from 'bullmq';
-import { redisClient } from './cache/redis-client';
+import { Job, Queue, QueueEvents, Worker } from 'bullmq';
 import { logger } from './logger';
 import { monitorError } from './monitoring';
 
-// Default queue configuration
+// CRITICAL FIX #1: Add maxRetriesPerRequest: null to prevent worker disconnections
+const REDIS_CONNECTION = {
+  host: process.env.REDIS_HOST ?? 'localhost',
+  port: parseInt(process.env.REDIS_PORT ?? '6379'),
+  password: process.env.REDIS_PASSWORD,
+  username: process.env.REDIS_USERNAME,
+  maxRetriesPerRequest: null  // CRITICAL: Prevents worker disconnections
+};
+
+// CRITICAL FIX #2: Add proper job retention to prevent memory leaks
 const DEFAULT_QUEUE_CONFIG = {
-  connection: redisClient,
+  connection: REDIS_CONNECTION,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
       type: 'exponential',
       delay: 1000
     },
-    removeOnComplete: true,
-    removeOnFail: 5000
+    removeOnComplete: 100,    // FIX: Keep only last 100 completed jobs
+    removeOnFail: 1000        // FIX: Keep more failed jobs for debugging
   }
 };
 
@@ -33,7 +41,7 @@ export enum QueueName {
   TASK_REMINDER = 'task-reminder'
 }
 
-// Job data types
+// CRITICAL FIX #3: Use serialization-safe types (no Date objects)
 export interface EmailJobData {
   to: string | string[];
   subject: string;
@@ -67,27 +75,38 @@ export interface TaskReminderJobData {
   taskId: string;
   userId: string;
   type: 'deadline' | 'update' | 'payment';
-  dueDate?: Date;
+  dueDate?: string;  // FIX: Use string instead of Date for serialization safety
 }
 
 // Job processor functions
 type JobProcessor<T> = (job: Job<T>) => Promise<any>;
 
-// Active queues and workers
-const queues: Record<string, Queue> = {};
-const workers: Record<string, Worker> = {};
-const schedulers: Record<string, QueueScheduler> = {};
+// Active queues and workers with proper typing
+const queues: Partial<Record<QueueName, Queue<any, any, string>>> = {};
+const workers: Partial<Record<QueueName, Worker<any, any, string>>> = {};
+const queueEvents: Partial<Record<QueueName, QueueEvents>> = {};
+
+// FIX #4: Add shutdown flag to prevent job addition during shutdown
+let isShuttingDown = false;
 
 /**
  * Create a job queue
  */
-export function createQueue<T>(name: QueueName): Queue<T> {
-  if (queues[name]) {
-    return queues[name] as Queue<T>;
+export function createQueue<T = any>(name: QueueName): Queue<T, any, string> {
+  const existingQueue = queues[name];
+  if (existingQueue) {
+    return existingQueue as Queue<T, any, string>;
   }
   
-  // Create queue
-  const queue = new Queue<T>(name, DEFAULT_QUEUE_CONFIG);
+  // Create queue with simplified typing to avoid BullMQ's complex type extraction
+  const queue: Queue<T, any, string> = new Queue(name.toString(), {
+    ...DEFAULT_QUEUE_CONFIG,
+    defaultJobOptions: {
+      ...DEFAULT_QUEUE_CONFIG.defaultJobOptions,
+      removeOnComplete: 100,  // Explicit setting
+      removeOnFail: 1000      // Explicit setting
+    }
+  });
   
   // Handle queue events
   queue.on('error', error => {
@@ -98,8 +117,8 @@ export function createQueue<T>(name: QueueName): Queue<T> {
   // Store queue reference
   queues[name] = queue;
   
-  // Create scheduler for delayed jobs
-  schedulers[name] = new QueueScheduler(name, { connection: redisClient });
+  // Create queue events for monitoring
+  queueEvents[name] = new QueueEvents(name, { connection: REDIS_CONNECTION });
   
   logger.info(`Queue ${name} created`);
   
@@ -109,18 +128,19 @@ export function createQueue<T>(name: QueueName): Queue<T> {
 /**
  * Register a job processor
  */
-export function registerProcessor<T>(
+export function registerProcessor<T = any>(
   queueName: QueueName, 
   processor: JobProcessor<T>,
   concurrency = 1
-): Worker<T> {
-  if (workers[queueName]) {
-    return workers[queueName] as Worker<T>;
+): Worker<T, any, string> {
+  const existingWorker = workers[queueName];
+  if (existingWorker) {
+    return existingWorker as Worker<T, any, string>;
   }
   
-  // Create worker
-  const worker = new Worker<T>(queueName, processor, { 
-    connection: redisClient,
+  // Create worker with simplified typing to avoid BullMQ's complex type extraction
+  const worker: Worker<T, any, string> = new Worker(queueName, processor, { 
+    connection: REDIS_CONNECTION,
     concurrency
   });
   
@@ -158,7 +178,7 @@ export function registerProcessor<T>(
 /**
  * Add a job to the queue
  */
-export async function addJob<T>(
+export async function addJob<T = any>(
   queueName: QueueName,
   data: T,
   options: {
@@ -167,15 +187,21 @@ export async function addJob<T>(
     attempts?: number;
     jobId?: string;
   } = {}
-): Promise<Job<T>> {
+): Promise<Job<T, any, string>> {
+  // FIX #5: Prevent job addition during shutdown
+  if (isShuttingDown) {
+    throw new Error('Cannot add jobs during shutdown');
+  }
+
   // Get or create queue
-  const queue = queues[queueName] as Queue<T> || createQueue<T>(queueName);
+  const queue = (queues[queueName] as Queue<T, any, string>) ?? createQueue<T>(queueName);
   
-  // Add job to queue
-  const job = await queue.add(queueName, data, {
+  // Add job to queue - bypass BullMQ's complex type system
+  const job = await (queue as any).add(queueName, data, {
     ...DEFAULT_QUEUE_CONFIG.defaultJobOptions,
     ...options,
-    jobId: options.jobId || undefined
+    attempts: options.attempts ?? DEFAULT_QUEUE_CONFIG.defaultJobOptions.attempts,
+    jobId: options.jobId ?? undefined
   });
   
   logger.info(`Job ${job.id} added to queue ${queueName}`, {
@@ -185,13 +211,13 @@ export async function addJob<T>(
     options
   });
   
-  return job;
+  return job as Job<T, any, string>;
 }
 
 /**
- * Add a recurring job
+ * Add a recurring job - FIX #6: Use upsertJobScheduler instead of add
  */
-export async function addRecurringJob<T>(
+export async function addRecurringJob<T = any>(
   queueName: QueueName,
   data: T,
   pattern: string,
@@ -200,17 +226,29 @@ export async function addRecurringJob<T>(
     attempts?: number;
     jobId?: string;
   } = {}
-): Promise<Job<T>> {
+): Promise<Job<T, any, string>> {
+  if (isShuttingDown) {
+    throw new Error('Cannot add recurring jobs during shutdown');
+  }
+
   // Get or create queue
-  const queue = queues[queueName] as Queue<T> || createQueue<T>(queueName);
+  const queue = (queues[queueName] as Queue<T, any, string>) ?? createQueue<T>(queueName);
   
-  // Add recurring job
-  const job = await queue.add(queueName, data, {
-    ...DEFAULT_QUEUE_CONFIG.defaultJobOptions,
-    ...options,
-    jobId: options.jobId || undefined,
-    repeat: { pattern }
-  });
+  // FIX: Use upsertJobScheduler to prevent duplicate schedulers during deployments
+  // Bypass BullMQ's complex type system
+  const job = await (queue as any).upsertJobScheduler(
+    options.jobId ?? `${queueName}-recurring`,
+    { pattern },
+    {
+      name: queueName,
+      data,
+      opts: {
+        ...DEFAULT_QUEUE_CONFIG.defaultJobOptions,
+        ...options,
+        attempts: options.attempts ?? DEFAULT_QUEUE_CONFIG.defaultJobOptions.attempts
+      }
+    }
+  );
   
   logger.info(`Recurring job ${job.id} added to queue ${queueName}`, {
     jobId: job.id,
@@ -220,19 +258,25 @@ export async function addRecurringJob<T>(
     options
   });
   
-  return job;
+  return job as Job<T, any, string>;
 }
 
 /**
  * Get job by ID
  */
-export async function getJob<T>(queueName: QueueName, jobId: string): Promise<Job<T> | null> {
-  const queue = queues[queueName] as Queue<T>;
+export async function getJob<T = any>(queueName: QueueName, jobId: string): Promise<Job<T, any, string> | null> {
+  const queue = queues[queueName];
   if (!queue) {
     return null;
   }
   
-  return queue.getJob(jobId);
+  try {
+    const job = await queue.getJob(jobId);
+    return job ?? null;
+  } catch (error) {
+    logger.error(`Failed to get job ${jobId} from queue ${queueName}`, { error });
+    return null;
+  }
 }
 
 /**
@@ -290,14 +334,67 @@ export async function getQueueMetrics(queueName: QueueName): Promise<{
 }
 
 /**
- * Shut down all queues and workers
+ * FIX #7: Improved shutdown with proper sequencing
  */
 export async function shutdown(): Promise<void> {
-  const workerPromises = Object.values(workers).map(worker => worker.close());
-  const queuePromises = Object.values(queues).map(queue => queue.close());
-  const schedulerPromises = Object.values(schedulers).map(scheduler => scheduler.close());
+  if (isShuttingDown) {
+    return;
+  }
   
-  await Promise.all([...workerPromises, ...queuePromises, ...schedulerPromises]);
+  isShuttingDown = true;
+  logger.info('Starting graceful shutdown');
   
-  logger.info('All job queues and workers shut down');
+  try {
+    // 1. Close workers first (stops processing new jobs)
+    const workerPromises = Object.values(workers).map(worker => 
+      worker.close().catch(error => 
+        logger.error('Error closing worker', { error })
+      )
+    );
+    await Promise.all(workerPromises);
+    
+    // 2. Close queue events
+    const eventPromises = Object.values(queueEvents).map(events => 
+      events.close().catch(error => 
+        logger.error('Error closing queue events', { error })
+      )
+    );
+    await Promise.all(eventPromises);
+    
+    // 3. Close queues
+    const queuePromises = Object.values(queues).map(queue => 
+      queue.close().catch(error => 
+        logger.error('Error closing queue', { error })
+      )
+    );
+    await Promise.all(queuePromises);
+    
+    logger.info('All job queues and workers shut down successfully');
+  } catch (error) {
+    logger.error('Error during shutdown', { error });
+    throw error;
+  }
 }
+
+// FIX #8: Add signal handlers for graceful shutdown
+process.on('SIGTERM', async () => {
+  logger.info('Received SIGTERM, shutting down gracefully');
+  try {
+    await shutdown();
+    process.exit(0);
+  } catch (error) {
+    logger.error('Error during SIGTERM shutdown', { error });
+    process.exit(1);
+  }
+});
+
+process.on('SIGINT', async () => {
+  logger.info('Received SIGINT, shutting down gracefully');
+  try {
+    await shutdown();
+    process.exit(0);
+  } catch (error) {
+    logger.error('Error during SIGINT shutdown', { error });
+    process.exit(1);
+  }
+});

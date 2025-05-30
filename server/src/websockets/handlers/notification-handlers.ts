@@ -17,7 +17,7 @@ const prisma = new PrismaClient();
 /**
  * Registers notification-related event handlers for a socket
  */
-export function registerNotificationHandlers(socket: Socket, socketManager: SocketManager): void {
+export function registerNotificationHandlers(socket: Socket, _socketManager: SocketManager): void {
   const user = socket.data.user;
   
   // Get user notifications
@@ -44,7 +44,7 @@ export function registerNotificationHandlers(socket: Socket, socketManager: Sock
         });
       }
     } catch (error) {
-      monitorError(error, { component: 'NotificationHandlers.get', userId: user.id });
+      monitorError(error as Error, { component: 'NotificationHandlers.get', userId: user.id });
       
       // Return error to client
       if (typeof callback === 'function') {
@@ -65,7 +65,7 @@ export function registerNotificationHandlers(socket: Socket, socketManager: Sock
       });
       
       // Update notification in database
-      const updatedNotification = await prisma.notification.updateMany({
+      await prisma.notification.updateMany({
         where: {
           id: notificationId,
           userId: user.id // Ensure user owns the notification
@@ -83,7 +83,7 @@ export function registerNotificationHandlers(socket: Socket, socketManager: Sock
         });
       }
     } catch (error) {
-      monitorError(error, { 
+      monitorError(error as Error, { 
         component: 'NotificationHandlers.markAsRead', 
         userId: user.id,
         notificationId 
@@ -122,7 +122,7 @@ export function registerNotificationHandlers(socket: Socket, socketManager: Sock
         });
       }
     } catch (error) {
-      monitorError(error, { 
+      monitorError(error as Error, { 
         component: 'NotificationHandlers.markAllAsRead', 
         userId: user.id 
       });
@@ -172,7 +172,7 @@ export async function createNotification(
       notificationId: notification.id
     });
   } catch (error) {
-    monitorError(error, { 
+    monitorError(error as Error, { 
       component: 'createNotification', 
       userId,
       type,

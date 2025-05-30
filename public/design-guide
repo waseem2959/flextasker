@@ -1,0 +1,765 @@
+**Styling & UI Framework:**
+
+/* Tailwind CSS Configuration */
+module.exports = {
+  content: ['./src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#E8F6F8',
+          100: '#B8E4EA',
+          500: '#0C6478',
+          600: '#15919B',
+          700: '#09D1C7',
+          900: '#064B55'
+        },
+        success: '#2EBD8E',
+        error: '#DC3545',
+        warning: '#F39C12'
+      },
+      spacing: {
+        '4.5': '1.125rem',
+        '18': '4.5rem'
+      }
+    }
+  }
+}
+
+### Real-time Features Implementation
+
+// Socket.IO configuration
+const io = new Server(server, {
+  cors: { origin: process.env.CLIENT_URL },
+  transports: ['websocket', 'polling']
+});
+
+// Real-time bidding updates
+io.on('connection', (socket) => {
+  socket.on('join_task', (taskId) => {
+    socket.join(`task_${taskId}`);
+  });
+  
+  socket.on('new_bid', async (bidData) => {
+    const bid = await createBid(bidData);
+    io.to(`task_${bid.taskId}`).emit('bid_update', bid);
+  });
+});
+
+
+### Optimized Color Palette
+
+**Primary Colors (Accessibility Compliant):**
+:root {
+  /* Trust-building primary colors */
+  --color-primary-dark: #0C6478;    /* Navigation, headers, security elements */
+  --color-primary: #15919B;         /* Main brand color, buttons */
+  --color-primary-accent: #09D1C7;  /* CTAs, highlights */
+  --color-success: #2EBD8E;         /* Success states (WCAG AA compliant) */
+  
+  /* Supporting colors */
+  --color-text-primary: #1A2B34;    /* High contrast text */
+  --color-text-secondary: #6B7280;  /* Secondary information */
+  --color-error: #DC3545;           /* Error states */
+  --color-warning: #F39C12;         /* Warnings */
+  
+  /* Background system */
+  --color-background: #FFFFFF;
+  --color-surface: #F8FAFC;
+  --color-border: #E5E7EB;
+}
+
+/* Dark mode optimization */
+[data-theme="dark"] {
+  --color-background: #0F1419;
+  --color-surface: #1C2C35;
+  --color-text-primary: #F8FAFC;
+  --color-primary: #26C6DA;
+}
+
+### Typography System
+
+**Font Stack & Scale:**
+:root {
+  /* Modern font stack */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Manrope', var(--font-primary);
+  
+  /* Modular scale (1.25 ratio) */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg: 1.25rem;     /* 20px */
+  --text-xl: 1.563rem;    /* 25px */
+  --text-2xl: 1.953rem;   /* 31px */
+  --text-3xl: 2.441rem;   /* 39px */
+  
+  /* Line heights */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+}
+
+### Layout Foundation
+
+**8px Grid System:**
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-md);
+}
+
+:root {
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+}
+
+/* Responsive breakpoints */
+@media (min-width: 768px) {
+  .container { padding: 0 var(--space-lg); }
+}
+
+@media (min-width: 1024px) {
+  .container { padding: 0 var(--space-xl); }
+}
+
+### Component Architecture
+
+**Base Button System:**
+interface ButtonProps {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  loading?: boolean;
+  disabled?: boolean;
+}
+
+export const Button: FC<ButtonProps> = ({ 
+  variant = 'primary', 
+  size = 'md', 
+  loading,
+  children,
+  ...props 
+}) => {
+  const baseClasses = "font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2";
+  
+  const variants = {
+    primary: "bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500",
+    secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500",
+    ghost: "text-primary-500 hover:bg-primary-50 focus:ring-primary-500",
+    danger: "bg-red-500 text-white hover:bg-red-600 focus:ring-red-500"
+  };
+  
+  const sizes = {
+    sm: "px-3 py-1.5 text-sm",
+    md: "px-4 py-2 text-base",
+    lg: "px-6 py-3 text-lg"
+  };
+  
+  return (
+    <button 
+      className={cn(baseClasses, variants[variant], sizes[size])}
+      disabled={loading || props.disabled}
+      {...props}
+    >
+      {loading ? <Spinner /> : children}
+    </button>
+  );
+};
+
+Core Features & Components {#core-features}
+
+### Task Management System
+
+**Task Creation Wizard:**
+const TaskCreationWizard: FC = () => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [taskData, setTaskData] = useState<TaskData>({});
+  
+  const steps = [
+    { id: 1, title: 'Task Details', component: TaskDetailsStep },
+    { id: 2, title: 'Location & Schedule', component: LocationStep },
+    { id: 3, title: 'Budget & Requirements', component: BudgetStep },
+    { id: 4, title: 'Review & Post', component: ReviewStep }
+  ];
+  
+  return (
+    <div className="task-creation-wizard max-w-4xl mx-auto">
+      {/* Progress Indicator */}
+      <div className="progress-steps flex justify-between mb-8">
+        {steps.map((step, index) => (
+          <div 
+            key={step.id} 
+            className={cn(
+              "step-indicator",
+              currentStep >= step.id && "active",
+              currentStep > step.id && "completed"
+            )}
+          >
+            <div className="step-circle">{step.id}</div>
+            <span className="step-label">{step.title}</span>
+          </div>
+        ))}
+      </div>
+      
+      {/* Step Content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentStep}
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: -20, opacity: 0 }}
+          className="step-content"
+        >
+          {React.createElement(steps[currentStep - 1].component, {
+            data: taskData,
+            onUpdate: setTaskData,
+            onNext: () => setCurrentStep(prev => Math.min(prev + 1, steps.length)),
+            onBack: () => setCurrentStep(prev => Math.max(prev - 1, 1))
+          })}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+};
+
+### Real-time Bidding Interface
+
+**Bid Card Component:**
+const BidCard: FC<BidCardProps> = ({ bid, onAccept, onMessage }) => {
+  const [showDetails, setShowDetails] = useState(false);
+  
+  return (
+    <motion.div 
+      className="bid-card p-6 border rounded-lg hover:border-primary-300 transition-colors"
+      whileHover={{ y: -2 }}
+      layout
+    >
+      {/* Bidder Profile */}
+      <div className="bid-header flex items-center justify-between mb-4">
+        <div className="bidder-info flex items-center space-x-3">
+          <img 
+            src={bid.provider.avatar} 
+            alt={bid.provider.name}
+            className="w-12 h-12 rounded-full"
+          />
+          <div>
+            <h3 className="font-semibold">{bid.provider.name}</h3>
+            <div className="flex items-center space-x-2">
+              <StarRating rating={bid.provider.rating} size="sm" />
+              <span className="text-sm text-gray-600">
+                ({bid.provider.reviewCount} reviews)
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bid-amount text-right">
+          <div className="text-2xl font-bold text-primary-600">
+            ${bid.amount}
+          </div>
+          <div className="text-sm text-gray-500">
+            {bid.type === 'fixed' ? 'Fixed price' : 'Per hour'}
+          </div>
+        </div>
+      </div>
+      
+      {/* Bid Message */}
+      <div className="bid-message mb-4">
+        <p className="text-gray-700 line-clamp-3">
+          {bid.message}
+        </p>
+        {bid.message.length > 150 && (
+          <button 
+            onClick={() => setShowDetails(!showDetails)}
+            className="text-primary-500 text-sm hover:underline"
+          >
+            {showDetails ? 'Show less' : 'Show more'}
+          </button>
+        )}
+      </div>
+      
+      {/* Provider Stats */}
+      <div className="provider-stats flex justify-between text-sm text-gray-600 mb-4">
+        <span>Completion rate: {bid.provider.completionRate}%</span>
+        <span>Response time: {bid.provider.responseTime}</span>
+        <span>Distance: {bid.distance} away</span>
+      </div>
+      
+      {/* Actions */}
+      <div className="bid-actions flex space-x-3">
+        <Button 
+          variant="primary" 
+          onClick={() => onAccept(bid.id)}
+          className="flex-1"
+        >
+          Accept Bid
+        </Button>
+        <Button 
+          variant="secondary" 
+          onClick={() => onMessage(bid.provider.id)}
+        >
+          Message
+        </Button>
+      </div>
+    </motion.div>
+  );
+};
+
+### Messaging System
+
+**Real-time Chat Component:**
+const ChatInterface: FC<ChatProps> = ({ taskId, participants }) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const { socket } = useSocket();
+  
+  useEffect(() => {
+    socket.on('new_message', (message: Message) => {
+      setMessages(prev => [...prev, message]);
+    });
+    
+    socket.on('typing', (user: User) => {
+      setTypingUsers(prev => [...prev, user]);
+    });
+    
+    return () => {
+      socket.off('new_message');
+      socket.off('typing');
+    };
+  }, [socket]);
+  
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
+    
+    const message = {
+      taskId,
+      content: newMessage,
+      type: 'text',
+      timestamp: new Date().toISOString()
+    };
+    
+    socket.emit('send_message', message);
+    setNewMessage('');
+  };
+  
+  return (
+    <div className="chat-interface flex flex-col h-96 border rounded-lg">
+      {/* Message List */}
+      <div className="message-list flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.map(message => (
+          <MessageBubble 
+            key={message.id} 
+            message={message}
+            isOwn={message.senderId === currentUser.id}
+          />
+        ))}
+      </div>
+      
+      {/* Input Area */}
+      <div className="chat-input p-4 border-t">
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            placeholder="Type a message..."
+            className="flex-1 p-2 border rounded-md"
+          />
+          <Button onClick={sendMessage}>Send</Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+### Payment System
+
+**Secure Payment Flow:**
+
+const PaymentFlow: FC<PaymentProps> = ({ task, selectedBid }) => {
+  const [paymentMethod, setPaymentMethod] = useState<string>('');
+  const [processing, setProcessing] = useState(false);
+  
+  const fees = {
+    serviceFee: selectedBid.amount * 0.155,
+    trustFee: 2.50,
+    paymentFee: selectedBid.amount * 0.029
+  };
+  
+  const total = selectedBid.amount + fees.serviceFee + fees.trustFee + fees.paymentFee;
+  
+  const processPayment = async () => {
+    setProcessing(true);
+    try {
+      const result = await createEscrowPayment({
+        taskId: task.id,
+        bidId: selectedBid.id,
+        amount: total,
+        paymentMethod
+      });
+      
+      if (result.success) {
+        toast.success('Payment secured! Work can now begin.');
+        router.push(`/tasks/${task.id}/progress`);
+      }
+    } catch (error) {
+      toast.error('Payment failed. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+  
+  return (
+    <div className="payment-flow max-w-2xl mx-auto">
+      {/* Payment Summary */}
+      <div className="payment-summary bg-gray-50 p-6 rounded-lg mb-6">
+        <h3 className="text-lg font-semibold mb-4">Payment Summary</h3>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span>Task Amount</span>
+            <span>${selectedBid.amount.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span>Service Fee (15.5%)</span>
+            <span>${fees.serviceFee.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span>Trust & Support Fee</span>
+            <span>${fees.trustFee.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span>Payment Processing</span>
+            <span>${fees.paymentFee.toFixed(2)}</span>
+          </div>
+          <div className="border-t pt-2 flex justify-between font-semibold">
+            <span>Total</span>
+            <span>${total.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Payment Method Selection */}
+      <PaymentMethodSelector 
+        selected={paymentMethod}
+        onSelect={setPaymentMethod}
+      />
+      
+      {/* Escrow Protection Info */}
+      <div className="escrow-info bg-blue-50 p-4 rounded-lg mb-6">
+        <h4 className="font-semibold text-blue-900 mb-2">🛡️ Payment Protection</h4>
+        <p className="text-blue-700 text-sm">
+          Your payment is held securely in escrow and only released when you're 
+          satisfied with the completed work.
+        </p>
+      </div>
+      
+      <Button 
+        onClick={processPayment}
+        loading={processing}
+        disabled={!paymentMethod}
+        size="lg"
+        className="w-full"
+      >
+        Secure Payment & Hire Tasker
+      </Button>
+    </div>
+  );
+};
+
+Essential Pages Implementation {#essential-pages}
+
+### Homepage Implementation
+
+**Hero Section with Interactive Elements:**
+
+const Homepage: FC = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  
+  return (
+    <div className="homepage">
+      {/* Hero Section */}
+      <section className="hero bg-gradient-to-br from-primary-50 to-blue-100 py-20">
+        <div className="container">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+              Get things done with 
+              <span className="text-primary-600"> trusted local experts</span>
+            </h1>
+            <p className="text-xl text-gray-600 mb-8">
+              From home repairs to personal assistance, find skilled professionals 
+              ready to help with any task.
+            </p>
+            
+            {/* Task Search */}
+            <div className="task-search-widget max-w-2xl mx-auto">
+              <div className="bg-white p-2 rounded-lg shadow-lg">
+                <div className="flex flex-col md:flex-row gap-2">
+                  <input
+                    type="text"
+                    placeholder="What do you need help with?"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1 p-3 border-0 focus:ring-0"
+                  />
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="md:w-48 p-3 border-0"
+                  >
+                    <option value="">All Categories</option>
+                    <option value="cleaning">Cleaning</option>
+                    <option value="handyman">Handyman</option>
+                    <option value="moving">Moving</option>
+                    <option value="delivery">Delivery</option>
+                  </select>
+                  <Button size="lg" className="md:w-32">
+                    Search
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Quick Actions */}
+            <div className="quick-actions mt-8 flex justify-center space-x-4">
+              <Button variant="primary" size="lg">
+                Post a Task
+              </Button>
+              <Button variant="ghost" size="lg">
+                Earn Money as a Tasker
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Service Categories */}
+      <section className="categories py-16">
+        <div className="container">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Popular Services
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {categories.map(category => (
+              <CategoryCard key={category.id} category={category} />
+            ))}
+          </div>
+        </div>
+      </section>
+      
+      {/* How It Works */}
+      <HowItWorksSection />
+      
+      {/* Trust Indicators */}
+      <TrustSection />
+      
+      {/* Testimonials */}
+      <TestimonialsSection />
+    </div>
+  );
+};
+
+### User Dashboard
+
+**Comprehensive Dashboard Layout:**
+
+const UserDashboard: FC = () => {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  return (
+    <div className="dashboard-layout">
+      {/* Dashboard Header */}
+      <header className="dashboard-header bg-white border-b p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Welcome back, {user.firstName}!</h1>
+            <p className="text-gray-600">Manage your tasks and earnings</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <NotificationBell />
+            <UserMenu />
+          </div>
+        </div>
+      </header>
+      
+      <div className="dashboard-content flex">
+        {/* Sidebar Navigation */}
+        <aside className="sidebar w-64 bg-gray-50 min-h-screen p-6">
+          <nav className="space-y-2">
+            <NavItem 
+              icon="home" 
+              label="Overview" 
+              active={activeTab === 'overview'}
+              onClick={() => setActiveTab('overview')}
+            />
+            <NavItem 
+              icon="briefcase" 
+              label="My Tasks" 
+              active={activeTab === 'tasks'}
+              onClick={() => setActiveTab('tasks')}
+            />
+            <NavItem 
+              icon="dollar-sign" 
+              label="Earnings" 
+              active={activeTab === 'earnings'}
+              onClick={() => setActiveTab('earnings')}
+            />
+            <NavItem 
+              icon="message-circle" 
+              label="Messages" 
+              active={activeTab === 'messages'}
+              onClick={() => setActiveTab('messages')}
+            />
+            <NavItem 
+              icon="settings" 
+              label="Settings" 
+              active={activeTab === 'settings'}
+              onClick={() => setActiveTab('settings')}
+            />
+          </nav>
+        </aside>
+        
+        {/* Main Content */}
+        <main className="flex-1 p-8">
+          <DashboardContent activeTab={activeTab} />
+        </main>
+      </div>
+    </div>
+  );
+};
+
+// Dashboard Overview Component
+const DashboardOverview: FC = () => {
+  const stats = useDashboardStats();
+  
+  return (
+    <div className="dashboard-overview">
+      {/* Key Metrics */}
+      <div className="metrics-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <MetricCard
+          title="Active Tasks"
+          value={stats.activeTasks}
+          change="+12%"
+          changeType="positive"
+          icon="briefcase"
+        />
+        <MetricCard
+          title="This Month's Earnings"
+          value={`$${stats.monthlyEarnings}`}
+          change="+24%"
+          changeType="positive"
+          icon="dollar-sign"
+        />
+        <MetricCard
+          title="Completed Tasks"
+          value={stats.completedTasks}
+          change="+8%"
+          changeType="positive"
+          icon="check-circle"
+        />
+        <MetricCard
+          title="Average Rating"
+          value={stats.averageRating}
+          change="+0.2"
+          changeType="positive"
+          icon="star"
+        />
+      </div>
+      
+      {/* Recent Activity */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <RecentTasksWidget />
+        </div>
+        <div>
+          <EarningsChartWidget />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+### Help Center & Support
+
+**Comprehensive Help System:**
+
+const HelpCenter: FC = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  
+  return (
+    <div className="help-center">
+      {/* Search Header */}
+      <div className="help-header bg-primary-600 text-white py-16">
+        <div className="container text-center">
+          <h1 className="text-4xl font-bold mb-6">How can we help you?</h1>
+          <div className="search-box max-w-2xl mx-auto">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search for help articles..."
+                className="w-full pl-12 pr-4 py-4 text-gray-900 rounded-lg border-0 focus:ring-2 focus:ring-white"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Category Grid */}
+      <div className="categories-section py-12">
+        <div className="container">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {helpCategories.map(category => (
+              <HelpCategoryCard
+                key={category.id}
+                category={category}
+                onClick={() => setSelectedCategory(category.id)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      {/* Popular Articles */}
+      <div className="popular-articles py-12 bg-gray-50">
+        <div className="container">
+          <h2 className="text-2xl font-bold mb-8">Popular Help Articles</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {popularArticles.map(article => (
+              <ArticleCard key={article.id} article={article} />
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      {/* Contact Support */}
+      <div className="contact-support py-12">
+        <div className="container">
+          <div className="bg-white p-8 rounded-lg shadow-lg max-w-2xl mx-auto text-center">
+            <h3 className="text-xl font-semibold mb-4">
+              Can't find what you're looking for?
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Our support team is here to help you with any questions or issues.
+            </p>
+            <div className="flex justify-center space-x-4">
+              <Button variant="primary">Contact Support</Button>
+              <Button variant="secondary">Live Chat</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

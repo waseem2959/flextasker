@@ -8,7 +8,7 @@
 import { Request } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { logger } from './logger';
-import { cacheService } from './cache/cache-service';
+import { CacheService } from './cache/cache-service';
 import { config } from './config';
 
 // Initialize Prisma client
@@ -36,6 +36,7 @@ export async function initializeFeatureFlags(): Promise<void> {
       logger.info('No feature flags found, creating defaults');
       
       const defaultFlags = [
+        // Existing feature flags
         {
           name: 'extended-user-profiles',
           description: 'Enable extended user profile information',
@@ -67,6 +68,48 @@ export async function initializeFeatureFlags(): Promise<void> {
           description: 'Enable service discovery and registry',
           type: FeatureFlagType.BOOLEAN,
           enabled: true,
+          rules: {}
+        },
+        
+        // Consolidated services feature flags
+        {
+          name: 'consolidated-chat-service',
+          description: 'Enable consolidated chat service endpoints',
+          type: FeatureFlagType.PERCENTAGE,
+          enabled: true,
+          value: config.NODE_ENV === 'production' ? 25 : 100, // 25% rollout in production, 100% in other environments
+          rules: {}
+        },
+        {
+          name: 'consolidated-bid-service',
+          description: 'Enable consolidated bid service endpoints',
+          type: FeatureFlagType.PERCENTAGE,
+          enabled: true,
+          value: config.NODE_ENV === 'production' ? 10 : 100, // 10% rollout in production, 100% in other environments
+          rules: {}
+        },
+        {
+          name: 'consolidated-notification-service',
+          description: 'Enable consolidated notification service endpoints',
+          type: FeatureFlagType.PERCENTAGE,
+          enabled: true,
+          value: config.NODE_ENV === 'production' ? 25 : 100, // 25% rollout in production, 100% in other environments
+          rules: {}
+        },
+        {
+          name: 'consolidated-review-service',
+          description: 'Enable consolidated review service endpoints',
+          type: FeatureFlagType.PERCENTAGE,
+          enabled: true,
+          value: config.NODE_ENV === 'production' ? 10 : 100, // 10% rollout in production, 100% in other environments
+          rules: {}
+        },
+        {
+          name: 'consolidated-websocket-handlers',
+          description: 'Enable consolidated WebSocket event handlers',
+          type: FeatureFlagType.PERCENTAGE,
+          enabled: true,
+          value: config.NODE_ENV === 'production' ? 15 : 100, // 15% rollout in production, 100% in other environments
           rules: {}
         }
       ];
@@ -115,7 +158,7 @@ export interface FeatureFlag {
 export async function getAllFeatureFlags(): Promise<FeatureFlag[]> {
   try {
     // Try to get flags from cache first
-    const cachedFlags = await cacheService.get<FeatureFlag[]>(FEATURE_FLAGS_CACHE_KEY);
+    const cachedFlags = await CacheService.get<FeatureFlag[]>(FEATURE_FLAGS_CACHE_KEY);
     
     if (cachedFlags) {
       return cachedFlags;
@@ -125,7 +168,7 @@ export async function getAllFeatureFlags(): Promise<FeatureFlag[]> {
     const flags = await prisma.featureFlag.findMany();
     
     // Cache the flags
-    await cacheService.set(
+    await CacheService.set(
       FEATURE_FLAGS_CACHE_KEY,
       flags,
       FEATURE_FLAGS_CACHE_TTL
@@ -199,7 +242,7 @@ export async function isFeatureEnabledForUser(
     const flags = await getAllFeatureFlags();
     const feature = flags.find(f => f.name === featureName);
     
-    if (!feature || !feature.enabled) {
+    if (!feature?.enabled) {
       return false;
     }
     
@@ -298,7 +341,7 @@ export async function setFeatureFlag(flag: Omit<FeatureFlag, 'id' | 'createdAt' 
     }
     
     // Invalidate cache
-    await cacheService.delete(FEATURE_FLAGS_CACHE_KEY);
+    await CacheService.invalidate(FEATURE_FLAGS_CACHE_KEY);
     
     // Convert rules back to object
     return {
@@ -334,7 +377,7 @@ export async function deleteFeatureFlag(featureName: string): Promise<boolean> {
     });
     
     // Invalidate cache
-    await cacheService.delete(FEATURE_FLAGS_CACHE_KEY);
+    await CacheService.invalidate(FEATURE_FLAGS_CACHE_KEY);
     
     return true;
   } catch (error) {

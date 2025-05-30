@@ -92,18 +92,32 @@ export function createI18nMiddleware() {
   return middleware.handle(i18next);
 }
 
+// Import the AuthenticatedUser type from auth middleware
+import { AuthenticatedUser } from '../middleware/auth-middleware';
+
+// Extend the Express Request type to include language
+interface AuthenticatedRequest extends Request {
+  user?: AuthenticatedUser & { language?: string };
+  language?: string;
+}
+
 /**
  * Language detection middleware
  * Sets language based on user preferences or request
  */
-export function languageMiddleware(req: Request, res: Response, next: NextFunction) {
+export function languageMiddleware(
+  req: AuthenticatedRequest, 
+  res: Response, 
+  next: NextFunction
+) {
   // If user is authenticated and has a language preference, use that
-  if (req.user?.language && SUPPORTED_LANGUAGES.includes(req.user.language)) {
-    req.language = req.user.language;
+  const userLanguage = req.user?.language;
+  if (userLanguage && SUPPORTED_LANGUAGES.includes(userLanguage)) {
+    req.language = userLanguage;
   }
   
   // Set Content-Language header
-  res.set('Content-Language', req.language || DEFAULT_LANGUAGE);
+  res.set('Content-Language', req.language ?? DEFAULT_LANGUAGE);
   
   next();
 }
@@ -331,7 +345,7 @@ async function createDefaultTranslations(localesPath: string): Promise<void> {
 /**
  * Translate message with the given key and options
  */
-export function t(key: string, options?: object): string {
+export function t(key: string, options?: Record<string, any>): string {
   return i18next.t(key, options);
 }
 
@@ -339,19 +353,21 @@ export function t(key: string, options?: object): string {
  * Get current language
  */
 export function getCurrentLanguage(): string {
-  return i18next.language || DEFAULT_LANGUAGE;
+  return i18next.language ?? DEFAULT_LANGUAGE;
 }
 
 /**
  * Change language
+ * @returns The i18next instance after changing the language
  */
-export function changeLanguage(lng: string): Promise<typeof i18next> {
+export async function changeLanguage(lng: string): Promise<typeof i18next> {
   if (!SUPPORTED_LANGUAGES.includes(lng)) {
     logger.warn(`Unsupported language: ${lng}, falling back to ${DEFAULT_LANGUAGE}`);
     lng = DEFAULT_LANGUAGE;
   }
   
-  return i18next.changeLanguage(lng);
+  await i18next.changeLanguage(lng);
+  return i18next;
 }
 
 export default {

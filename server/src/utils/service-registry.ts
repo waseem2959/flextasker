@@ -70,7 +70,7 @@ export enum ServiceEvents {
  * Manages service registration, discovery, and health monitoring
  */
 class ServiceRegistry extends EventEmitter {
-  private services: Map<string, ServiceInstance> = new Map();
+  private readonly services: Map<string, ServiceInstance> = new Map();
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private currentServiceId: string | null = null;

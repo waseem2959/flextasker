@@ -2,7 +2,7 @@
 import React from 'react';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 
 interface LayoutProps {
   children: React.ReactNode;

@@ -3,26 +3,26 @@ import express from 'express';
 import { createServer, Server as HttpServer } from 'http';
 
 // Import middleware and utilities
-import { connectDatabase } from './utils/database';
-import { logger } from './utils/logger';
-import { config } from './utils/config';
-import { initializeI18n } from './utils/i18n';
-import { initializeScheduledTasks } from './utils/scheduled-tasks';
-import { initializeOAuthProviders } from './utils/oauth-providers';
-import { performHealthCheck, HealthStatus } from './utils/health-monitor';
 import { ApiGateway } from './api-gateway';
-import { serviceRegistry, ServiceType } from './utils/service-registry';
-import { initializeMigrationSystem } from './utils/db-migration';
-import featureFlagsService from './utils/feature-flags';
-import validationUtils from './utils/validation-utils';
-import performanceProfiler from './middleware/performance-profiler';
-import { cacheService } from './utils/cache';
-import { 
-  initializeMiddleware, 
-  initializeRoutes, 
+import performanceProfiler from './middleware/performance-profiler-middleware';
+import {
+  initializeMiddleware,
+  initializeMonitoring,
+  initializeRoutes,
   initializeSockets,
   gracefulShutdown
 } from './utils/app-initializer';
+import { config } from './utils/config';
+import { initializeMigrationSystem } from './utils/db-migration';
+import featureFlagsService from './utils/feature-flags';
+import { HealthStatus, performHealthCheck } from './utils/health-monitor';
+import { initializeI18n } from './utils/i18n';
+
+import { logger } from './utils/logger';
+import { initializeOAuthProviders } from './utils/oauth-providers';
+import { initializeScheduledTasks } from './utils/scheduled-tasks';
+import { serviceRegistry, ServiceType } from './utils/service-registry';
+import validationUtils from './utils/validation-utils';
 
 // Load environment variables
 dotenv.config();
@@ -90,17 +90,16 @@ class FlexTaskerServer {
       // Initialize configuration
       logger.info('Initializing application components...');
       
-      // Connect to database first
-      await connectDatabase();
-      logger.info('Database connection established successfully');
-      
-      // Initialize database migrations
+      // Connect to database and initialize migrations
       await initializeMigrationSystem();
-      logger.info('Database migration system initialized');
+      logger.info('Database connection and migrations initialized');
       
-      // Initialize the cache service
-      await cacheService.initialize();
-      logger.info('Cache service initialized');
+      // Initialize monitoring system
+      await initializeMonitoring();
+      logger.info('Monitoring system initialized');
+      
+      // Note: CacheService is already initialized and doesn't need an explicit initialize call
+      logger.info('Cache service ready');
       
       // Initialize internationalization
       await initializeI18n();

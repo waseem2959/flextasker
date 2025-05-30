@@ -8,8 +8,7 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import semver from 'semver';
 import { logger } from './logger';
-import { sendError } from './api-response';
-import { ErrorType } from '../../../shared/types/errors';
+import { sendError } from './response-utils';
 
 // API version format: v{MAJOR}.{MINOR}
 export const API_VERSION_REGEX = /v(\d+)\.(\d+)/;
@@ -63,16 +62,16 @@ export const API_VERSIONS: Record<string, {
  */
 export function extractApiVersion(req: Request): string | null {
   // Check URL path
-  const pathMatch = req.path.match(/\/api\/(v\d+\.\d+)/);
-  if (pathMatch && pathMatch[1]) {
+  const pathMatch = /\/api\/(v\d+\.\d+)/.exec(req.path);
+  if (pathMatch?.[1]) {
     return pathMatch[1];
   }
   
   // Check Accept header with version parameter
   const acceptHeader = req.get('Accept');
   if (acceptHeader) {
-    const versionMatch = acceptHeader.match(/version=(v\d+\.\d+)/);
-    if (versionMatch && versionMatch[1]) {
+    const versionMatch = /version=(v\d+\.\d+)/.exec(acceptHeader);
+    if (versionMatch?.[1]) {
       return versionMatch[1];
     }
   }
@@ -104,7 +103,7 @@ export function determineEffectiveVersion(requestedVersion: string | null): stri
   }
   
   // If not a known version, try to find the closest matching version
-  const match = requestedVersion.match(API_VERSION_REGEX);
+  const match = API_VERSION_REGEX.exec(requestedVersion);
   if (match) {
     const [, majorStr] = match;
     const requestedMajor = parseInt(majorStr, 10);
@@ -112,10 +111,9 @@ export function determineEffectiveVersion(requestedVersion: string | null): stri
     // Find all versions with same major version
     const matchingVersions = Object.keys(API_VERSIONS)
       .filter(version => {
-        const vMatch = version.match(API_VERSION_REGEX);
-        if (vMatch) {
-          const [, vMajorStr] = vMatch;
-          const vMajor = parseInt(vMajorStr, 10);
+        const vMatch = API_VERSION_REGEX.exec(version);
+        if (vMatch?.[1]) {
+          const vMajor = parseInt(vMatch[1], 10);
           return vMajor === requestedMajor;
         }
         return false;
@@ -123,8 +121,8 @@ export function determineEffectiveVersion(requestedVersion: string | null): stri
       .sort((a, b) => {
         // Sort in descending order
         return semver.compare(
-          semver.coerce(b) || '0.0.0',
-          semver.coerce(a) || '0.0.0'
+          semver.coerce(b) ?? '0.0.0',
+          semver.coerce(a) ?? '0.0.0'
         );
       });
     
@@ -134,8 +132,7 @@ export function determineEffectiveVersion(requestedVersion: string | null): stri
     }
   }
   
-  // Default to current version if no match found
-  return CURRENT_API_VERSION;
+  return CURRENT_API_VERSION; // Default to current version if no match found
 }
 
 /**
@@ -151,7 +148,7 @@ export function isVersionSupported(version: string): boolean {
     return false;
   }
   
-  return versionConfig.status !== VersionStatus.SUNSET;
+  return versionConfig?.status !== VersionStatus.SUNSET;
 }
 
 /**
@@ -179,31 +176,22 @@ export function apiVersionMiddleware() {
     
     // Check if version is supported
     if (versionConfig && versionConfig.status === VersionStatus.SUNSET) {
-      return sendError(
-        res,
-        {
-          type: 'VERSION' as ErrorType,
-          message: versionConfig.message || 'This API version is no longer supported',
-          code: 'API_VERSION_SUNSET',
-          details: {
-            requestedVersion: requestedVersion || 'none',
-            suggestedVersion: CURRENT_API_VERSION
-          }
-        },
-        410 // Gone
-      );
+      const errorMessage = versionConfig.message ?? 'This API version is no longer supported';
+      return sendError(res, errorMessage, 410, 'API_VERSION_SUNSET', [
+        { field: 'requestedVersion', message: `Version ${requestedVersion ?? 'none'} is no longer supported` }
+      ]);
     }
     
     // Extend request with version info
     req.apiVersion = {
       requested: requestedVersion,
       effective: effectiveVersion,
-      status: versionConfig?.status || VersionStatus.CURRENT
+      status: versionConfig?.status ?? VersionStatus.CURRENT
     };
     
     // Add version headers to response
     res.set('X-API-Version', effectiveVersion);
-    res.set('X-API-Version-Status', versionConfig?.status || VersionStatus.CURRENT);
+    res.set('X-API-Version-Status', versionConfig?.status ?? VersionStatus.CURRENT);
     
     // Add deprecation warning header if applicable
     if (versionConfig?.status === VersionStatus.DEPRECATED) {
@@ -219,12 +207,12 @@ export function apiVersionMiddleware() {
     // Log version information
     logger.debug('API version processed', {
       path: req.path,
-      requestedVersion: requestedVersion || 'none',
+      requestedVersion: requestedVersion ?? 'none',
       effectiveVersion,
       status: versionConfig?.status
     });
     
-    next();
+    return next();
   };
 }
 
@@ -248,31 +236,32 @@ export function createVersionedRouter(
   const { fallthrough = false } = options;
   
   // Add middleware to check version
-  router.use((req: Request, res: Response, next: NextFunction) => {
+  const versionCheckMiddleware = (req: Request, res: Response, next: NextFunction): void => {
     if (req.apiVersion?.effective === version) {
-      return next();
+      next();
+      return;
     }
     
     if (fallthrough) {
-      return next('router');
+      next('router');
+      return;
     }
     
     // If not falling through, return a 404
-    sendError(
-      res,
-      {
-        type: ErrorType.NOT_FOUND,
-        message: 'API endpoint not found for this version',
-        code: 'VERSION_ENDPOINT_NOT_FOUND',
-        details: {
-          requestedVersion: req.apiVersion?.requested,
-          effectiveVersion: req.apiVersion?.effective
-        }
-      },
-      404
-    );
-    return;
-  });
+    const errorMessage = 'API endpoint not found for this version';
+    const errors = [
+      { 
+        field: 'version',
+        message: errorMessage,
+        ...(req.apiVersion?.requested && { requestedVersion: req.apiVersion.requested }),
+        ...(req.apiVersion?.effective && { effectiveVersion: req.apiVersion.effective })
+      }
+    ];
+    
+    sendError(res, errorMessage, 404, 'VERSION_ENDPOINT_NOT_FOUND', errors);
+  };
+  
+  router.use(versionCheckMiddleware);
   
   return router;
 }
@@ -286,41 +275,38 @@ export function createVersionedRouter(
  * @returns Express middleware
  */
 export function versionedRoute(
-  versionHandlers: Record<string, (req: Request, res: Response, next: NextFunction) => void>
-): (req: Request, res: Response, next: NextFunction) => void {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const version = req.apiVersion?.effective || CURRENT_API_VERSION;
+  versionHandlers: Record<string, (req: Request, res: Response, next: NextFunction) => void | Promise<void>>
+): (req: Request, res: Response, next: NextFunction) => Promise<void> {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const version = req.apiVersion?.effective ?? CURRENT_API_VERSION;
     
     // Find the exact version handler
     let handler = versionHandlers[version];
     
     // If no exact match, try to find the closest compatible version
     if (!handler) {
-      const requestedVerMatch = version.match(API_VERSION_REGEX);
-      if (requestedVerMatch) {
-        const [, majorStr] = requestedVerMatch;
-        const major = parseInt(majorStr, 10);
+      const requestedVerMatch = API_VERSION_REGEX.exec(version);
+      if (requestedVerMatch?.[1]) {
+        const major = parseInt(requestedVerMatch[1], 10);
         
         // Find all versions with the same major number
         const compatibleVersions = Object.keys(versionHandlers)
           .filter(v => {
-            const vMatch = v.match(API_VERSION_REGEX);
-            if (vMatch) {
-              const [, vMajorStr] = vMatch;
-              const vMajor = parseInt(vMajorStr, 10);
-              return vMajor === major;
+            const vMatch = API_VERSION_REGEX.exec(v);
+            if (vMatch?.[1]) {
+              return parseInt(vMatch[1], 10) === major;
             }
             return false;
           })
           .sort((a, b) => {
             // Sort in descending order (newest first)
             return semver.compare(
-              semver.coerce(b) || '0.0.0',
-              semver.coerce(a) || '0.0.0'
+              semver.coerce(b) ?? '0.0.0',
+              semver.coerce(a) ?? '0.0.0'
             );
           });
         
-        if (compatibleVersions.length > 0) {
+        if (compatibleVersions[0] && versionHandlers[compatibleVersions[0]]) {
           handler = versionHandlers[compatibleVersions[0]];
         }
       }
@@ -331,12 +317,19 @@ export function versionedRoute(
       handler = versionHandlers[CURRENT_API_VERSION];
     }
     
-    // If we found a handler, call it; otherwise, call next()
     if (handler) {
-      return handler(req, res, next);
+      try {
+        const result = handler(req, res, next);
+        if (result instanceof Promise) {
+          await result.catch(next);
+        }
+      } catch (error) {
+        next(error);
+      }
+      return;
     }
+    return next();
     
-    next();
   };
 }
 

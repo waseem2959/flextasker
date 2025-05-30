@@ -7,15 +7,18 @@
 
 import { Server as HttpServer } from 'http';
 import { Server as SocketServer, Socket } from 'socket.io';
-import { verifyJwt } from '../utils/auth';
+import { verifyJwt } from '../utils/security/jwt';
 import { logger } from '../utils/logger';
 import { monitorError } from '../utils/monitoring';
+import metricsService from '../utils/monitoring/metrics-service';
+import { wrapSocketEmit } from './handlers/websocket-metrics';
 import { UserRole } from '../../../shared/types/enums';
 
 // Import event handlers
 import { registerNotificationHandlers } from './handlers/notification-handlers';
 import { registerChatHandlers } from './handlers/chat-handlers';
 import { registerTaskHandlers } from './handlers/task-handlers';
+import { registerUserHandlers, updateUserOnlineStatus } from './handlers/user-handlers';
 
 // Socket user data interface
 interface SocketUser {
@@ -29,8 +32,8 @@ interface UserConnections {
 }
 
 export class SocketManager {
-  private io: SocketServer;
-  private userConnections: UserConnections = {};
+  private readonly io: SocketServer;
+  private readonly userConnections: UserConnections = {};
   
   constructor(server: HttpServer) {
     // Initialize Socket.IO with CORS configuration
@@ -58,32 +61,36 @@ export class SocketManager {
    * Sets up authentication middleware and other middleware
    */
   private setupMiddleware(): void {
-    // Authentication middleware
-    this.io.use(async (socket, next) => {
+    // Add authentication middleware to validate JWT tokens
+    this.io.use((socket, next) => {
       try {
-        const token = socket.handshake.auth.token;
+        const token = socket.handshake.auth.token ?? 
+                      socket.handshake.headers.authorization?.replace('Bearer ', '');
         
         if (!token) {
-          return next(new Error('Authentication error: No token provided'));
+          return next(new Error('Authentication required'));
         }
         
         // Verify JWT token
-        const decoded = await verifyJwt(token);
+        const decoded = verifyJwt(token);
         
-        if (!decoded || !decoded.id) {
-          return next(new Error('Authentication error: Invalid token'));
-        }
-        
-        // Attach user data to socket
+        // Set user data on socket
         socket.data.user = {
-          id: decoded.id,
-          role: decoded.role
+          id: decoded.userId,
+          role: decoded.role ?? UserRole.USER
         };
+        
+        // Join user's personal room
+        socket.join(`user:${decoded.userId}`);
+        
+        // Add to user connections mapping
+        this.addUserConnection(decoded.userId, socket.id);
         
         next();
       } catch (error) {
-        logger.warn('Socket authentication failed', { error: error.message });
-        next(new Error('Authentication error'));
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.warn('Socket authentication failed', { error: errorMessage });
+        next(new Error('Authentication failed'));
       }
     });
   }
@@ -92,49 +99,67 @@ export class SocketManager {
    * Sets up event listeners for connections and disconnections
    */
   private setupEventListeners(): void {
-    this.io.on('connection', (socket: Socket) => {
-      const user = socket.data.user as SocketUser;
-      
-      // Log connection
-      logger.info('Client connected to socket', { 
-        socketId: socket.id,
-        userId: user.id
-      });
-      
-      // Track user connection
-      this.addUserConnection(user.id, socket.id);
-      
-      // Join user's room for private messages
-      socket.join(`user:${user.id}`);
-      
-      // Register event handlers
-      this.registerEventHandlers(socket);
-      
-      // Handle disconnection
-      socket.on('disconnect', (reason) => {
-        logger.info('Client disconnected from socket', { 
-          socketId: socket.id,
-          userId: user.id,
-          reason
+    this.io.on('connection', (socket) => {
+      try {
+        const user = socket.data.user;
+        logger.info('Socket connected', { userId: user.id, socketId: socket.id });
+        
+        // Wrap socket emit with metrics tracking
+        wrapSocketEmit(socket);
+        
+        // Track connection event
+        metricsService.trackWebSocketEvent('connection', false, 'system', socket.data?.user?.id);
+        
+        // Update user online status and notify contacts
+        updateUserOnlineStatus(this, user.id, true);
+        
+        // Set up disconnect handler
+        socket.on('disconnect', () => {
+          // Track disconnect event
+          metricsService.trackWebSocketEvent('disconnect', false, 'system', socket.data?.user?.id);
+          this.handleDisconnect(socket);
         });
         
-        // Remove user connection
-        this.removeUserConnection(user.id, socket.id);
-      });
+        // Register event handlers
+        registerNotificationHandlers(socket, this);
+        registerChatHandlers(socket, this);
+        registerTaskHandlers(socket, this);
+        registerUserHandlers(socket, this);
+        
+        // Track handlers registration
+        metricsService.trackWebSocketEvent('handlers_registered', true, 'system', socket.data?.user?.id);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.error('Error setting up socket event handlers', { error: errorMessage });
+      }
     });
   }
   
   /**
-   * Registers all event handlers for a socket
+   * Handles socket disconnection
    */
-  private registerEventHandlers(socket: Socket): void {
+  private handleDisconnect(socket: Socket): void {
     try {
-      registerNotificationHandlers(socket, this);
-      registerChatHandlers(socket, this);
-      registerTaskHandlers(socket, this);
+      logger.debug('Socket disconnected', { socketId: socket.id });
+      
+      // Get user info before removing connection
+      const userId = Object.keys(this.userConnections).find(userId => 
+        this.userConnections[userId]?.includes(socket.id)
+      );
+      
+      // Remove from connections and notify if it was the last connection
+      if (userId) {
+        this.removeUserConnection(userId, socket.id);
+        
+        // If user has no more connections, notify others they went offline
+        if (!this.userConnections[userId] || this.userConnections[userId].length === 0) {
+          // Update user online status and notify contacts
+          updateUserOnlineStatus(this, userId, false);
+        }
+      }
     } catch (error) {
-      monitorError(error, { component: 'SocketManager.registerEventHandlers' });
-      logger.error('Error registering socket event handlers', { error });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      monitorError(new Error(errorMessage), { component: 'SocketManager.handleDisconnect' });
     }
   }
   

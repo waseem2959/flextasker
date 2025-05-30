@@ -7,7 +7,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import { Application } from 'express';
 import { config } from './config';
 import { logger } from './logger';
@@ -90,7 +90,7 @@ export function generateTestToken(userData: {
   lastName: string;
   role: UserRole;
 }) {
-  return jwt.sign(userData, config.JWT_SECRET, {
+  return (jwt as any).sign(userData, config.JWT_SECRET, {
     expiresIn: '1h'
   });
 }
@@ -146,7 +146,7 @@ export async function createTestTask(taskData: {
     return await prisma.task.create({
       data: {
         ...taskData,
-        status: taskData.status || 'OPEN'
+        status: taskData.status ?? 'OPEN'
       }
     });
   } catch (error) {
@@ -204,8 +204,6 @@ export function authenticatedRequest(app: Application, token?: string) {
 export class MockSocketClient {
   private events: Record<string, ((...args: any[]) => void)[]> = {};
   private connected = false;
-  
-  constructor(private userId?: string, private token?: string) {}
   
   /**
    * Mock connection

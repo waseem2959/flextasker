@@ -8,7 +8,6 @@
 import { Router } from 'express';
 import { OpenAPIV3 } from 'openapi-types';
 import fs from 'fs/promises';
-import path from 'path';
 import { logger } from './logger';
 import { config } from './config';
 
@@ -164,9 +163,7 @@ export interface RouteDoc {
  * Register route documentation
  */
 export function registerRouteDoc(doc: RouteDoc): void {
-  if (!baseDocument.paths[doc.path]) {
-    baseDocument.paths[doc.path] = {};
-  }
+  baseDocument.paths[doc.path] ??= {};
   
   const pathItem = baseDocument.paths[doc.path] as OpenAPIV3.PathItemObject;
   
@@ -186,13 +183,9 @@ export function registerRouteDoc(doc: RouteDoc): void {
  * Register a schema in the components section
  */
 export function registerSchema(name: string, schema: OpenAPIV3.SchemaObject): void {
-  if (!baseDocument.components) {
-    baseDocument.components = {};
-  }
+  baseDocument.components ??= {};
   
-  if (!baseDocument.components.schemas) {
-    baseDocument.components.schemas = {};
-  }
+  baseDocument.components.schemas ??= {};
   
   baseDocument.components.schemas[name] = schema;
 }
@@ -345,3 +338,8 @@ export const schemas = {
 Object.entries(schemas).forEach(([name, schema]) => {
   registerSchema(name, schema as OpenAPIV3.SchemaObject);
 });
+
+// Create and export the API documentation handler router
+const apiDocRouter = Router();
+createSwaggerMiddleware(apiDocRouter);
+export const apiDocHandler = apiDocRouter;

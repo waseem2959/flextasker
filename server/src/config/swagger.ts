@@ -26,7 +26,7 @@ export function setupSwagger(app: Application): void {
   }));
   
   // Serve swagger spec as JSON for external tools
-  app.get('/api-docs.json', (req, res) => {
+  app.get('/api-docs.json', (_req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerSpec);
   });

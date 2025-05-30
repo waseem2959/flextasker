@@ -8,29 +8,37 @@
 export * from './csrf';
 export * from './headers';
 export * from './sanitization';
+export * from './jwt';
 
 // Import dependencies
-import { Request, Response, NextFunction } from 'express';
+import { Express, Request, Response, NextFunction } from 'express';
 import { logger } from '../logger';
-import { monitorError } from '../monitoring';
 
 /**
  * Initialize all security measures for an Express application
  * @param app Express application instance
  */
-export function initializeSecurity(app: any): void {
-  // Import security middleware
-  const { 
-    securityHeaders, 
-    corsHeaders,
-    csrfProtection,
-    sanitizeBody,
-    sanitizeQuery
-  } = require('./index');
+// Import security middleware directly to avoid circular dependencies
+import { securityHeaders, corsHeaders, csrfProtection, sanitizeBody, sanitizeQuery } from '.';
+
+export function initializeSecurity(app: Express): void {
   
   // Apply security middleware
   app.use(securityHeaders);
-  app.use(corsHeaders());
+  
+  // Apply CORS middleware
+  const corsMiddleware = corsHeaders();
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    // Call the CORS middleware and handle its response
+    const result = corsMiddleware(req, res, next);
+    // If the middleware returns a response, end the middleware chain
+    if (result) {
+      return;
+    }
+    // Otherwise, continue to next middleware
+    next();
+  });
+  
   app.use(sanitizeQuery());
   app.use(sanitizeBody());
   

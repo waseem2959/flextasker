@@ -10,12 +10,10 @@ import {
   addRecurringJob, 
   QueueName, 
   EmailJobData, 
-  NotificationJobData,
   TaskReminderJobData
-} from './job-queue';
+} from './job-queue'; // Removed unused NotificationJobData import
 import { logger } from './logger';
-import { TaskStatus } from '../../../shared/types/enums';
-import { notificationHandler, NotificationType } from './websocket/notification-handler';
+import { TaskStatus, NotificationType } from '../../../shared/types/enums';
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
@@ -117,7 +115,7 @@ export async function processTaskDeadlineReminders(): Promise<void> {
     
     const tasks = await prisma.task.findMany({
       where: {
-        status: { in: [TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS] },
+        status: { in: [TaskStatus.OPEN, TaskStatus.IN_PROGRESS] }, // Changed from ASSIGNED to OPEN
         dueDate: {
           gte: now,
           lte: twoDaysFromNow
@@ -186,7 +184,7 @@ export async function processTaskStatusUpdates(): Promise<void> {
     
     const tasks = await prisma.task.findMany({
       where: {
-        status: { in: [TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS] },
+        status: { in: [TaskStatus.OPEN, TaskStatus.IN_PROGRESS] }, // Changed from ASSIGNED to OPEN
         updatedAt: {
           lt: oneWeekAgo
         }
@@ -231,15 +229,17 @@ export async function processTaskStatusUpdates(): Promise<void> {
         }
       );
       
-      // Also notify the owner
-      await notificationHandler.createNotification({
-        userId: task.ownerId,
-        type: NotificationType.TASK_UPDATED,
-        title: 'Task Status Check',
-        message: `Your task "${task.title}" hasn't been updated in over a week.`,
+      // Notify the owner about the task status check
+      await prisma.notification.create({
         data: {
-          taskId: task.id,
-          taskTitle: task.title
+          userId: task.ownerId,
+          type: NotificationType.TASK_UPDATED,
+          title: 'Task Status Check',
+          message: `Your task "${task.title}" hasn't been updated in over a week.`,
+          data: JSON.stringify({
+            taskId: task.id,
+            taskTitle: task.title
+          }),
         }
       });
       

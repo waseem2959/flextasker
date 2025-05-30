@@ -6,10 +6,9 @@
  */
 
 // Export context instances
-export { AuthContext } from './context-instance';
+export { AuthContext, NotificationContext } from './contextInstance';
 
-// Export enhanced context providers
-// Auth provider now consolidated into a single implementation
-
-// Export legacy context provider for backward compatibility
-export { AuthProvider } from './auth-context';
+// Export context providers
+export { AuthProvider } from './AuthContext';
+export { NotificationProvider } from './NotificationContext';
+export type { Notification } from './NotificationContext';

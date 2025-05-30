@@ -1,96 +1,106 @@
 /**
  * Redis Client
  * 
- * This module provides a Redis client instance for caching operations.
- * It handles connection management, reconnection, and error handling.
+ * This module provides a centralized Redis client for the application
+ * with connection handling, health checks, and reconnection logic.
  */
 
-import Redis from 'ioredis';
+import { createClient, RedisClientType } from 'redis';
 import { logger } from '../logger';
 
-// Configuration options from environment
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+// Configuration from environment variables with defaults
+const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
-const REDIS_TLS = process.env.REDIS_TLS === 'true';
+const REDIS_USERNAME = process.env.REDIS_USERNAME;
+const RECONNECT_STRATEGY_MAX_RETRIES = 10;
 
-// Redis client options
-const redisOptions: Redis.RedisOptions = {
-  retryStrategy: (times: number) => {
-    // Exponential backoff with a maximum of 30 seconds
-    const delay = Math.min(Math.exp(times), 30) * 1000;
-    logger.info(`Redis reconnecting in ${delay}ms (attempt ${times})`);
-    return delay;
-  },
-  maxRetriesPerRequest: 3,
-  enableReadyCheck: true,
-  connectTimeout: 10000, // 10 seconds
-};
-
-// Add password if provided
-if (REDIS_PASSWORD) {
-  redisOptions.password = REDIS_PASSWORD;
+// Extend Redis client type with isReady property
+interface ExtendedRedisClient extends RedisClientType {
+  isReady: boolean;
 }
 
-// Add TLS options if enabled
-if (REDIS_TLS) {
-  redisOptions.tls = {
-    rejectUnauthorized: false,
-  };
+/**
+ * Create and configure a Redis client
+ */
+function createRedisClient(): ExtendedRedisClient {
+  // Create Redis client with type assertion
+  const client = createClient({
+    url: REDIS_URL,
+    username: REDIS_USERNAME,
+    password: REDIS_PASSWORD,
+    socket: {
+      reconnectStrategy: (retries: number) => {
+        // Exponential backoff with maximum retry limit
+        if (retries > RECONNECT_STRATEGY_MAX_RETRIES) {
+          logger.error('Redis reconnection failed after max retries');
+          return new Error('Redis reconnection failed');
+        }
+        
+        // Exponential backoff: 2^retries * 100ms (capped at 5 seconds)
+        return Math.min(Math.pow(2, retries) * 100, 5000);
+      }
+    }
+  }) as unknown as ExtendedRedisClient;
+  
+  // Initialize isReady flag
+  client.isReady = false;
+  
+  // Set up event handlers
+  client.on('error', (err: Error) => {
+    logger.error('Redis client error', { error: err.message });
+  });
+  
+  client.on('reconnecting', () => {
+    client.isReady = false;
+    logger.warn('Redis client reconnecting');
+  });
+  
+  client.on('connect', () => {
+    client.isReady = true;
+    logger.info('Redis client connected');
+  });
+  
+  client.on('ready', () => {
+    client.isReady = true;
+    logger.info('Redis client ready');
+  });
+  
+  client.on('end', () => {
+    client.isReady = false;
+    logger.info('Redis client disconnected');
+  });
+  
+  return client;
 }
 
-// Create Redis client
-const redisClient = new Redis(REDIS_URL, redisOptions);
+// Create singleton instance
+const redisClient = createRedisClient();
 
-// Handle Redis events
-redisClient.on('connect', () => {
-  logger.info('Redis client connected');
-});
-
-redisClient.on('ready', () => {
-  logger.info('Redis client ready');
-});
-
-redisClient.on('error', (error) => {
-  logger.error('Redis client error', { error: error.message });
-});
-
-redisClient.on('close', () => {
-  logger.warn('Redis client connection closed');
-});
-
-redisClient.on('reconnecting', () => {
-  logger.info('Redis client reconnecting');
-});
-
-redisClient.on('end', () => {
-  logger.warn('Redis client connection ended');
-});
+// Connect immediately unless in test environment
+if (process.env.NODE_ENV !== 'test') {
+  redisClient.connect().catch((err: Error) => {
+    logger.error('Failed to connect to Redis', { error: err.message });
+  });
+}
 
 /**
  * Check if Redis is connected
+ * @returns Promise<boolean> True if Redis is connected and ready
  */
-export function isRedisConnected(): boolean {
-  return redisClient.status === 'ready';
-}
-
-/**
- * Get Redis client instance
- */
-export function getRedisClient(): Redis.Redis {
-  return redisClient;
-}
-
-/**
- * Gracefully close Redis connection
- */
-export async function closeRedisConnection(): Promise<void> {
+export async function isRedisHealthy(): Promise<boolean> {
   try {
-    await redisClient.quit();
-    logger.info('Redis connection closed gracefully');
+    if (!redisClient.isReady) {
+      return false;
+    }
+    
+    // Simple ping-pong to verify connection
+    const pong = await redisClient.ping();
+    return pong === 'PONG';
   } catch (error) {
-    logger.error('Error closing Redis connection', { error });
-    redisClient.disconnect();
+    logger.error('Redis health check failed', { error });
+    return false;
   }
 }
 
-export default redisClient;
+// Export client
+export { redisClient };

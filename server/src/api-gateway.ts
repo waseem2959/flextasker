@@ -9,10 +9,10 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import { config } from './utils/config';
 import { logger } from './utils/logger';
 import { createI18nMiddleware, languageMiddleware } from './utils/i18n';
-import { rateLimiter } from './middleware/rate-limiter';
-import { requestContextMiddleware } from './middleware/request-context';
-import { securityMiddleware, handleCsrfError } from './middleware/security';
-import { enhancedErrorHandler } from './middleware/enhanced-error-handler';
+import { rateLimiter } from './middleware/rate-limiter-middleware';
+import requestContext from './middleware/request-context-middleware';
+import { security } from './middleware/security-middleware';
+import { errorHandler } from './middleware/error-handler-middleware';
 import { cacheMiddleware } from './utils/cache/cache-middleware';
 import healthMonitor from './utils/health-monitor';
 import { apiDocHandler } from './utils/api-docs';
@@ -20,10 +20,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
-import { authenticateJwt } from './middleware/auth';
+import { authenticateToken } from './middleware/auth-middleware';
 
 export class ApiGateway {
-  private app: Application;
+  private readonly app: Application;
   
   constructor() {
     this.app = express();
@@ -50,12 +50,11 @@ export class ApiGateway {
       allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With']
     }));
     this.app.use(cookieParser());
-    this.app.use(securityMiddleware);
-    this.app.use(handleCsrfError);
+    this.app.use(security.securityHeaders);
     
     // Request processing
     this.app.use(compression());
-    this.app.use(requestContextMiddleware);
+    this.app.use(requestContext);
     this.app.use(rateLimiter);
     
     // Internationalization
@@ -97,10 +96,10 @@ export class ApiGateway {
     
     // Protected routes (require authentication)
     const protectedRouter = express.Router();
-    protectedRouter.use(authenticateJwt);
+    protectedRouter.use(authenticateToken);
     
     // Apply caching middleware to GET requests
-    protectedRouter.get('*', cacheMiddleware);
+    protectedRouter.get('*', cacheMiddleware());
     
     // Register API resource routes
     protectedRouter.use('/users', require('./routes/users').default);
@@ -115,19 +114,23 @@ export class ApiGateway {
     
     // Admin routes (require admin role)
     const adminRouter = express.Router();
-    adminRouter.use(authenticateJwt);
-    adminRouter.use((req: Request, res: Response, next: NextFunction) => {
+    adminRouter.use(authenticateToken);
+    // Admin role check middleware
+    const adminCheckMiddleware = (req: Request, res: Response, next: NextFunction): void => {
       if (req.user?.role !== 'ADMIN') {
-        return res.status(403).json({
+        res.status(403).json({
           success: false,
           error: {
             type: 'AUTHORIZATION',
             message: 'Admin access required'
           }
         });
+      } else {
+        next();
       }
-      next();
-    });
+    };
+    
+    adminRouter.use(adminCheckMiddleware);
     
     adminRouter.use('/admin', require('./routes/admin').default);
     
@@ -165,7 +168,26 @@ export class ApiGateway {
    * Set up error handling
    */
   private setupErrorHandling(): void {
-    this.app.use(enhancedErrorHandler);
+    // Central error handling middleware - must be registered last
+    const errorMiddleware = (
+      err: any,
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      if (res.headersSent) {
+        return next(err);
+      }
+      
+      // Convert to Error instance if needed
+      const error = err instanceof Error ? err : new Error(String(err));
+      
+      // Delegate to the error handler function
+      errorHandler(error, req, res, next);
+    };
+    
+    // Register the error handling middleware
+    this.app.use(errorMiddleware as express.ErrorRequestHandler);
   }
   
   /**

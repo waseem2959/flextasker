@@ -11,6 +11,9 @@ import { validationResult, ValidationChain, ValidationError } from 'express-vali
 import { logger } from './logger';
 import { UserRole, TaskStatus, BidStatus, TaskPriority, BudgetType } from '../../../shared/types/enums';
 
+// Note: validation-schemas.ts has been consolidated into this file
+// All schemas are now defined in the ValidationSchemas object below
+
 /**
  * Centralized validation schema registry
  * This allows reusing validation schemas across the application
@@ -69,7 +72,7 @@ export const ValidationSchemas = {
       password: z.string().min(8, { message: 'Password must be at least 8 characters' })
         .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
         .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
-        .regex(/[0-9]/, { message: 'Password must contain at least one number' })
+        .regex(/\\d/, { message: 'Password must contain at least one number' })
         .regex(/[^A-Za-z0-9]/, { message: 'Password must contain at least one special character' }),
       firstName: z.string().min(1, { message: 'First name is required' }),
       lastName: z.string().min(1, { message: 'Last name is required' }),
@@ -169,7 +172,7 @@ export const ValidationSchemas = {
       password: z.string().min(8, { message: 'Password must be at least 8 characters' })
         .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
         .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
-        .regex(/[0-9]/, { message: 'Password must contain at least one number' })
+        .regex(/\\d/, { message: 'Password must contain at least one number' })
         .regex(/[^A-Za-z0-9]/, { message: 'Password must contain at least one special character' }),
       confirmPassword: z.string(),
       firstName: z.string().min(1, { message: 'First name is required' }),
@@ -188,7 +191,7 @@ export const ValidationSchemas = {
       password: z.string().min(8, { message: 'Password must be at least 8 characters' })
         .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
         .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
-        .regex(/[0-9]/, { message: 'Password must contain at least one number' })
+        .regex(/\\d/, { message: 'Password must contain at least one number' })
         .regex(/[^A-Za-z0-9]/, { message: 'Password must contain at least one special character' }),
       confirmPassword: z.string()
     }).refine(data => data.password === data.confirmPassword, {
@@ -279,9 +282,14 @@ export function validateRequest(req: Request): {
     
     errors.array().forEach((error: ValidationError) => {
       // Extract the field name safely - validation error structure may vary
-      const fieldName = 'path' in error ? String(error.path) : 
-                      'param' in error ? String(error.param) : 
-                      'field' in error ? String(error.field) : 'unknown';
+      let fieldName = 'unknown';
+      if ('path' in error) {
+        fieldName = String(error.path);
+      } else if ('param' in error) {
+        fieldName = String(error.param);
+      } else if ('field' in error) {
+        fieldName = String(error.field);
+      }
       
       errorMap[fieldName] = error.msg;
     });
@@ -393,7 +401,7 @@ export function validatePasswordStrength(password: string): {
   }
   
   // Number check
-  if (!/[0-9]/.test(password)) {
+  if (!/\d/.test(password)) {
     feedback.push('Password must contain at least one number');
   } else {
     score += 1;
