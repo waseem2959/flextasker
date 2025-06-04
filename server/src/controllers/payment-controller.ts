@@ -6,9 +6,9 @@
  */
 
 import { Request, Response } from 'express';
-import { BaseController } from './base-controller';
 import { paymentService } from '../services/payment-service';
 import { logger } from '../utils/logger';
+import { BaseController } from './base-controller';
 
 class PaymentController extends BaseController {
   /**
@@ -98,6 +98,70 @@ class PaymentController extends BaseController {
     const stats = await paymentService.getPaymentStatistics(start, end);
     
     return this.sendSuccess(res, stats, 'Payment statistics retrieved successfully');
+  });
+
+  /**
+   * Get task payment information
+   */
+  getTaskPayments = this.asyncHandler(async (req: Request, res: Response) => {
+    const taskId = req.params.taskId;
+    const userId = req.user!.id;
+
+    logger.info('Retrieving task payments', { taskId, userId });
+    const result = await paymentService.getTaskPayments(taskId, userId);
+    
+    return this.sendSuccess(res, result, 'Task payments retrieved successfully');
+  });
+
+  /**
+   * Add payment method
+   */
+  addPaymentMethod = this.asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const paymentMethodData = req.body;
+
+    logger.info('Adding payment method', { userId, type: paymentMethodData.type });
+    const paymentMethod = await paymentService.addPaymentMethod(userId, paymentMethodData);
+    
+    return this.sendSuccess(res, paymentMethod, 'Payment method added successfully', 201);
+  });
+
+  /**
+   * Get user's payment methods
+   */
+  getPaymentMethods = this.asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+
+    logger.info('Retrieving payment methods', { userId });
+    const paymentMethods = await paymentService.getPaymentMethods(userId);
+    
+    return this.sendSuccess(res, paymentMethods, 'Payment methods retrieved successfully');
+  });
+
+  /**
+   * Delete payment method
+   */
+  deletePaymentMethod = this.asyncHandler(async (req: Request, res: Response) => {
+    const paymentMethodId = req.params.id;
+    const userId = req.user!.id;
+
+    logger.info('Deleting payment method', { paymentMethodId, userId });
+    await paymentService.deletePaymentMethod(paymentMethodId, userId);
+    
+    return this.sendSuccess(res, null, 'Payment method deleted successfully');
+  });
+
+  /**
+   * Get payment receipt
+   */
+  getPaymentReceipt = this.asyncHandler(async (req: Request, res: Response) => {
+    const paymentId = req.params.id;
+    const userId = req.user!.id;
+
+    logger.info('Retrieving payment receipt', { paymentId, userId });
+    const receipt = await paymentService.getPaymentReceipt(paymentId, userId);
+    
+    return this.sendSuccess(res, receipt, 'Payment receipt retrieved successfully');
   });
 }
 

@@ -208,19 +208,20 @@ const ChartTooltipContent = React.forwardRef<
                       !hideIndicator && (
                         <div
                           className={cn(
-                            "shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]",
+                            "shrink-0 rounded-[2px] [--color-bg:transparent] [--color-border:transparent]",
                             {
-                              "h-2.5 w-2.5": indicator === "dot",
-                              "w-1": indicator === "line",
-                              "w-0 border-[1.5px] border-dashed bg-transparent":
+                              "h-2.5 w-2.5 border-[--color-border] bg-[--color-bg]": indicator === "dot",
+                              "w-1 bg-[--color-bg]": indicator === "line",
+                              "w-0 border-[1.5px] border-dashed border-[--color-border] bg-transparent":
                                 indicator === "dashed",
                               "my-0.5": nestLabel && indicator === "dashed",
+                            },
+                            {
+                              "[--color-bg:theme(colors.gray.200)] [--color-border:theme(colors.gray.200)]": !indicatorColor,
+                              "[--color-bg:var(--indicator-color)] [--color-border:var(--indicator-color)]": !!indicatorColor,
                             }
                           )}
-                          style={{
-                            "--color-bg": indicatorColor,
-                            "--color-border": indicatorColor,
-                          } as React.CSSProperties}
+                          data-indicator-color={indicatorColor ?? undefined}
                         />
                       )
                     )}
@@ -348,9 +349,10 @@ function getPayloadConfigFromPayload(
     ] as string
   }
 
-  return configLabelKey in config
-    ? config[configLabelKey]
-    : config[key]
+  if (configLabelKey in config) {
+    return config[configLabelKey]
+  }
+  return config[key]
 }
 
 export {

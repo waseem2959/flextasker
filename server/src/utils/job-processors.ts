@@ -5,16 +5,16 @@
  * It handles asynchronous tasks like sending emails, notifications, and file processing.
  */
 
+import { PrismaClient } from '@prisma/client';
 import { Job } from 'bullmq';
 import { render } from 'ejs';
-import fs from 'fs/promises';
 import { existsSync } from 'fs';
+import fs from 'fs/promises';
 import { createTransport } from 'nodemailer';
 import path from 'path';
 import { performance } from 'perf_hooks';
 import sharp from 'sharp';
 import { config } from './config';
-import { PrismaClient } from '@prisma/client';
 import { logger } from './logger';
 import { recordResponseTime } from './monitoring/performance';
 
@@ -96,7 +96,7 @@ const notificationHandler = {
         type,
         message,
         title,
-        data: data ? JSON.stringify(data) : null,
+        data: data ?? undefined,
         isRead: false
       }
     });
@@ -218,12 +218,46 @@ async function processNotificationJob(job: Job<NotificationJobData>): Promise<an
 }
 
 /**
+ * Updates file processing status in the database
+ */
+async function updateFileStatus(fileId: string | undefined, success: boolean, result?: any, error?: unknown) {
+  if (!fileId) return;
+  
+  await prisma.file.update({
+    where: { id: fileId },
+    data: {
+      processed: success,
+      processingMetadata: success ? result : undefined,
+      processingError: success ? undefined : getErrorMessage(error)
+    }
+  });
+}
+
+/**
+ * Sends notification about file processing status
+ */
+async function notifyFileProcessingStatus(userId: string | undefined, fileId: string | undefined, success: boolean, processType: string | undefined, result?: any, error?: any) {
+  if (!userId) return;
+  
+  await notificationHandler.createNotification({
+    userId,
+    type: ExtendedNotificationType.SYSTEM_NOTICE as unknown as NotificationType,
+    title: success ? 'File Processing Complete' : 'File Processing Failed',
+    message: success ? 'Your file has been processed successfully.' : 'There was an error processing your file.',
+    data: {
+      fileId,
+      processType,
+      ...(success ? { result } : { error: error instanceof Error ? error.message : 'Unknown error' })
+    }
+  });
+}
+
+/**
  * File processing processor
  */
 async function processFileJob(job: Job<FileProcessingJobData>): Promise<any> {
   const { fileId, filePath, userId, processType } = job.data;
   const startTime = performance.now();
-  // Use performance API for timing
   
   try {
     logger.info('Processing file job', { jobId: job.id, fileId, processType });
@@ -235,50 +269,11 @@ async function processFileJob(job: Job<FileProcessingJobData>): Promise<any> {
     }
     
     // Process file based on type
-    let result;
+    const result = await processFileByType(fullPath, processType);
     
-    switch (processType) {
-      case 'image-resize': {
-        result = await processImage(fullPath);
-        break;
-      }
-      case 'document-parse': {
-        result = await processDocument(fullPath);
-        break;
-      }
-      case 'archive-extract': {
-        result = await processArchive(fullPath);
-        break;
-      }
-      default:
-        throw new Error(`Unknown process type: ${processType}`);
-    }
-    
-    // Update file processing status in database
-    if (fileId) {
-      await prisma.file.update({
-        where: { id: fileId },
-        data: {
-          processed: true,
-          processingMetadata: result
-        }
-      });
-    }
-    
-    // Notify user about completed processing
-    if (userId) {
-      await notificationHandler.createNotification({
-        userId,
-        type: ExtendedNotificationType.SYSTEM_NOTICE as unknown as NotificationType,
-        title: 'File Processing Complete',
-        message: `Your file has been processed successfully.`,
-        data: {
-          fileId,
-          processType,
-          result
-        }
-      });
-    }
+    // Update status and notify user
+    await updateFileStatus(fileId, true, result);
+    await notifyFileProcessingStatus(userId, fileId, true, processType, result);
     
     const duration = performance.now() - startTime;
     recordResponseTime('job:file-processing', duration);
@@ -290,44 +285,33 @@ async function processFileJob(job: Job<FileProcessingJobData>): Promise<any> {
       result
     };
   } catch (error) {
-    logger.error('Failed to process file', { 
-      jobId: job.id, 
-      fileId, 
-      processType, 
-      error 
-    });
+    logger.error('Failed to process file', { jobId: job.id, fileId, processType, error });
     
-    // Update file processing status in database
-    if (fileId) {
-      await prisma.file.update({
-        where: { id: fileId },
-        data: {
-          processed: false,
-          processingError: error instanceof Error ? error.message : 'Unknown error'
-        }
-      });
-    }
-    
-    // Notify user about failed processing
-    if (userId) {
-      await notificationHandler.createNotification({
-        userId,
-        type: ExtendedNotificationType.SYSTEM_NOTICE as unknown as NotificationType,
-        title: 'File Processing Failed',
-        message: `There was an error processing your file.`,
-        data: {
-          fileId,
-          processType,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      });
-    }
+    // Update status and notify user about failure
+    await updateFileStatus(fileId, false, undefined, error);
+    await notifyFileProcessingStatus(userId, fileId, false, processType, undefined, error);
     
     // Record error in performance monitoring
     const errorDuration = performance.now() - startTime;
     recordResponseTime('job:error', errorDuration);
     
     throw error;
+  }
+}
+
+/**
+ * Process file based on its type
+ */
+async function processFileByType(fullPath: string, processType?: string): Promise<any> {
+  switch (processType) {
+    case 'image-resize':
+      return await processImage(fullPath);
+    case 'document-parse':
+      return await processDocument(fullPath);
+    case 'archive-extract':
+      return await processArchive(fullPath);
+    default:
+      throw new Error(`Unknown process type: ${processType}`);
   }
 }
 
@@ -530,16 +514,18 @@ async function processDataExportJob(job: Job<DataExportJobData>): Promise<any> {
         data = await prisma.user.findUnique({
           where: { id: userId },
           include: {
-            tasks: true,
+            ownedTasks: true,
             assignedTasks: true,
             bids: true,
-            reviews: true,
+            reviewsGiven: true,
+            reviewsReceived: true,
             _count: {
               select: {
-                tasks: true,
+                ownedTasks: true,
                 assignedTasks: true,
                 bids: true,
-                reviews: true
+                reviewsGiven: true,
+                reviewsReceived: true
               }
             }
           }
@@ -588,13 +574,13 @@ async function processDataExportJob(job: Job<DataExportJobData>): Promise<any> {
     const export_ = await prisma.export.create({
       data: {
         userId,
-        filePath,
-        fileName: filename,
-        dataType,
-        format,
-        fileSize: (await fs.stat(filePath)).size,
+        type: dataType,
         status: 'COMPLETED',
-        filters: filters ? JSON.stringify(filters) : null
+        fileUrl: `/exports/${path.basename(filePath)}`,
+        filePath: path.relative(process.cwd(), filePath),
+        requestedAt: new Date(),
+        completedAt: new Date(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Expires in 7 days
       }
     });
     
@@ -634,11 +620,11 @@ async function processDataExportJob(job: Job<DataExportJobData>): Promise<any> {
     await prisma.export.create({
       data: {
         userId,
-        dataType,
-        format,
+        type: dataType,
         status: 'FAILED',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        filters: filters ? JSON.stringify(filters) : null
+        fileUrl: null,
+        requestedAt: new Date(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Expires in 7 days
       }
     });
     
@@ -853,4 +839,11 @@ export function initializeJobProcessors(): void {
   registerProcessor(QueueName.TASK_REMINDER, processTaskReminderJob, 5);
   
   logger.info('Job processors initialized');
+}
+
+/**
+ * Get error message from error object
+ */
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unknown error';
 }

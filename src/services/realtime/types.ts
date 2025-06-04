@@ -1,72 +1,80 @@
 /**
- * Realtime Communication Service Types
+ * Realtime service types
  */
 
-import { User } from '@/types';
-
-// Event types for real-time updates
-export enum SocketEventType {
-  TASK_UPDATED = 'TASK_UPDATED',
-  TASK_CREATED = 'TASK_CREATED',
-  BID_RECEIVED = 'BID_RECEIVED',
-  BID_UPDATED = 'BID_UPDATED',
-  REVIEW_RECEIVED = 'REVIEW_RECEIVED',
-  NOTIFICATION_RECEIVED = 'NOTIFICATION_RECEIVED',
-  MESSAGE_RECEIVED = 'MESSAGE_RECEIVED',
-  USER_STATUS_CHANGED = 'USER_STATUS_CHANGED',
-  TYPING_STARTED = 'TYPING_STARTED',
-  TYPING_STOPPED = 'TYPING_STOPPED'
-}
-
-// Socket connection states
+/**
+ * Connection states for the realtime service
+ */
 export enum ConnectionState {
-  DISCONNECTED = 'DISCONNECTED',
-  CONNECTING = 'CONNECTING',
-  CONNECTED = 'CONNECTED',
-  RECONNECTING = 'RECONNECTING',
-  ERROR = 'ERROR'
+  DISCONNECTED = 'disconnected',
+  CONNECTING = 'connecting',
+  CONNECTED = 'connected',
+  RECONNECTING = 'reconnecting',
+  ERROR = 'error'
 }
 
-// Interface for socket events
-export interface SocketEvent<T = any> {
-  type: SocketEventType;
+/**
+ * Connection options interface
+ */
+export interface ConnectionOptions {
+  autoReconnect?: boolean;
+  reconnectAttempts?: number;
+  reconnectDelay?: number;
+  timeout?: number;
+  query?: Record<string, string>;
+  auth?: {
+    token: string;
+  };
+}
+
+/**
+ * Realtime client configuration
+ */
+export interface RealtimeConfig {
+  url: string;
+  options?: ConnectionOptions;
+  debug?: boolean;
+}
+
+/**
+ * Connection status interface
+ */
+export interface ConnectionStatus {
+  state: ConnectionState;
+  lastConnected: Date | null;
+  reconnectAttempt: number;
+  error: Error | null;
+}
+
+/**
+ * Socket message interface
+ */
+export interface SocketMessage<T = any> {
+  event: string;
   data: T;
-  timestamp: string;
+  timestamp: number;
 }
 
-// Chat message interface
-export interface ChatMessage {
+/**
+ * Subscription handler type
+ */
+export type SubscriptionHandler<T = any> = (data: T) => void;
+
+/**
+ * Subscription options
+ */
+export interface SubscriptionOptions {
+  once?: boolean;
+  priority?: number;
+}
+
+/**
+ * Subscription interface
+ */
+export interface Subscription {
   id: string;
-  senderId: string;
-  receiverId: string;
-  content: string;
-  timestamp: Date;
-  read: boolean;
-}
-
-// Conversation interface
-export interface Conversation {
-  id: string;
-  participants: User[];
-  lastMessage?: ChatMessage;
-  unreadCount: number;
-}
-
-// Notification interface
-export interface Notification {
-  id: string;
-  userId: string;
-  type: string;
-  message: string;
-  read: boolean;
-  relatedId?: string;
-  createdAt: Date;
-}
-
-// Bid submission parameters
-export interface BidSubmission {
-  taskId: string;
-  amount: number;
-  description: string;
-  timeline: string;
+  event: string;
+  handler: SubscriptionHandler;
+  options: SubscriptionOptions;
+  unsubscribe: () => void;
 }

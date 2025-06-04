@@ -4,8 +4,8 @@
  * This module provides a comprehensive implementation of all bid-related functionality.
  */
 
-import { prisma } from '../utils/database-utils';
 import { BidStatus, TaskStatus } from '../../../shared/types/enums';
+import { prisma } from '../utils/database-utils';
 import { AuthorizationError, NotFoundError, ValidationError } from '../utils/error-utils';
 import { logger } from '../utils/logger';
 
@@ -63,12 +63,18 @@ export class BidService {
     // Create the bid
     const bid = await prisma.bid.create({
       data: {
-        taskId: bidData.taskId,
-        userId: bidData.userId,
         amount: bidData.amount,
         message: bidData.message,
         status: BidStatus.PENDING,
-        estimatedCompletionTime: bidData.estimatedCompletionTime
+        estimatedCompletionTime: bidData.estimatedCompletionTime,
+        description: bidData.message ?? '',
+        timeline: bidData.estimatedCompletionTime,
+        task: {
+          connect: { id: bidData.taskId }
+        },
+        bidder: {
+          connect: { id: bidData.userId }
+        }
       }
     });
 

@@ -4,12 +4,12 @@
  * This module provides a comprehensive implementation of all user-related functionality.
  */
 
-import { db } from '../utils/database';
-import { UserRole, TaskStatus } from '../../../shared/types/enums';
-import { AuthenticationError, NotFoundError, ValidationError } from '../utils/error-utils';
-import { logger } from '../utils/logger';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import { TaskStatus, UserRole } from '../../../shared/types/enums';
+import { db } from '../utils/database';
+import { AuthenticationError, NotFoundError, ValidationError } from '../utils/error-utils';
+import { logger } from '../utils/logger';
 
 /**
  * Error class for user-specific errors
@@ -38,13 +38,17 @@ export class UserService {
       throw new ValidationError('Password is required');
     }
 
-    if (!userData.name) {
-      throw new ValidationError('Name is required');
+    if (!userData.firstName) {
+      throw new ValidationError('First name is required');
+    }
+
+    if (!userData.lastName) {
+      throw new ValidationError('Last name is required');
     }
 
     // Check if email already exists
     const existingUser = await db.user.findUnique({
-      where: { email: userData.email }
+      where: { email: userData.email.toLowerCase() }
     });
 
     if (existingUser) {
@@ -60,9 +64,10 @@ export class UserService {
     // Create the user
     const user = await db.user.create({
       data: {
-        email: userData.email,
-        password: hashedPassword,
-        name: userData.name,
+        email: userData.email.toLowerCase(),
+        passwordHash: hashedPassword,
+        firstName: userData.firstName.trim(),
+        lastName: userData.lastName.trim(),
         role: userData.role ?? UserRole.USER,
         phone: userData.phone,
         bio: userData.bio,
@@ -76,7 +81,8 @@ export class UserService {
       select: {
         id: true,
         email: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         role: true,
         phone: true,
         bio: true,
@@ -131,9 +137,10 @@ export class UserService {
       select: {
         id: true,
         email: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         role: true,
-        password: true,
+        passwordHash: true,
         isActive: true,
         emailVerified: true
       }
@@ -206,13 +213,57 @@ export class UserService {
   }
 
   /**
-   * Update a user's password
+   * Update user avatar
    */
-  async updatePassword(userId: string, currentPassword: string, newPassword: string): Promise<any> {
-    // Get the current user with password
+  async updateAvatar(userId: string, avatarPath: string): Promise<any> {
+    // Validate that user exists
     const user = await db.user.findUnique({
       where: { id: userId },
-      select: { id: true, password: true }
+      select: { id: true, profileImage: true }
+    });
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    // Validate avatar path
+    if (!avatarPath || typeof avatarPath !== 'string') {
+      throw new ValidationError('Valid avatar path is required');
+    }
+
+    // Update user's profile image
+    const updatedUser = await db.user.update({
+      where: { id: userId },
+      data: {
+        profileImage: avatarPath
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        phone: true,
+        bio: true,
+        location: true,
+        profileImage: true,
+        isActive: true,
+        emailVerified: true,
+        createdAt: true
+      }
+    });
+
+    logger.info('User avatar updated', { userId, avatarPath });
+    return updatedUser;
+  }
+
+  /**
+   * Update a user's password 
+   */
+  async updatePassword(userId: string, currentPassword: string, newPassword: string): Promise<any> {
+    // Get the current user with password hash
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, passwordHash: true }
     });
 
     if (!user) {
@@ -220,7 +271,7 @@ export class UserService {
     }
 
     // Verify current password
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
 
     if (!isPasswordValid) {
       throw new AuthenticationError('Current password is incorrect');
@@ -232,7 +283,7 @@ export class UserService {
     // Update the password
     await db.user.update({
       where: { id: userId },
-      data: { password: hashedPassword }
+      data: { passwordHash: hashedPassword }
     });
 
     logger.info('Password updated', { userId });
@@ -348,7 +399,7 @@ export class UserService {
     await db.user.update({
       where: { id: user.id },
       data: {
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         resetPasswordToken: null,
         resetPasswordExpires: null
       }
@@ -414,6 +465,103 @@ export class UserService {
       bidsAccepted,
       reviewsReceived,
       averageRating
+    };
+  }
+
+  /**
+   * Search for users with filters and pagination
+   */
+  async searchUsers(params: any = {}): Promise<any> {
+    const {
+      query,
+      role,
+      location,
+      minRating,
+      page = 1,
+      limit = 20
+    } = params;
+
+    // Build where conditions
+    const where: any = {
+      isActive: true, // Only show active users
+      emailVerified: true // Only show verified users
+    };
+
+    // Text search in name and bio
+    if (query) {
+      where.OR = [
+        { name: { contains: query, mode: 'insensitive' } },
+        { bio: { contains: query, mode: 'insensitive' } }
+      ];
+    }
+
+    // Role filter
+    if (role) {
+      where.role = role;
+    }
+
+    // Location filter
+    if (location) {
+      where.location = { contains: location, mode: 'insensitive' };
+    }
+
+    // Rating filter
+    if (minRating) {
+      where.averageRating = { gte: parseFloat(minRating) };
+    }
+
+    // Count total records for pagination
+    const total = await db.user.count({ where });
+
+    // Calculate pagination
+    const totalPages = Math.ceil(total / limit);
+    const offset = (page - 1) * limit;
+
+    // Get users with pagination
+    const users = await db.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        bio: true,
+        location: true,
+        profileImage: true,
+        averageRating: true,
+        emailVerified: true,
+        phoneVerified: true,
+        createdAt: true,
+        lastActive: true
+      },
+      skip: offset,
+      take: limit,
+      orderBy: [
+        { averageRating: 'desc' },
+        { createdAt: 'desc' }
+      ]
+    });
+
+    logger.info('Users searched', { 
+      query, 
+      role, 
+      location, 
+      minRating, 
+      total, 
+      page, 
+      limit 
+    });
+
+    return {
+      users,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
     };
   }
 }

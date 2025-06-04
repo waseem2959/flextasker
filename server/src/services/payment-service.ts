@@ -34,13 +34,17 @@ export interface PaymentTransaction {
   taskId: string;
   payerId: string;
   amount: number;
+  platformFee: number;
+  processingFee: number;
   status: string;
   paymentMethod: string;
+  gatewayTransactionId?: string;
   createdAt: Date;
   completedAt?: Date;
   task: {
     id: string;
     title: string;
+    paymentStatus?: string;
     owner: {
       firstName: string;
       lastName: string;
@@ -67,6 +71,7 @@ interface TaskWithRelations {
   assigneeId: string | null;
   title: string;
   status: string;
+  paymentStatus?: string;
   owner: {
     id: string;
     firstName: string;
@@ -80,7 +85,15 @@ interface TaskWithRelations {
     email: string;
   } | null;
   payments: Array<{
+    id: string;
     status: string;
+    amount: number;
+    platformFee: number;
+    processingFee: number;
+    paymentMethod: string;
+    gatewayTransactionId?: string;
+    createdAt: Date;
+    completedAt?: Date | null;
   }>;
 }
 
@@ -192,13 +205,14 @@ export class PaymentService {
       const payment = await db.payment.create({
         data: {
           taskId: paymentData.taskId,
+          userId: payerId,
           payerId,
           amount: paymentData.amount,
           platformFee,
           processingFee: paymentProcessingFee,
-          paymentMethod: paymentData.paymentMethod,
+          paymentMethod: paymentData.paymentMethod ?? 'UNKNOWN',
           status: 'PENDING',
-          metadata: paymentData.paymentDetails || {}
+          gatewayResponse: paymentData.paymentDetails ? (paymentData.paymentDetails as any) : undefined
         }
       });
 
@@ -214,7 +228,7 @@ export class PaymentService {
           where: { id: payment.id },
           data: {
             status: 'FAILED',
-            gatewayResponse: gatewayResult.details
+            gatewayResponse: gatewayResult.details ? (gatewayResult.details as any) : undefined
           }
         });
 
@@ -226,8 +240,8 @@ export class PaymentService {
         where: { id: payment.id },
         data: {
           status: 'COMPLETED',
-          gatewayTransactionId: gatewayResult.transactionId,
-          gatewayResponse: gatewayResult.details,
+          gatewayTransactionId: gatewayResult.transactionId ?? undefined,
+          gatewayResponse: gatewayResult.details ? (gatewayResult.details as any) : undefined,
           completedAt: new Date()
         }
       });
@@ -247,13 +261,17 @@ export class PaymentService {
         taskId: updatedPayment.taskId,
         payerId: updatedPayment.payerId,
         amount: updatedPayment.amount,
+        platformFee: updatedPayment.platformFee,
+        processingFee: updatedPayment.processingFee,
         status: updatedPayment.status,
-        paymentMethod: updatedPayment.paymentMethod,
+        paymentMethod: updatedPayment.paymentMethod ?? 'UNKNOWN',
+        gatewayTransactionId: updatedPayment.gatewayTransactionId ?? undefined,
         createdAt: updatedPayment.createdAt,
-        completedAt: updatedPayment.completedAt,
+        completedAt: updatedPayment.completedAt ?? undefined,
         task: {
           id: task.id,
           title: task.title,
+          paymentStatus: task.paymentStatus ?? undefined,
           owner: {
             firstName: task.owner.firstName,
             lastName: task.owner.lastName
@@ -320,7 +338,14 @@ export class PaymentService {
    * between task assignee, platform fees, and payment processing fees.
    */
   private async updateUserBalances(
-    task: TaskWithRelations,
+    task: { 
+      id: string;
+      assigneeId: string | null;
+      title: string;
+      owner: { id: string; firstName: string; lastName: string };
+      assignee: { id: string; firstName: string; lastName: string } | null;
+      payments: { status: string }[];
+    },
     amount: number,
     totalFees: number
   ): Promise<void> {
@@ -413,8 +438,10 @@ export class PaymentService {
         taskId: payment.taskId,
         payerId: payment.payerId,
         amount: payment.amount,
+        platformFee: payment.platformFee,
+        processingFee: payment.processingFee,
         status: payment.status,
-        paymentMethod: payment.paymentMethod,
+        paymentMethod: payment.paymentMethod ?? 'UNKNOWN',
         createdAt: payment.createdAt,
         completedAt: payment.completedAt ?? undefined,
         task: {
@@ -507,13 +534,17 @@ export class PaymentService {
         taskId: payment.taskId,
         payerId: payment.payerId,
         amount: payment.amount,
+        platformFee: payment.platformFee,
+        processingFee: payment.processingFee,
         status: payment.status,
-        paymentMethod: payment.paymentMethod,
+        paymentMethod: payment.paymentMethod ?? 'UNKNOWN',
+        gatewayTransactionId: payment.gatewayTransactionId ?? undefined,
         createdAt: payment.createdAt,
         completedAt: payment.completedAt ?? undefined,
         task: {
           id: payment.task.id,
           title: payment.task.title,
+          paymentStatus: payment.task.paymentStatus ?? undefined,
           owner: {
             firstName: payment.task.owner.firstName,
             lastName: payment.task.owner.lastName
@@ -599,12 +630,21 @@ export class PaymentService {
         }
       });
 
-      // Calculate platform and processing fees for earnings
-      const totalFees = (earnings._sum.amount ?? 0) * (
-        this.PLATFORM_FEE_PERCENTAGE + this.PAYMENT_PROCESSING_FEE_PERCENTAGE
-      ) + (completedCount * this.PAYMENT_PROCESSING_FIXED_FEE);
+      // Calculate total platform and processing fees from completed payments
+      const fees = await db.payment.aggregate({
+        where: {
+          task: {
+            assigneeId: userId
+          },
+          status: 'COMPLETED'
+        },
+        _sum: {
+          platformFee: true,
+          processingFee: true
+        }
+      });
 
-      // Adjust earnings to account for fees
+      const totalFees = (fees._sum.platformFee ?? 0) + (fees._sum.processingFee ?? 0);
       const adjustedEarnings = (earnings._sum.amount ?? 0) - totalFees;
 
       return {
@@ -701,9 +741,7 @@ export class PaymentService {
           amount: refundAmount,
           reason,
           requestedById: requestedBy,
-          status: 'COMPLETED',
-          gatewayRefundId: refundResult.refundTransactionId,
-          completedAt: new Date()
+          status: 'COMPLETED'
         }
       });
 
@@ -727,7 +765,47 @@ export class PaymentService {
       }
 
       // Reverse user balance changes
-      await this.reverseUserBalances(payment.task, refundAmount);
+      const taskWithPayments = await db.task.findUnique({
+        where: { id: payment.task.id },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          },
+          assignee: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          },
+          payments: {
+            select: {
+              id: true,
+              status: true,
+              amount: true,
+              platformFee: true,
+              processingFee: true,
+              paymentMethod: true,
+              gatewayTransactionId: true,
+              createdAt: true,
+              completedAt: true
+            }
+          }
+        }
+      });
+
+      if (!taskWithPayments) {
+        throw new Error('Task not found');
+      }
+
+      // Update the task balance reversal
+      await this.reverseUserBalances(taskWithPayments as TaskWithRelations, refundAmount);
 
       logger.info('Refund processed successfully', { paymentId, refundAmount });
     } catch (error) {
@@ -902,7 +980,7 @@ export class PaymentService {
       });
 
       // Populate volumes and fees
-      statusVolumes.forEach((statusVolume: { status: string; _sum: { amount?: number; platformFee?: number; processingFee?: number } }) => {
+      statusVolumes.forEach((statusVolume: { status: string; _sum: { amount: number | null; platformFee: number | null; processingFee: number | null } }) => {
         statusBreakdown[statusVolume.status].volume = statusVolume._sum.amount ?? 0;
         statusBreakdown[statusVolume.status].fees = 
           (statusVolume._sum.platformFee ?? 0) + 
@@ -918,6 +996,351 @@ export class PaymentService {
       };
     } catch (error) {
       logger.error('Error getting payment statistics', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get task payments information
+   */
+  async getTaskPayments(taskId: string, userId: string): Promise<{
+    payments: PaymentTransaction[];
+    totalAmount: number;
+    lastPayment?: PaymentTransaction;
+  }> {
+    logger.info('Getting task payments', { taskId, userId });
+
+    try {
+      // Get task with payment information
+      const task = await db.task.findUnique({
+        where: { id: taskId },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
+          },
+          assignee: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true
+            }
+          },
+          payments: {
+            orderBy: { createdAt: 'desc' }
+          }
+        }
+      });
+
+      if (!task) {
+        throw new NotFoundError('Task not found');
+      }
+
+      // Check if user is authorized to view task payments
+      const isOwner = task.owner.id === userId;
+      const isAssignee = task.assignee?.id === userId;
+
+      if (!isOwner && !isAssignee) {
+        throw new ValidationError('Not authorized to view payments for this task');
+      }
+
+      // Format payment data
+      type PaymentWithTask = {
+        id: string;
+        payerId: string;
+        amount: number;
+        platformFee: number;
+        processingFee: number;
+        status: string;
+        paymentMethod: string | null;
+        gatewayTransactionId: string | null;
+        createdAt: Date;
+        completedAt: Date | null;
+      };
+
+      const payments: PaymentTransaction[] = task.payments.map((payment: PaymentWithTask) => ({
+        id: payment.id,
+        taskId: task.id,
+        payerId: payment.payerId,
+        amount: payment.amount,
+        platformFee: payment.platformFee,
+        processingFee: payment.processingFee,
+        status: payment.status,
+        paymentMethod: payment.paymentMethod ?? 'UNKNOWN',
+        gatewayTransactionId: payment.gatewayTransactionId ?? undefined,
+        createdAt: payment.createdAt,
+        completedAt: payment.completedAt ?? undefined,
+        task: {
+          id: task.id,
+          title: task.title,
+          paymentStatus: task.paymentStatus ?? undefined,
+          owner: {
+            firstName: task.owner.firstName,
+            lastName: task.owner.lastName
+          },
+          assignee: task.assignee ? {
+            firstName: task.assignee.firstName,
+            lastName: task.assignee.lastName
+          } : null
+        }
+      }));
+
+      const totalAmount = payments
+        .filter(p => p.status === 'COMPLETED')
+        .reduce((sum, p) => sum + p.amount, 0);
+
+      const lastPayment = payments.length > 0 ? payments[0] : undefined;
+
+      return {
+        payments,
+        totalAmount,
+        lastPayment
+      };
+    } catch (error) {
+      logger.error('Error getting task payments', { error, taskId, userId });
+      throw error;
+    }
+  }
+
+  /**
+   * Add a payment method for a user
+   */
+  async addPaymentMethod(userId: string, paymentMethodData: {
+    type: 'CREDIT_CARD' | 'BANK_ACCOUNT' | 'DIGITAL_WALLET';
+    provider: 'STRIPE' | 'PAYPAL';
+    externalId: string;
+    details: {
+      cardToken?: string;
+      bankAccountId?: string;
+      walletId?: string;
+      last4?: string;
+      brand?: string;
+      expiryMonth?: number;
+      expiryYear?: number;
+      name?: string;
+    };
+  }): Promise<{
+    id: string;
+    type: string;
+    provider: string;
+    maskedDetails: Record<string, unknown>;
+    isDefault: boolean;
+    createdAt: Date;
+  }> {
+    logger.info('Adding payment method', { userId, type: paymentMethodData.type, provider: paymentMethodData.provider });
+
+    try {
+      // Check if this is the user's first payment method
+      const existingMethodsCount = await db.paymentMethod.count({
+        where: { userId, isActive: true }
+      });
+
+      const isDefault = existingMethodsCount === 0;
+
+      // Create payment method record
+      const paymentMethod = await db.paymentMethod.create({
+        data: {
+          userId,
+          type: paymentMethodData.type,
+          provider: paymentMethodData.provider,
+          externalId: paymentMethodData.externalId,
+          details: paymentMethodData.details,
+          isDefault,
+          isActive: true
+        }
+      });
+
+      // Create masked details for response
+      const maskedDetails: Record<string, unknown> = {};
+      if (paymentMethodData.type === 'CREDIT_CARD') {
+        maskedDetails.last4 = paymentMethodData.details.last4 ?? '****';
+        maskedDetails.brand = paymentMethodData.details.brand ?? 'Unknown';
+        maskedDetails.expiryMonth = paymentMethodData.details.expiryMonth;
+        maskedDetails.expiryYear = paymentMethodData.details.expiryYear;
+      } else if (paymentMethodData.type === 'BANK_ACCOUNT') {
+        maskedDetails.last4 = paymentMethodData.details.last4 ?? '****';
+        maskedDetails.name = paymentMethodData.details.name ?? 'Bank Account';
+      } else if (paymentMethodData.type === 'DIGITAL_WALLET') {
+        maskedDetails.name = paymentMethodData.details.name ?? 'Digital Wallet';
+      }
+
+      return {
+        id: paymentMethod.id,
+        type: paymentMethod.type,
+        provider: paymentMethod.provider,
+        maskedDetails,
+        isDefault: paymentMethod.isDefault,
+        createdAt: paymentMethod.createdAt
+      };
+    } catch (error) {
+      logger.error('Error adding payment method', { error, userId });
+      throw error;
+    }
+  }
+
+  /**
+   * Get user's payment methods
+   */
+  async getPaymentMethods(userId: string): Promise<Array<{
+    id: string;
+    type: string;
+    maskedDetails: Record<string, unknown>;
+    isDefault: boolean;
+    isActive: boolean;
+    createdAt: Date;
+  }>> {
+    logger.info('Getting payment methods', { userId });
+
+    try {
+      const paymentMethods = await db.paymentMethod.findMany({
+        where: {
+          userId,
+          isActive: true
+        },
+        orderBy: [
+          { isDefault: 'desc' },
+          { createdAt: 'desc' }
+        ]
+      });
+
+      return paymentMethods.map(method => {
+        const details = method.details as Record<string, unknown>;
+        const maskedDetails: Record<string, unknown> = {};
+
+        if (method.type === 'CREDIT_CARD') {
+          maskedDetails.last4 = details.last4 ?? '****';
+          maskedDetails.brand = details.brand ?? 'Unknown';
+          maskedDetails.expiryMonth = details.expiryMonth;
+          maskedDetails.expiryYear = details.expiryYear;
+        } else if (method.type === 'BANK_ACCOUNT') {
+          maskedDetails.last4 = details.last4 ?? '****';
+          maskedDetails.name = details.name ?? 'Bank Account';
+        } else if (method.type === 'DIGITAL_WALLET') {
+          maskedDetails.name = details.name ?? 'Digital Wallet';
+        }
+
+        return {
+          id: method.id,
+          type: method.type,
+          maskedDetails,
+          isDefault: method.isDefault,
+          isActive: method.isActive,
+          createdAt: method.createdAt
+        };
+      });
+    } catch (error) {
+      logger.error('Error getting payment methods', { error, userId });
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a payment method
+   */
+  async deletePaymentMethod(paymentMethodId: string, userId: string): Promise<void> {
+    logger.info('Deleting payment method', { paymentMethodId, userId });
+
+    try {
+      const paymentMethod = await db.paymentMethod.findUnique({
+        where: { id: paymentMethodId }
+      });
+
+      if (!paymentMethod) {
+        throw new NotFoundError('Payment method not found');
+      }
+
+      if (paymentMethod.userId !== userId) {
+        throw new ValidationError('Not authorized to delete this payment method');
+      }
+
+      // Soft delete by setting isActive to false
+      await db.paymentMethod.update({
+        where: { id: paymentMethodId },
+        data: { 
+          isActive: false,
+          isDefault: false
+        }
+      });
+
+      // If this was the default method, set another method as default
+      if (paymentMethod.isDefault) {
+        const nextMethod = await db.paymentMethod.findFirst({
+          where: {
+            userId,
+            isActive: true,
+            id: { not: paymentMethodId }
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+
+        if (nextMethod) {
+          await db.paymentMethod.update({
+            where: { id: nextMethod.id },
+            data: { isDefault: true }
+          });
+        }
+      }
+
+      logger.info('Payment method deleted successfully', { paymentMethodId, userId });
+    } catch (error) {
+      logger.error('Error deleting payment method', { error, paymentMethodId, userId });
+      throw error;
+    }
+  }
+
+  /**
+   * Get payment receipt
+   */
+  async getPaymentReceipt(paymentId: string, userId: string): Promise<{
+    payment: PaymentTransaction;
+    receipt: {
+      receiptNumber: string;
+      issueDate: Date;
+      platformFee: number;
+      processingFee: number;
+      totalFees: number;
+      netAmount: number;
+    };
+  }> {
+    logger.info('Getting payment receipt', { paymentId, userId });
+
+    try {
+      const payment = await this.getPaymentById(paymentId, userId);
+
+      if (payment.status !== 'COMPLETED') {
+        throw new ValidationError('Receipt only available for completed payments');
+      }
+
+      // Get payment details from database to calculate fees
+      const paymentRecord = await db.payment.findUnique({
+        where: { id: paymentId }
+      });
+
+      if (!paymentRecord) {
+        throw new NotFoundError('Payment record not found');
+      }
+
+      const platformFee = paymentRecord.platformFee || 0;
+      const processingFee = paymentRecord.processingFee || 0;
+      const totalFees = platformFee + processingFee;
+      const netAmount = payment.amount - totalFees;
+
+      return {
+        payment,
+        receipt: {
+          receiptNumber: `FT-${paymentId.substring(0, 8).toUpperCase()}`,
+          issueDate: payment.completedAt || payment.createdAt,
+          platformFee,
+          processingFee,
+          totalFees,
+          netAmount
+        }
+      };
+    } catch (error) {
+      logger.error('Error getting payment receipt', { error, paymentId, userId });
       throw error;
     }
   }

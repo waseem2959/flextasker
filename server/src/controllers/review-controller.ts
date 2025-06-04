@@ -6,9 +6,9 @@
  */
 
 import { Request, Response } from 'express';
-import { BaseController } from './base-controller';
 import { reviewService } from '../services/review-service';
 import { logger } from '../utils/logger';
+import { BaseController } from './base-controller';
 
 class ReviewController extends BaseController {
   /**
@@ -129,14 +129,13 @@ class ReviewController extends BaseController {
       userId: req.query.userId as string,
       minRating: req.query.minRating ? parseInt(req.query.minRating as string) : undefined,
       maxRating: req.query.maxRating ? parseInt(req.query.maxRating as string) : undefined,
+      page: parseInt(req.query.page as string) || 1,
+      limit: parseInt(req.query.limit as string) || 10,
+      sort: req.query.sort as string || 'newest'
     };
-    
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const sort = req.query.sort as string || 'newest';
 
-    logger.info('Searching reviews', { filters, page, limit, sort });
-    const results = await reviewService.searchReviews(filters, { page, limit, sort });
+    logger.info('Searching reviews', { filters });
+    const results = await reviewService.searchReviews(filters);
     
     return this.sendSuccess(res, results, 'Search results retrieved successfully');
   });

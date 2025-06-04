@@ -5,8 +5,8 @@
  * ensuring consistent behavior across the application.
  */
 
-import { Request } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { Request } from 'express';
 import { z } from 'zod';
 import { logger } from './logger';
 
@@ -45,12 +45,17 @@ export interface SortParams {
 export interface PaginationResult<T> {
   items: T[];
   meta: {
-    currentPage: number;
-    itemsPerPage: number;
-    totalItems: number;
+    page: number;               // Consistent with client naming
+    currentPage: number;        // Keep for backward compatibility
+    limit: number;              // Consistent with client naming
+    itemsPerPage: number;       // Keep for backward compatibility
+    total: number;              // Primary field name (matches client)
+    totalItems: number;         // Keep for backward compatibility
     totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
+    hasNext: boolean;           // Primary field names (matches client)
+    hasPrev: boolean;
+    hasNextPage: boolean;       // Keep for backward compatibility
+    hasPreviousPage: boolean;   // Keep for backward compatibility
   };
 }
 
@@ -128,14 +133,21 @@ export function extractSortParams(req: Request, defaultSortBy?: string): SortPar
  */
 export function createPaginationMeta(totalItems: number, page: number, limit: number) {
   const totalPages = Math.ceil(totalItems / limit);
+  const hasNext = page < totalPages;
+  const hasPrev = page > 1;
   
   return {
-    currentPage: page,
-    itemsPerPage: limit,
-    totalItems,
+    page,                       // Primary field names (matches client)
+    currentPage: page,          // Keep for backward compatibility
+    limit,                      // Primary field names (matches client)
+    itemsPerPage: limit,        // Keep for backward compatibility
+    total: totalItems,          // Primary field name (matches client)
+    totalItems,                 // Keep for backward compatibility
     totalPages,
-    hasNextPage: page < totalPages,
-    hasPreviousPage: page > 1
+    hasNext,                    // Primary field names (matches client)
+    hasPrev,
+    hasNextPage: hasNext,       // Keep for backward compatibility
+    hasPreviousPage: hasPrev    // Keep for backward compatibility
   };
 }
 
@@ -206,6 +218,12 @@ export function generatePaginationLinks(
   return links;
 }
 
+// Type for Prisma model with required operations
+type PrismaModel = {
+  count: (args: any) => Promise<number>;
+  findMany: (args: any) => Promise<any[]>;
+};
+
 /**
  * Execute a paginated query with Prisma
  * 
@@ -228,13 +246,19 @@ export async function paginatedQuery<T>(
   const skip = (page - 1) * limit;
   
   try {
+    const prismaModel = prisma[model as keyof typeof prisma] as unknown as PrismaModel;
+
+    if (!prismaModel || typeof prismaModel.count !== 'function' || typeof prismaModel.findMany !== 'function') {
+      throw new Error(`Model ${model} does not support required operations`);
+    }
+
     // Use Promise.all to run both queries in parallel
     const [totalItems, items] = await Promise.all([
       // Count query
-      prisma[model as keyof typeof prisma].count({ where }),
+      prismaModel.count({ where }),
       
       // Data query
-      prisma[model as keyof typeof prisma].findMany({
+      prismaModel.findMany({
         where,
         orderBy,
         include,
@@ -294,8 +318,14 @@ export function createCursorPagination<T>(
         queryParams.skip = 1; // Skip the cursor item
       }
       
+      const prismaModel = prisma[model as keyof typeof prisma];
+      
+      if (!('findMany' in prismaModel)) {
+        throw new Error(`Model ${model} does not support required operations`);
+      }
+
       // Execute query
-      const items = await prisma[model as keyof typeof prisma].findMany(queryParams);
+      const items = await (prismaModel as any).findMany(queryParams);
       
       // Check if there are more items
       const hasMore = items.length > limit;
@@ -365,9 +395,9 @@ export async function getPaginatedData<T>(
     select?: any;
   }
 ): Promise<PaginationResult<T>> {
-  const model = prisma[modelName];
+  const model = prisma[modelName] as unknown as PrismaModel;
   
-  if (!model) {
+  if (!model || typeof model.count !== 'function' || typeof model.findMany !== 'function') {
     throw new Error(`Invalid model name: ${String(modelName)}`);
   }
   

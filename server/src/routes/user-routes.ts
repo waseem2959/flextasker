@@ -9,12 +9,12 @@
  * - Profile verification
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { body, param, query } from 'express-validator';
+import { userController } from '@/controllers/user-controller';
 import { authenticateToken, optionalAuth } from '@/middleware/auth-middleware';
 import { uploadAvatar } from '@/middleware/upload-middleware';
 import { validate } from '@/middleware/validation-middleware';
-import { userController } from '@/controllers/user-controller';
+import { Router } from 'express';
+import { body, param, query } from 'express-validator';
 import { UserRole } from '../../../shared/types/enums';
 
 const router = Router();
@@ -60,18 +60,10 @@ router.put('/me',
  * Update User Avatar
  * PUT /api/v1/users/me/avatar
  */
-// TODO: Implement updateAvatar in user controller
 router.put('/me/avatar',
   authenticateToken,
-  (req: Request, res: Response, _next: NextFunction) => {
-    uploadAvatar(req, res, (err: unknown) => {
-      if (err) {
-        const error = err as Error;
-        return res.status(400).json({ success: false, message: error.message });
-      }
-      return res.status(501).json({ success: false, message: 'Avatar update not implemented yet' });
-    });
-  }
+  uploadAvatar,
+  userController.updateAvatar
 );
 
 /**
@@ -116,9 +108,7 @@ router.get('/search',
     query('page').optional().isInt({ min: 1 }).toInt(),
     query('limit').optional().isInt({ min: 1, max: 100 }).toInt()
   ]),
-  (_req: Request, res: Response) => {
-    res.status(501).json({ success: false, message: 'Search functionality not implemented yet' });
-  }
+  userController.searchUsers
 );
 
 /**

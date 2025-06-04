@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flextasker - You're Offline</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+  <style>
+    :root {
+      --color-primary: #15919B;
+      --color-primary-dark: #0C6478;
+      --color-primary-light: #E8F6F8;
+      --color-text: #1A2B34;
+      --color-text-secondary: #6B7280;
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: var(--font-family);
+      background-color: #f8fafc;
+      color: var(--color-text);
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    .offline-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      flex-grow: 1;
+    }
+    
+    .offline-icon {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 2rem;
+    }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: var(--color-primary-dark);
+    }
+    
+    p {
+      font-size: 1.125rem;
+      margin-bottom: 1.5rem;
+      color: var(--color-text-secondary);
+    }
+    
+    .btn {
+      display: inline-block;
+      background-color: var(--color-primary);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background-color 0.2s;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    
+    .btn:hover {
+      background-color: var(--color-primary-dark);
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      color: var(--color-primary);
+      border: 1px solid var(--color-primary);
+      margin-left: 1rem;
+    }
+    
+    .btn-outline:hover {
+      background-color: var(--color-primary-light);
+      color: var(--color-primary-dark);
+    }
+    
+    .cached-resources {
+      margin-top: 2rem;
+      text-align: left;
+      width: 100%;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 1rem;
+    }
+    
+    .cached-resources h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: var(--color-primary-dark);
+    }
+    
+    .resource-list {
+      display: none;
+      list-style: none;
+      max-height: 200px;
+      overflow-y: auto;
+      background-color: white;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+    
+    .resource-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 0.875rem;
+    }
+    
+    .resource-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .show-resources {
+      font-size: 0.875rem;
+      color: var(--color-primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-bottom: 1rem;
+      display: block;
+    }
+    
+    @media (max-width: 640px) {
+      .offline-icon {
+        width: 80px;
+        height: 80px;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+      
+      p {
+        font-size: 1rem;
+      }
+      
+      .btn-container {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .btn {
+        margin-bottom: 1rem;
+      }
+      
+      .btn-outline {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <svg class="offline-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#0C6478" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1 1l22 22"></path>
+      <path d="M16.72 11.06c.87.86 1.28 2.1 1.28 3.44m-4.5-1.5a2.5 2.5 0 0 0-3.54-3.54"></path>
+      <path d="M5 12.55a7 7 0 0 1 9.9-9.9m3.75 13.2a7 7 0 0 1-7.65 1.5"></path>
+      <path d="M18 14a2 2 0 0 1-2 2h-1.5v2.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1.5"></path>
+    </svg>
+    
+    <h1>You're Offline</h1>
+    <p>We can't load the page you requested because you're currently offline. Check your internet connection and try again.</p>
+    
+    <div class="btn-container">
+      <button class="btn" onclick="window.location.reload()">Try Again</button>
+      <button class="btn btn-outline" onclick="window.history.back()">Go Back</button>
+    </div>
+    
+    <div class="cached-resources">
+      <button class="show-resources" onclick="toggleResourceList()">Show available offline content</button>
+      <ul id="resource-list" class="resource-list"></ul>
+    </div>
+  </div>
+  
+  <script>
+    // Toggle resource list visibility
+    function toggleResourceList() {
+      const list = document.getElementById('resource-list');
+      const button = document.querySelector('.show-resources');
+      
+      if (list.style.display === 'block') {
+        list.style.display = 'none';
+        button.textContent = 'Show available offline content';
+      } else {
+        list.style.display = 'block';
+        button.textContent = 'Hide available offline content';
+        loadCachedResources();
+      }
+    }
+    
+    // Load and display cached resources
+    async function loadCachedResources() {
+      const list = document.getElementById('resource-list');
+      list.innerHTML = '<li>Loading cached resources...</li>';
+      
+      try {
+        // Get all cache storage names
+        const cacheNames = await caches.keys();
+        
+        // If no caches, show message
+        if (cacheNames.length === 0) {
+          list.innerHTML = '<li>No cached content available</li>';
+          return;
+        }
+        
+        // Get all cached resources
+        let allResources = [];
+        for (const cacheName of cacheNames) {
+          const cache = await caches.open(cacheName);
+          const requests = await cache.keys();
+          
+          // Get the URLs and format them
+          const resources = requests.map(request => {
+            const url = new URL(request.url);
+            // Only show resources from the same origin
+            if (url.origin === location.origin) {
+              return {
+                path: url.pathname,
+                cacheName
+              };
+            }
+            return null;
+          }).filter(resource => resource !== null);
+          
+          allResources = [...allResources, ...resources];
+        }
+        
+        // Display the resources
+        if (allResources.length === 0) {
+          list.innerHTML = '<li>No cached content available</li>';
+          return;
+        }
+        
+        list.innerHTML = '';
+        allResources.forEach(resource => {
+          const li = document.createElement('li');
+          li.textContent = resource.path;
+          li.addEventListener('click', () => {
+            window.location.href = resource.path;
+          });
+          li.style.cursor = 'pointer';
+          list.appendChild(li);
+        });
+      } catch (error) {
+        console.error('Error loading cached resources:', error);
+        list.innerHTML = '<li>Error loading cached resources</li>';
+      }
+    }
+    
+    // Check if we're actually offline
+    if (navigator.onLine) {
+      document.querySelector('h1').textContent = 'Page Not Found';
+      document.querySelector('p').textContent = 'The page you requested could not be found. It may have been moved or deleted.';
+    }
+    
+    // Listen for online/offline events
+    window.addEventListener('online', () => {
+      document.querySelector('h1').textContent = "You're Back Online!";
+      document.querySelector('p').textContent = 'Your connection has been restored. Click below to refresh the page.';
+    });
+    
+    window.addEventListener('offline', () => {
+      document.querySelector('h1').textContent = "You're Offline";
+      document.querySelector('p').textContent = "We can't load the page you requested because you're currently offline. Check your internet connection and try again.";
+    });
+  </script>
+</body>
+</html>

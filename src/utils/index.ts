@@ -8,97 +8,66 @@
 // Export authentication utilities from consolidated auth module
 // Note: We're being explicit about exports to avoid naming conflicts
 import {
-  parseJwt,
-  setupTokenRefresh,
-  hasRole,
-  hasAnyRole,
-  isAdmin,
-  isTasker,
-  isClient as isRegularUser,
-  initializeAuth,
-  cleanupAuth,
-  createLoginCredentials,
-  createRegisterData
-} from '@/services/auth/service';
+    cleanupAuth,
+    createLoginCredentials,
+    createRegisterData,
+    hasAnyRole,
+    hasRole,
+    initializeAuth,
+    isAdmin,
+    isClient as isRegularUser,
+    isTasker,
+    parseJwt,
+    setupTokenRefresh
+} from '@/services/auth';
 
-// Export consolidated type utilities
-import {
-  // Task type guards
-  isOpenTask,
-  isAcceptedTask,
-  isInProgressTask,
-  isCompletedTask,
-  isCancelledTask,
-  isDisputedTask,
-  canAssignTask,
-  canStartTask,
-  canCompleteTask,
-  canCancelTask,
-  canDisputeTask,
-  isUserRole,
-  isBidStatus,
-  
-  // Type adapters
-  toDiscriminatedTask,
-  toRegularTask,
-  isDiscriminatedTask,
-  isRegularTask,
-  ensureDiscriminatedTask,
-  ensureRegularTask
-} from './typeUtils';
-
-// Export auth utilities
 export {
-  parseJwt,
-  setupTokenRefresh,
-  hasRole,
-  hasAnyRole,
-  isAdmin,
-  isTasker,
-  isRegularUser,
-  initializeAuth,
-  cleanupAuth,
-  createLoginCredentials,
-  createRegisterData
+    cleanupAuth,
+    createLoginCredentials,
+    createRegisterData, hasAnyRole, hasRole, initializeAuth, isAdmin, isRegularUser, isTasker, parseJwt,
+    setupTokenRefresh
 };
 
-// Export type utilities
+// Export type utilities from consolidated type adapters file
+    import {
+        ensureDiscriminatedTask,
+        ensureRegularTask,
+        isBidStatus,
+        isDiscriminatedTask,
+        isRegularTask,
+        isUserRole,
+        // Type adapters
+        toDiscriminatedTask,
+        toRegularTask
+    } from './type-adapters';
+
 export {
-  // Task type guards
-  isOpenTask,
-  isAcceptedTask,
-  isInProgressTask,
-  isCompletedTask,
-  isCancelledTask,
-  isDisputedTask,
-  canAssignTask,
-  canStartTask,
-  canCompleteTask,
-  canCancelTask,
-  canDisputeTask,
-  isUserRole,
-  isBidStatus,
-  
-  // Type adapters
-  toDiscriminatedTask,
-  toRegularTask,
-  isDiscriminatedTask,
-  isRegularTask,
-  ensureDiscriminatedTask,
-  ensureRegularTask
+    ensureDiscriminatedTask,
+    ensureRegularTask,
+    isBidStatus,
+    isDiscriminatedTask,
+    isRegularTask,
+    isUserRole,
+    // Type adapters
+    toDiscriminatedTask,
+    toRegularTask
 };
 
 // Export user-related utilities from consolidated module
-export * from './user';
+    export * from '@/services/user';
 
 // Export error handling utilities
-export * from './errorHandler';
+// Error utils removed for simplicity
 
 // Export validation utilities
-export * from './validation';
+export * from '@/services/validation';
 
 // Export date and time utilities
-export * from './dateUtils';
+export * from '@/services/date';
 
 // Export offline queue module
-export * from './offlineQueue';
+export * from '@/services/offline';
+
+// Export UI utilities from lib
+export { cn, formatCurrency, truncateText, uiUtils } from '@/lib';
+

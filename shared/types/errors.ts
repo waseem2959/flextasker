@@ -54,7 +54,7 @@ export enum HttpStatusCode {
 export interface ErrorResponse {
   success: false;
   message: string;
-  errors?: string[];
+  errors?: string[] | ValidationErrorDetail[];
   code?: string;
   timestamp: string;
 }

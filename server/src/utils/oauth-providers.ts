@@ -9,10 +9,11 @@
 import { PrismaClient } from '@prisma/client';
 import { Request } from 'express';
 import passport, { AuthenticateOptions } from 'passport';
-import { Strategy as FacebookStrategy, Profile as FacebookProfile } from 'passport-facebook';
-import { Strategy as GithubStrategy, Profile as GithubProfile } from 'passport-github2';
+import { Profile as FacebookProfile, Strategy as FacebookStrategy } from 'passport-facebook';
+import { Profile as GithubProfile, Strategy as GithubStrategy } from 'passport-github2';
 import { Profile as GoogleProfile, Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { v4 as uuidv4 } from 'uuid';
+import { UserRole } from '../../../shared/types/enums';
 import { config } from './config';
 import { logger } from './logger';
 
@@ -22,7 +23,7 @@ type User = {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role: UserRole;
   [key: string]: any; // Allow additional properties
 };
 
@@ -96,10 +97,20 @@ export function initializeOAuthProviders(): void {
     
     passport.deserializeUser(async (id: string, done) => {
       try {
-        const user = await prisma.user.findUnique({
+        const prismaUser = await prisma.user.findUnique({
           where: { id }
         });
-        done(null, user);
+        
+        if (prismaUser) {
+          // Cast to our custom User type
+          const user = {
+            ...prismaUser,
+            role: prismaUser.role as UserRole
+          };
+          done(null, user);
+        } else {
+          done(null, null);
+        }
       } catch (error) {
         done(error, null);
       }
@@ -308,30 +319,33 @@ async function findOrCreateOAuthUser(profile: OAuthUserProfile): Promise<User> {
     // Check if we already have this OAuth account linked
     const existingOAuth = await prisma.oauthAccount.findUnique({
       where: {
-        providerUserId_provider: {
-          providerUserId: profile.providerUserId,
-          provider: profile.provider
+        provider_providerUserId: {
+          provider: profile.provider,
+          providerUserId: profile.providerUserId
         }
       },
       include: {
         user: true
       }
-    });
-    
-    if (existingOAuth) {
-      // Update OAuth account with new tokens
-      await prisma.oauthAccount.update({
-        where: {
-          id: existingOAuth.id
-        },
-        data: {
-          accessToken: profile.accessToken,
-          refreshToken: profile.refreshToken
-        }
-      });
-      
-      return existingOAuth.user;
-    }
+    });      if (existingOAuth) {
+        // Update OAuth account with new tokens
+        await prisma.oauthAccount.update({
+          where: {
+            id: existingOAuth.id
+          },
+          data: {
+            accessToken: profile.accessToken,
+            refreshToken: profile.refreshToken
+          }
+        });
+        
+        // Cast the Prisma user to our custom User type with proper UserRole
+        const user = existingOAuth.user;
+        return {
+          ...user,
+          role: user.role as UserRole
+        };
+      }
     
     // Check if user exists with the same email
     let user = null;
@@ -345,16 +359,28 @@ async function findOrCreateOAuthUser(profile: OAuthUserProfile): Promise<User> {
     
     // If no user exists, create one
     if (!user) {
-      user = await prisma.user.create({
+      // Create new user with proper role
+      const newUser = await prisma.user.create({
         data: {
           id: uuidv4(),
           email: profile.email,
           firstName: profile.firstName,
           lastName: profile.lastName,
           emailVerified: true, // Auto-verify OAuth users
-          profilePicture: profile.profilePictureUrl
+          profilePicture: profile.profilePictureUrl,
+          role: UserRole.USER, // Set default role
+          passwordHash: '', // Required field for OAuth users
+          isActive: true,
+          balance: 0,
+          pendingBalance: 0
         }
       });
+      
+      // Cast to our custom User type
+      user = {
+        ...newUser,
+        role: newUser.role as UserRole
+      };
       
       logger.info('Created new user from OAuth', {
         userId: user.id,
@@ -366,14 +392,20 @@ async function findOrCreateOAuthUser(profile: OAuthUserProfile): Promise<User> {
     await prisma.oauthAccount.create({
       data: {
         provider: profile.provider,
+        providerId: profile.providerUserId, // Required unique identifier
         providerUserId: profile.providerUserId,
         accessToken: profile.accessToken,
         refreshToken: profile.refreshToken,
-        userId: user.id
+        userId: user.id,
+        expiresAt: null // Optional expiry
       }
     });
     
-    return user;
+    // Cast to our custom User type before returning
+    return {
+      ...user,
+      role: user.role as UserRole
+    };
   } catch (error) {
     logger.error('Error in findOrCreateOAuthUser', { error, profile });
     throw error;

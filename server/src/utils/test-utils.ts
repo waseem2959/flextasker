@@ -6,12 +6,12 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import request from 'supertest';
-import * as jwt from 'jsonwebtoken';
 import { Application } from 'express';
+import * as jwt from 'jsonwebtoken';
+import request from 'supertest';
+import { BudgetType, TaskPriority, TaskStatus, UserRole } from '../../../shared/types/enums';
 import { config } from './config';
 import { logger } from './logger';
-import { UserRole } from '../../../shared/types/enums';
 
 // Initialize test database client
 const prisma = new PrismaClient();
@@ -120,7 +120,7 @@ export async function createTestUser(userData: {
         email,
         firstName,
         lastName,
-        password, // In a real app this would be hashed
+        passwordHash: password, // We store directly as passwordHash for tests
         role,
         emailVerified: true
       }
@@ -139,14 +139,16 @@ export async function createTestTask(taskData: {
   description: string;
   budget: number;
   ownerId: string;
-  categoryId?: string;
+  categoryId: string;
   status?: string;
 }) {
   try {
     return await prisma.task.create({
       data: {
         ...taskData,
-        status: taskData.status ?? 'OPEN'
+        status: taskData.status ?? TaskStatus.OPEN,
+        priority: TaskPriority.MEDIUM, // Default priority
+        budgetType: BudgetType.FIXED // Default budget type
       }
     });
   } catch (error) {

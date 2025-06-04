@@ -28,16 +28,15 @@ export interface ProximityMatch {
   userId: string;
   firstName: string;
   lastName: string;
-  avatar?: string; // Uses undefined for missing values (TypeScript convention)
+  avatar?: string;
   trustScore: number;
   verificationLevel: string;
-  distance: number; // in kilometers
+  distance: number;
   location: {
     city: string;
     state: string;
     country: string;
   };
-  skills?: string[];
   averageRating?: number;
   completedTasks?: number;
 }
@@ -48,7 +47,7 @@ export interface NearbyTasksResult {
   description: string;
   budget: number;
   budgetType: string;
-  distance: number; // in kilometers
+  distance: number;
   location: {
     address?: string;
     city?: string;
@@ -80,7 +79,7 @@ interface TaskerUser {
   firstName: string;
   lastName: string;
   avatar: string | null;
-  trustScore: number;
+  trustScore: number | null;
   latitude: number | null;
   longitude: number | null;
   city: string | null;
@@ -107,8 +106,8 @@ interface TaskWithLocation {
   owner: {
     firstName: string;
     lastName: string;
-    avatar: string | null; // Database field - can be NULL
-    trustScore: number;
+    avatar: string | null;
+    trustScore: number | null;
   };
   _count: {
     bids: number;
@@ -125,7 +124,6 @@ interface LocationStatistics {
   taskDistribution: Array<{
     city: string | null;
     state: string | null;
-    country: string | null;
     _count: { id: number };
   }>;
   totalUsersWithLocation: number;
@@ -447,7 +445,7 @@ export class LocationService {
         firstName: tasker.firstName,
         lastName: tasker.lastName,
         avatar: this.convertNullToUndefined(tasker.avatar),
-        trustScore: tasker.trustScore,
+        trustScore: tasker.trustScore ?? 0,
         verificationLevel,
         distance,
         location: {
@@ -701,7 +699,7 @@ export class LocationService {
           firstName: task.owner.firstName,
           lastName: task.owner.lastName,
           avatar: this.convertNullToUndefined(task.owner.avatar),
-          trustScore: task.owner.trustScore
+          trustScore: task.owner.trustScore ?? 0 // Default to 0 if null
         },
         createdAt: this.ensureValidDate(task.createdAt, 'task.createdAt'),
         bidCount: task._count.bids

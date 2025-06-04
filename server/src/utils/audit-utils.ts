@@ -7,14 +7,16 @@
 
 import { PrismaClient } from '@prisma/client';
 import { Request } from 'express';
-import { logger } from './logger';
-// Import the request context from the correct path
 import { getRequestContext } from '../middleware/request-context-middleware';
-// Remove unused import
-// import { withTransaction } from './db-transaction';
+import { logger } from './logger';
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
+
+// Interface for dynamic model access
+interface DynamicPrismaModel {
+  findUnique: (args: { where: { id: string } }) => Promise<Record<string, any>>;
+}
 
 /**
  * Enum for audit event types
@@ -184,9 +186,6 @@ export async function auditFromRequest(
 
 /**
  * Audit middleware that automatically tracks entity changes
- * This should be used with Prisma middleware
- * 
- * @param entityType The type of entity to audit
  */
 export function createEntityChangeAudit(entityType: string) {
   return {
@@ -212,12 +211,14 @@ export function createEntityChangeAudit(entityType: string) {
      */
     async update({ params, result }: any) {
       try {
-        // For updates, we need to fetch the previous state
         const id = params.where.id;
         if (!id) return;
         
-        // Get old values before update
-        const oldRecord = await prisma[entityType].findUnique({
+        // Get the model and safely cast it to our interface
+        const client = prisma[entityType as keyof typeof prisma];
+        const model = (client as unknown) as DynamicPrismaModel;
+        
+        const oldRecord = await model.findUnique({
           where: { id }
         });
         

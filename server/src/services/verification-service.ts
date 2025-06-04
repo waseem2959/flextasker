@@ -15,19 +15,19 @@ import { logger } from '../utils/logger';
 import { EmailService } from './email-service';
 import { SMSService } from './sms-service';
 
-// Define types for better type safety throughout the service
-type DocumentType = 'ID_DOCUMENT' | 'ADDRESS_PROOF' | 'BACKGROUND_CHECK';
+// Define document status type
 type DocumentStatus = 'NONE' | 'PENDING' | 'VERIFIED' | 'REJECTED';
-type VerificationLevel = 'BASIC' | 'STANDARD' | 'PREMIUM';
+
+// Define verification level type
+export type VerificationLevel = 'BASIC' | 'STANDARD' | 'PREMIUM';
+
 // This type represents the status of individual document verification records in the database
-type DocumentVerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+export type DocumentVerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
 
 // Re-export for use in other files
-export { DocumentVerificationStatus };
-
 export interface DocumentVerificationData {
   userId: string;
-  documentType: DocumentType;
+  documentType: string;
   documentUrl: string;
   notes?: string;
 }
@@ -39,55 +39,6 @@ export interface UserVerificationStatus {
   trustScore: number;
   verificationLevel: VerificationLevel;
 }
-
-// Commented out unused interfaces to clean up the code
-// interface UserBasicInfo {
-//   id: string;
-//   email: string;
-//   firstName: string;
-//   emailVerified: boolean;
-// }
-// 
-// interface UserTrustInfo {
-//   id: string;
-//   emailVerified: boolean;
-//   phoneVerified: boolean;
-//   trustScore: number;
-// }
-// 
-// interface UserMinimalInfo {
-//   id: string;
-//   firstName: string;
-//   lastName: string;
-// }
-// 
-// interface DocumentVerificationRecord {
-//   type: string;
-//   status: DocumentVerificationStatus;
-// }
-// 
-// interface EmailVerificationToken {
-//   id: string;
-//   userId: string;
-//   token: string;
-//   email: string;
-//   expiresAt: Date;
-//   user: {
-//     id: string;
-//     email: string;
-//     firstName: string;
-//   };
-// }
-// 
-// interface PhoneVerificationToken {
-//   id: string;
-//   userId: string;
-//   code: string;
-//   phone: string;
-//   attempts: number;
-//   maxAttempts: number;
-//   expiresAt: Date;
-// }
 
 /**
  * Verification Service Class
@@ -395,7 +346,7 @@ export class VerificationService {
       // Check if there's already a pending verification for this document type
       const doc = await db.documentVerification.findFirst({
         where: { userId: data.userId, type: data.documentType },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { submittedAt: 'desc' },
       });
 
       if (doc?.status === 'PENDING') {
@@ -427,6 +378,60 @@ export class VerificationService {
         userId: data.userId,
         documentType: data.documentType
       });
+      throw error;
+    }
+  }
+
+  /**
+   * Request manual verification review
+   * 
+   * Users can request manual review when automated verification fails
+   * or for special circumstances.
+   */
+  async requestManualVerification(userId: string, reason: string): Promise<void> {
+    logger.info('Requesting manual verification', { userId });
+
+    try {
+      // Get user information
+      const user = await db.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true
+        }
+      });
+
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+
+      // Check if there's already a pending manual verification request
+      const existingRequest = await db.manualVerificationRequest.findFirst({
+        where: {
+          userId,
+          status: 'PENDING'
+        }
+      });
+
+      if (existingRequest) {
+        throw new ConflictError('A manual verification request is already pending');
+      }
+
+      // Create manual verification request
+      await db.manualVerificationRequest.create({
+        data: {
+          userId,
+          reason,
+          status: 'PENDING',
+          submittedAt: new Date()
+        }
+      });
+
+      logger.info('Manual verification request created', { userId });
+    } catch (error) {
+      logger.error('Error requesting manual verification', { error, userId });
       throw error;
     }
   }
@@ -467,10 +472,10 @@ export class VerificationService {
       
       if (documentVerifications.length > 0) {
         const hasVerified = documentVerifications.some(
-          (doc: { status: DocumentVerificationStatus }) => doc.status === 'VERIFIED'
+          (doc) => doc.status === 'VERIFIED'
         );
         const hasPending = documentVerifications.some(
-          (doc: { status: DocumentVerificationStatus }) => doc.status === 'PENDING'
+          (doc) => doc.status === 'PENDING'
         );
         
         if (hasVerified) {
@@ -606,7 +611,7 @@ export class VerificationService {
       // This would be more complex in a real implementation
       const completedTasks = await db.task.count({
         where: {
-          taskerId: userId,
+          assigneeId: userId,
           status: 'COMPLETED'
         }
       });

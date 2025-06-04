@@ -147,7 +147,7 @@ const Carousel = React.forwardRef<
         <section
           ref={ref}
           onKeyDownCapture={handleKeyDown}
-          className={cn("relative", className)}
+          className={cn("relative font-primary", className)}
           aria-label="carousel"
           aria-roledescription="carousel"
           {...props}
@@ -161,48 +161,47 @@ const Carousel = React.forwardRef<
 Carousel.displayName = "Carousel"
 
 const CarouselContent = React.forwardRef<
-  HTMLUListElement,
-  React.HTMLAttributes<HTMLUListElement>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
   const { carouselRef, orientation } = useCarousel()
 
   return (
     <div ref={carouselRef} className="overflow-hidden">
-      <ul
+      <div
         ref={ref}
         className={cn(
-          "flex",
+          "flex font-primary",
           orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
           className
         )}
         {...props}
       >
         {props.children}
-      </ul>
+      </div>
     </div>
   )
 })
 CarouselContent.displayName = "CarouselContent"
 
 const CarouselItem = React.forwardRef<
-  HTMLLIElement,
-  React.HTMLAttributes<HTMLLIElement>
+  HTMLElement,
+  React.HTMLAttributes<HTMLElement>
 >(({ className, ...props }, ref) => {
   const { orientation } = useCarousel()
 
   return (
-    <li
+    <section
       ref={ref}
       aria-roledescription="slide"
+      aria-label="carousel slide"
       className={cn(
-        "min-w-0 shrink-0 grow-0 basis-full",
+        "min-w-0 shrink-0 grow-0 basis-full font-primary",
         orientation === "horizontal" ? "pl-4" : "pt-4",
         className
       )}
       {...props}
-    >
-      {props.children}
-    </li>
+    />
   )
 })
 CarouselItem.displayName = "CarouselItem"
@@ -219,7 +218,7 @@ const CarouselPrevious = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "absolute  h-8 w-8 rounded-full",
+        "absolute h-8 w-8 rounded-full border border-[hsl(215,16%,80%)] bg-white text-[hsl(220,14%,46%)] hover:text-[hsl(196,80%,43%)] hover:border-[hsl(196,80%,43%)] focus:ring-2 focus:ring-[hsl(196,80%,43%)] focus:ring-offset-2",
         orientation === "horizontal"
           ? "-left-12 top-1/2 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
@@ -248,7 +247,7 @@ const CarouselNext = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "absolute h-8 w-8 rounded-full",
+        "absolute h-8 w-8 rounded-full border border-[hsl(215,16%,80%)] bg-white text-[hsl(220,14%,46%)] hover:text-[hsl(196,80%,43%)] hover:border-[hsl(196,80%,43%)] focus:ring-2 focus:ring-[hsl(196,80%,43%)] focus:ring-offset-2",
         orientation === "horizontal"
           ? "-right-12 top-1/2 -translate-y-1/2"
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",

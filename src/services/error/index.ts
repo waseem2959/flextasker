@@ -1,47 +1,34 @@
 /**
- * Error Service
+ * Error Service Index
  * 
- * This module provides comprehensive error handling functionality for the application.
- * It includes error classification, formatting, notification integration, and utilities
- * for handling API errors consistently.
+ * This file centralizes exports for error-related services.
  */
 
-// Export all functionality from the main error handler implementation
+import errorService, {
+    AppError,
+    AuthError,
+    classifyError,
+    createError,
+    createErrorHandler,
+    createErrorResponse,
+    ErrorType,
+    getErrorTitle,
+    handleApiError,
+    handleError,
+    isAppError,
+    NetworkError,
+    NotFoundError,
+    PermissionError,
+    ServerError,
+    TimeoutError,
+    ValidationError
+} from './error-service';
+
+// Named exports
 export {
-  // Error types
-  ErrorType,
-  
-  // Error classes
-  AppError,
-  NetworkError,
-  AuthError,
-  ValidationError,
-  NotFoundError,
-  PermissionError,
-  ServerError,
-  TimeoutError,
-  
-  // Error handling functions
-  isAppError,
-  classifyError,
-  createError,
-  createErrorResponse,
-  handleApiError,
-  
-  // Notification functions
-  showSuccessNotification,
-  showErrorNotification,
-  showInfoNotification,
-  showWarningNotification,
-} from './errorHandler';
+    AppError, AuthError, classifyError,
+    createError, createErrorHandler, createErrorResponse, ErrorType, getErrorTitle, handleApiError, handleError, isAppError, NetworkError, NotFoundError, PermissionError, ServerError, TimeoutError, ValidationError
+};
 
-// Export the error handler factory as the default export
-import { createErrorHandler } from './errorHandler';
-export { createErrorHandler };
-export default createErrorHandler;
-
-// Import toast from our hooks
-import { toast } from '@/hooks/use-toast';
-
-// Export toast for convenience
-export { toast };
+// Default export for convenience
+export default errorService;

@@ -6,9 +6,9 @@
  */
 
 import { Request, Response } from 'express';
-import { BaseController } from './base-controller';
 import { verificationService } from '../services/verification-service';
 import { logger } from '../utils/logger';
+import { BaseController } from './base-controller';
 
 class VerificationController extends BaseController {
   /**
@@ -79,6 +79,52 @@ class VerificationController extends BaseController {
     const status = await verificationService.getUserVerificationStatus(userId);
     
     return this.sendSuccess(res, status, 'Verification status retrieved successfully');
+  });
+
+  /**
+   * Upload identity document for verification
+   */
+  uploadIdentityDocument = this.asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const { documentType = 'ID_DOCUMENT', notes } = req.body;
+
+    if (!req.file) {
+      return this.sendError(res, 'Document file is required', 400);
+    }
+
+    // Validate document type
+    const validDocumentTypes = ['ID_DOCUMENT', 'ADDRESS_PROOF', 'BACKGROUND_CHECK'];
+    if (!validDocumentTypes.includes(documentType)) {
+      return this.sendError(res, 'Invalid document type', 400);
+    }
+
+    logger.info('Uploading identity document', { userId, documentType });
+
+    const verificationId = await verificationService.submitDocumentVerification({
+      userId,
+      documentType: documentType as 'ID_DOCUMENT' | 'ADDRESS_PROOF' | 'BACKGROUND_CHECK',
+      documentUrl: req.file.path,
+      notes
+    });
+    
+    return this.sendSuccess(res, { verificationId }, 'Document uploaded successfully and submitted for verification');
+  });
+
+  /**
+   * Request manual verification review
+   */
+  requestManualVerification = this.asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const { reason } = req.body;
+
+    if (!reason) {
+      return this.sendError(res, 'Reason for manual verification is required', 400);
+    }
+
+    logger.info('Requesting manual verification', { userId });
+    await verificationService.requestManualVerification(userId, reason);
+    
+    return this.sendSuccess(res, null, 'Manual verification request submitted successfully');
   });
 }
 

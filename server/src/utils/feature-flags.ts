@@ -5,11 +5,11 @@
  * controlled rollouts, A/B testing, and environment-specific feature activation.
  */
 
-import { Request } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { logger } from './logger';
+import { Request } from 'express';
 import { CacheService } from './cache/cache-service';
 import { config } from './config';
+import { logger } from './logger';
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
@@ -143,11 +143,14 @@ export enum FeatureFlagType {
 export interface FeatureFlag {
   id: string;
   name: string;
-  description: string;
-  type: FeatureFlagType;
+  description?: string | null;
+  type?: string | null;
   enabled: boolean;
+  isEnabled?: boolean;
+  rolloutPercentage?: number;
   value?: any;
   rules?: Record<string, any>;
+  conditions?: any;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -167,14 +170,21 @@ export async function getAllFeatureFlags(): Promise<FeatureFlag[]> {
     // If not in cache, get from database
     const flags = await prisma.featureFlag.findMany();
     
-    // Cache the flags
+    // Transform the flags to match the FeatureFlag interface
+    const transformedFlags: FeatureFlag[] = flags.map(flag => ({
+      ...flag,
+      rules: flag.rules ? JSON.parse(flag.rules as string) : undefined,
+      conditions: flag.conditions ? JSON.parse(flag.conditions as string) : undefined
+    }));
+    
+    // Cache the transformed flags
     await CacheService.set(
       FEATURE_FLAGS_CACHE_KEY,
-      flags,
+      transformedFlags,
       FEATURE_FLAGS_CACHE_TTL
     );
     
-    return flags;
+    return transformedFlags;
   } catch (error) {
     logger.error('Failed to get feature flags', { error });
     return [];

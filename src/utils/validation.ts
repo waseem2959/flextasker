@@ -1,192 +1,186 @@
 /**
- * Validation Utilities with TypeScript Improvements
- * 
- * This file provides centralized validation utilities for data validation,
- * ensuring runtime type safety alongside TypeScript's compile-time checks.
- * 
- * It includes both Zod schema-based validation and traditional validation functions
- * to support different validation approaches across the application.
+ * Form Validation Schema
+ * Contains validation schemas for form data
  */
 
+import { BudgetType, TaskPriority, UserRole } from '@/types';
 import { z } from 'zod';
-import { ValidationError } from '@/types/errors';
-import { TaskStatus, TaskPriority, BudgetType, UserRole } from '@/types/enums';
+
+// Email validation regex
+const emailRegex = /^[\w._%+-]+@[\w.-]+\.[a-zA-Z]{2,}$/;
+
+// Password validation - at least 8 chars, 1 uppercase, 1 lowercase, 1 number
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 /**
- * Validate data against a Zod schema
- * 
- * @param schema - Zod schema to validate against
- * @param data - Data to validate
- * @returns Validated and typed data
- * @throws ValidationError if validation fails
+ * Validate if email format is correct
+ * @param email - Email to validate
+ * @returns Boolean indicating if email is valid
  */
-export function validate<T extends z.ZodType>(schema: T, data: unknown): z.infer<T> {
-  try {
-    return schema.parse(data);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const fieldErrors: Record<string, string[]> = {};
-      
-      for (const issue of error.issues) {
-        const path = issue.path.join('.');
-        if (!fieldErrors[path]) {
-          fieldErrors[path] = [];
-        }
-        fieldErrors[path].push(issue.message);
-      }
-      
-      throw new ValidationError('Validation failed', fieldErrors);
-    }
-    
-    throw error;
-  }
-}
-
-/**
- * Common schema definitions
- */
-
-// Task status enum validation
-export const taskStatusSchema = z.nativeEnum(TaskStatus);
-
-// Task priority enum validation
-export const taskPrioritySchema = z.nativeEnum(TaskPriority);
-
-// Budget type enum validation
-export const budgetTypeSchema = z.nativeEnum(BudgetType);
-
-// User role enum validation
-export const userRoleSchema = z.nativeEnum(UserRole);
-
-/**
- * Direct validation functions (non-schema based)
- */
-
-/**
- * Validates email format using a comprehensive regex pattern
- * 
- * @param email - Email address to validate
- * @returns true if email format is valid, false otherwise
- */
-export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+export const isValidEmail = (email: string): boolean => {
   return emailRegex.test(email);
-}
+};
 
 /**
- * Validates password strength according to common security requirements
- * 
+ * Validate password strength
  * @param password - Password to validate
- * @returns Object containing validation result and specific failure reasons
+ * @returns Object with validation result and message
  */
-export function validatePassword(password: string): {
-  isValid: boolean;
-  errors: string[];
-} {
-  const errors: string[] = [];
+export const validatePassword = (password: string): { isValid: boolean; message?: string } => {
+  if (!password) {
+    return { isValid: false, message: 'Password is required' };
+  }
   
-  // Length check
   if (password.length < 8) {
-    errors.push('Password must be at least 8 characters long');
+    return { isValid: false, message: 'Password must be at least 8 characters' };
   }
   
-  // Contains number check
-  if (!/\d/.test(password)) {
-    errors.push('Password must contain at least one number');
+  if (!passwordRegex.test(password)) {
+    return { 
+      isValid: false, 
+      message: 'Password must include at least one uppercase letter, one lowercase letter, and one number' 
+    };
   }
   
-  // Contains uppercase letter check
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
-  }
-  
-  // Contains lowercase letter check
-  if (!/[a-z]/.test(password)) {
-    errors.push('Password must contain at least one lowercase letter');
-  }
-  
-  // Contains special character check
-  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/\?]/.test(password)) {
-    errors.push('Password must contain at least one special character');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
-}
+  return { isValid: true };
+};
 
-// Email schema using the isValidEmail function
-export const emailSchema = z.string().refine(isValidEmail, {
-  message: 'Invalid email format'
+/**
+ * User registration schema
+ */
+export const registerSchema = z.object({
+  firstName: z.string()
+    .min(2, { message: 'First name must be at least 2 characters long' })
+    .max(50, { message: 'First name cannot exceed 50 characters' }),
+    
+  lastName: z.string()
+    .min(2, { message: 'Last name must be at least 2 characters long' })
+    .max(50, { message: 'Last name cannot exceed 50 characters' }),
+    
+  email: z.string()
+    .email({ message: 'Please enter a valid email address' }),
+    
+  password: z.string()
+    .min(8, { message: 'Password must be at least 8 characters long' })
+    .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
+    .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
+    .regex(/\d/, { message: 'Password must contain at least one number' }),
+    
+  confirmPassword: z.string(),
+  
+  role: z.nativeEnum(UserRole),
+  
+  termsAccepted: z.boolean()
+    .refine(val => val === true, { message: 'You must accept the terms and conditions' })
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
-// Password schema using the validatePassword function
-export const passwordSchema = z.string().refine(
-  (password) => validatePassword(password).isValid,
-  {
-    message: 'Password does not meet security requirements'
-  }
-);
-
-// Location schema
-export const locationSchema = z.object({
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  country: z.string().optional(),
-  zipCode: z.string().optional(),
-  coordinates: z.object({
-    latitude: z.number(),
-    longitude: z.number()
-  }).optional(),
-  isRemote: z.boolean()
+/**
+ * Login schema
+ */
+export const loginSchema = z.object({
+  email: z.string()
+    .email({ message: 'Please enter a valid email address' }),
+    
+  password: z.string()
+    .min(1, { message: 'Password is required' }),
+    
+  rememberMe: z.boolean().optional().default(false),
 });
 
-// Budget schema
-export const budgetSchema = z.object({
-  amount: z.number().positive(),
-  type: budgetTypeSchema,
-  currency: z.string().default('USD'),
-  negotiable: z.boolean().default(false)
-});
-
-// Task creation schema
-export const createTaskSchema = z.object({
-  title: z.string().min(5).max(100),
-  description: z.string().min(20),
-  categoryId: z.string().uuid(),
-  priority: taskPrioritySchema,
-  budget: budgetSchema,
-  location: locationSchema,
-  tags: z.array(z.string()).optional().default([]),
-  requirements: z.array(z.string()).optional().default([]),
-  deadline: z.string().datetime().optional(),
-  startDate: z.string().datetime().optional()
-});
-
-// Task update schema
-export const updateTaskSchema = createTaskSchema.partial();
-
-// Task filter schema
-export const taskFilterSchema = z.object({
-  status: z.union([
-    taskStatusSchema,
-    z.array(taskStatusSchema)
-  ]).optional(),
-  priority: taskPrioritySchema.optional(),
-  categoryId: z.string().optional(),
-  search: z.string().optional(),
+/**
+ * Profile update schema
+ */
+export const profileUpdateSchema = z.object({
+  firstName: z.string()
+    .min(2, { message: 'First name must be at least 2 characters long' })
+    .max(50, { message: 'First name cannot exceed 50 characters' }),
+    
+  lastName: z.string()
+    .min(2, { message: 'Last name must be at least 2 characters long' })
+    .max(50, { message: 'Last name cannot exceed 50 characters' }),
+    
+  email: z.string()
+    .email({ message: 'Please enter a valid email address' }),
+    
+  phone: z.string().optional(),
+  
+  bio: z.string().max(500, { message: 'Bio cannot exceed 500 characters' }).optional(),
+  
   location: z.string().optional(),
-  minBudget: z.number().positive().optional(),
-  maxBudget: z.number().positive().optional(),
-  budgetType: budgetTypeSchema.optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  userId: z.string().optional(),
-  assignedTo: z.string().optional(),
-  sortBy: z.enum(['createdAt', 'deadline', 'budget', 'priority']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
-  page: z.number().int().positive().optional(),
-  limit: z.number().int().positive().min(1).max(100).optional()
+  
+  skills: z.array(z.string()).optional(),
+});
+
+/**
+ * Password change schema
+ */
+export const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, { message: 'Current password is required' }),
+  
+  newPassword: z.string()
+    .min(8, { message: 'New password must be at least 8 characters long' })
+    .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
+    .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
+    .regex(/[0-9]/, { message: 'Password must contain at least one number' }),
+    
+  confirmPassword: z.string(),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+/**
+ * Contact form schema
+ */
+export const contactFormSchema = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters long' }),
+  email: z.string().email({ message: 'Please enter a valid email address' }),
+  subject: z.string().min(5, { message: 'Subject must be at least 5 characters long' }),
+  message: z.string().min(20, { message: 'Message must be at least 20 characters long' }),
+});
+
+/**
+ * Task creation schema
+ */
+export const createTaskSchema = z.object({
+  title: z.string()
+    .min(5, { message: 'Title must be at least 5 characters long' })
+    .max(100, { message: 'Title cannot be longer than 100 characters' }),
+    
+  description: z.string()
+    .min(20, { message: 'Description must be at least 20 characters long' })
+    .max(2000, { message: 'Description cannot be longer than 2000 characters' }),
+    
+  category: z.string({ required_error: 'Please select a category' }),
+  
+  priority: z.nativeEnum(TaskPriority).optional(),
+  
+  budget: z.object({
+    amount: z.number()
+      .min(5, { message: 'Budget must be at least $5' })
+      .max(10000, { message: 'Budget cannot exceed $10,000' }),
+    type: z.nativeEnum(BudgetType)
+  }),
+  location: z.object({
+    isRemote: z.boolean(),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    country: z.string().optional(),
+    zipCode: z.string().optional(),
+    coordinates: z.object({
+      lat: z.number().optional(),
+      lng: z.number().optional(),
+    }).optional(),
+  }).optional(),
+      dueDate: z.date().optional(),
+    
+  startDate: z.date().optional(),
+    
+  tags: z.array(z.string()).optional(),
+    
+  attachments: z.array(z.string()).optional(),
 });

@@ -1,5 +1,5 @@
 // src/stores/authStore.ts
-import { authService } from '@/services/auth/service';
+import { authService } from '@/services/auth';
 import { User } from '@/types';
 import { create } from 'zustand';
 

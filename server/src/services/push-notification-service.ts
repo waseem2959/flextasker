@@ -7,11 +7,19 @@
  * - Handling notification delivery status
  */
 
-import { logger } from '../utils/logger';
 import { prisma as db } from '../utils/database-utils';
+import { logger } from '../utils/logger';
 
 // Using require for firebase-admin to avoid TypeScript declaration issues
 const firebase = require('firebase-admin');
+
+// Type definitions for JSON handling
+type InputJsonValue =
+  | string
+  | number
+  | boolean
+  | { [key: string]: InputJsonValue }
+  | InputJsonValue[];
 
 // Create type definitions to help TypeScript understand the Firebase API
 type FirebaseApp = {
@@ -291,24 +299,28 @@ export class PushNotificationService {
         }
       });
 
+      const safeDeviceInfo = this.safeJsonValue(deviceInfo || {});
+
       if (existingToken) {
         // Update last used timestamp
         await db.userDevice.update({
           where: { id: existingToken.id },
           data: {
             lastUsed: new Date(),
-            deviceInfo: deviceInfo || existingToken.deviceInfo
+            deviceInfo: safeDeviceInfo
           }
         });
 
         logger.info('Updated existing device token', { userId, deviceToken });
       } else {
-        // Create new token record
+        // Create new token record with required fields
         await db.userDevice.create({
           data: {
             userId,
             token: deviceToken,
-            deviceInfo: deviceInfo || {},
+            deviceId: `device_${Date.now()}_${Math.random().toString(36).slice(2)}`, // Generate a unique device ID
+            platform: (deviceInfo?.platform as string) || 'unknown',
+            deviceInfo: safeDeviceInfo,
             lastUsed: new Date()
           }
         });
@@ -376,10 +388,12 @@ export class PushNotificationService {
     if (!data) {
       return {};
     }
-    return Object.entries(data).reduce((acc: Record<string, string>, [key, value]) => {
+    
+    const safeData = this.safeJsonValue(data);
+    return Object.entries(safeData).reduce((acc: Record<string, string>, [key, value]) => {
       acc[key] = typeof value === 'string' ? value : JSON.stringify(value);
       return acc;
-    }, {} as Record<string, string>);
+    }, {});
   }
 
   /**
@@ -410,6 +424,55 @@ export class PushNotificationService {
     } catch (error) {
       logger.error(`Failed to remove invalid token`, { token, error });
     }
+  }
+
+  /**
+   * Safely convert any data to Prisma-compatible JSON value
+   */
+  private safeJsonValue(value: any): InputJsonValue {
+    if (!value || typeof value !== 'object') {
+      return {};
+    }
+
+    // Convert any non-serializable values to strings and ensure Prisma compatibility
+    const result: { [key: string]: InputJsonValue } = {};
+    
+    for (const [key, val] of Object.entries(value)) {
+      if (val === undefined) {
+        continue;
+      }
+      
+      if (val === null) {
+        continue;
+      }
+      
+      if (typeof val === 'function') {
+        result[key] = val.toString();
+        continue;
+      }
+      
+      if (Array.isArray(val)) {
+        result[key] = val.map(item => {
+          if (item === null || item === undefined) return '';
+          return typeof item === 'object' ? JSON.stringify(item) : String(item);
+        }).filter(Boolean);
+        continue;
+      }
+      
+      if (typeof val === 'object') {
+        result[key] = JSON.stringify(val);
+        continue;
+      }
+      
+      if (['string', 'number', 'boolean'].includes(typeof val)) {
+        result[key] = val as string | number | boolean;
+        continue;
+      }
+      
+      result[key] = String(val);
+    }
+    
+    return result;
   }
 }
 

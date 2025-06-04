@@ -1,0 +1,348 @@
+/* Styles for data visualization components */
+:root {
+  --chart-height: 300px;
+  --bar-color: var(--primary-500);
+  --transition-duration: 1000ms;
+  --bar-hover-color: var(--primary-600);
+  --bar-active-color: var(--primary-700);
+  --bar-inactive-color: var(--muted);
+  --bar-border-radius: 0.25rem;
+}
+
+/* BarChart Styles */
+.bar-chart-container {
+  width: 100%;
+  height: 300px; /* Default height */
+  margin-bottom: 1rem;
+}
+
+/* Dynamic height classes */
+.bar-chart-height-200 { height: 200px; }
+.bar-chart-height-300 { height: 300px; }
+.bar-chart-height-400 { height: 400px; }
+.bar-chart-height-500 { height: 500px; }
+
+/* Bar styles with data attributes */
+.bar {
+  width: 100%;
+  max-width: 40px;
+  border-top-left-radius: var(--bar-border-radius);
+  border-top-right-radius: var(--bar-border-radius);
+  transition: height var(--transition-duration) ease-in-out, background-color 0.2s ease;
+  background-color: var(--bar-color);
+  cursor: pointer;
+}
+
+.bar:hover {
+  background-color: var(--bar-hover-color);
+}
+
+.bar:active {
+  background-color: var(--bar-active-color);
+}
+
+/* Apply dynamic height and color from data attributes */
+.bar[data-bar-height][data-bar-color] {
+  height: attr(data-bar-height);
+  background-color: attr(data-bar-color);
+}
+
+/* Legend color dots */
+.legend-color[data-color],
+.pie-legend-color[data-color] {
+  background-color: var(--legend-color, currentColor);
+  background-color: attr(data-color);
+}
+
+/* Pie chart legend item - consolidated styles */
+.pie-legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Pie chart legend dot styles */
+.pie-legend-dot {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+/* Color classes for the pie chart legend dots */
+.color-primary { background-color: hsl(196, 80%, 43%); }
+.color-success { background-color: hsl(142, 71%, 45%); }
+.color-purple { background-color: hsl(263, 85%, 50%); }
+.color-warning { background-color: hsl(32, 95%, 44%); }
+.color-danger { background-color: hsl(354, 70%, 54%); }
+.color-muted { background-color: hsl(220, 14%, 46%); }
+
+/* Color 1-10 classes for standard color wheel */
+.color-1 { background-color: hsl(196, 80%, 43%); }
+.color-2 { background-color: hsl(142, 71%, 45%); }
+.color-3 { background-color: hsl(263, 85%, 50%); }
+.color-4 { background-color: hsl(32, 95%, 44%); }
+.color-5 { background-color: hsl(354, 70%, 54%); }
+.color-6 { background-color: hsl(220, 14%, 46%); }
+.color-7 { background-color: hsl(168, 83%, 41%); }
+.color-8 { background-color: hsl(291, 64%, 42%); }
+.color-9 { background-color: hsl(15, 86%, 50%); }
+.color-10 { background-color: hsl(43, 96%, 58%); }
+
+.pie-legend-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Chart container with dynamic height */
+.bar-chart-container[data-chart-height] {
+  height: attr(data-chart-height px);
+}
+
+.bar-chart-container[data-transition-duration] {
+  --transition-duration: attr(data-transition-duration ms);
+}
+
+.bar-chart-tooltip {
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem;
+  border: 1px solid hsl(215,16%,80%);
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* PieChart Styles */
+.pie-chart-container {
+  --pie-size: 300px;
+  --pie-transition: 500ms;
+  width: 100%;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.pie-chart-svg-container {
+  position: relative;
+  width: 100%;
+  max-width: var(--pie-size);
+  margin: 0 auto;
+  aspect-ratio: 1;
+}
+
+.pie-chart-svg {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.pie-slice {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  cursor: pointer;
+}
+
+.pie-slice:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.pie-chart-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pie-chart-total {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--foreground);
+  line-height: 1.2;
+}
+
+.pie-chart-label {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-top: 0.25rem;
+}
+
+.pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+.pie-legend-text {
+  font-size: 0.875rem;
+  color: var(--foreground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pie-legend-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.pie-legend-number {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+/* Apply dynamic colors from data attributes */
+.pie-legend-color[data-color] {
+  background-color: attr(data-color);
+}
+
+.pie-slice[data-slice-color] {
+  fill: attr(data-slice-color);
+}
+
+/* LineChart Styles */
+.line-chart-container {
+  width: 100%;
+  height: var(--chart-height);
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+/* Area Chart Styles */
+.area-chart-container {
+  width: 100%;
+  height: var(--chart-height);
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+/* Gauge Chart Styles */
+.gauge-chart-container {
+  width: 100%;
+  max-width: 250px;
+  margin: 0 auto;
+}
+
+.gauge-label {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  color: var(--foreground);
+}
+
+.gauge-value {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* Stats Card Styles */
+.stats-card {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--background);
+  transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.stats-card-value {
+  margin-top: 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.stats-card-change {
+  display: flex;
+  align-items: center;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.stats-card-change.positive {
+  color: var(--success);
+}
+
+.stats-card-change.negative {
+  color: var(--destructive);
+}
+
+.stats-card-icon {
+  padding: 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--primary-50);
+  color: var(--primary-500);
+}
+
+/* Responsive adjustments */
+@media (min-width: 640px) {
+  .stats-card {
+    padding: 1.5rem;
+  }
+  
+  .stats-card-value {
+    font-size: 1.75rem;
+  }
+}
+
+/* Animation for charts */
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.chart-animate {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Dark mode support */
+[data-theme='dark'] {
+  --bar-hover-color: var(--primary-400);
+  --bar-active-color: var(--primary-300);
+  --bar-inactive-color: var(--muted-foreground/0.2);
+}
+
+/* Focus styles for accessibility */
+.bar:focus-visible,
+.pie-slice:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  position: relative;
+  z-index: 1;
+}

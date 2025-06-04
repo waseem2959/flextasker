@@ -1,14 +1,8 @@
 /**
- * Contexts Index with TypeScript Improvements
+ * Contexts Index
  * 
- * This file provides a central export point for all contexts
- * with improved TypeScript typing and organization.
+ * Re-exports all contexts for easier imports.
  */
 
-// Export context instances
-export { AuthContext, NotificationContext } from './contextInstance';
+export * from './theme-context';
 
-// Export context providers
-export { AuthProvider } from './AuthContext';
-export { NotificationProvider } from './NotificationContext';
-export type { Notification } from './NotificationContext';

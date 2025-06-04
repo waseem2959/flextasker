@@ -5,9 +5,9 @@
  * providing a record of who did what and when for security and compliance purposes.
  */
 
+import { NextFunction, Request, Response } from 'express';
 import { db } from '../utils/database';
 import { logger } from '../utils/logger';
-import { NextFunction, Request, Response } from 'express';
 
 /**
  * Create an audit log middleware for a specific action and resource
@@ -29,23 +29,27 @@ export const auditLog = (action: string, resource: string) => {
           const userId = req.user?.id;
           const resourceId = req.params.id ?? req.body.id;
           
+          const auditData: any = {
+            action,
+            resource,
+            timestamp: new Date(),
+          };
+          
+          if (userId) {
+            auditData.userId = userId;
+          }
+          
+          if (req.ip) {
+            auditData.ipAddress = req.ip;
+          }
+          
+          const userAgent = req.get('User-Agent');
+          if (userAgent) {
+            auditData.userAgent = userAgent;
+          }
+          
           await db.auditLog.create({
-            data: {
-              userId,
-              action,
-              resource,
-              resourceId,
-              details: {
-                method: req.method,
-                url: req.url,
-                body: req.body,
-                params: req.params,
-                query: req.query,
-              },
-              ipAddress: req.ip,
-              userAgent: req.get('User-Agent'),
-              timestamp: new Date(),
-            },
+            data: auditData,
           });
           
           if (process.env.NODE_ENV !== 'production') {

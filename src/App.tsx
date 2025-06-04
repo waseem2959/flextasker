@@ -1,48 +1,49 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ReactQueryProvider } from "@/lib/query-provider";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Toaster } from "./components/ui/toaster";
+import { TooltipProvider } from "./components/ui/tooltip";
+import { ReactQueryProvider } from "./lib/query-provider";
 
 // Pages
+import Dashboard from "./pages/dashboard";
+import HowItWorks from "./pages/how-it-works";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Tasks from "./pages/Tasks";
-import TaskDetail from "./pages/TaskDetail";
-import PostTask from "./pages/PostTask";
-import Dashboard from "./pages/Dashboard";
-import HowItWorks from "./pages/HowItWorks";
-import Profile from "./pages/Profile";
+import Login from "./pages/login";
+import NotFound from "./pages/not-found";
+import Profile from "./pages/profile";
+import Register from "./pages/register";
+import TaskCreate from "./pages/task-create";
+import TaskDetail from "./pages/task-detail";
+import Tasks from "./pages/tasks";
 
-// Contexts
-import { EnhancedAuthProvider } from "./contexts";
+// Auth Provider
+import AuthProvider from "./services/providers/auth-provider";
 
 const App = () => (
-  <BrowserRouter>
-    <ReactQueryProvider>
-      <EnhancedAuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/tasks" element={<Tasks />} />
-            <Route path="/tasks/:id" element={<TaskDetail />} />
-            <Route path="/post-task" element={<PostTask />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
-      </EnhancedAuthProvider>
-    </ReactQueryProvider>
-  </BrowserRouter>
+    <BrowserRouter>
+      <ReactQueryProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <div className="min-h-screen bg-background">
+              <Toaster />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/tasks" element={<Tasks />} />
+                <Route path="/tasks/:id" element={<TaskDetail />} />
+                <Route path="/post-task" element={<TaskCreateWizard />} />
+                <Route path="/post-task/advanced" element={<TaskCreate />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/how-it-works" element={<HowItWorks />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </div>
+          </TooltipProvider>
+        </AuthProvider>
+      </ReactQueryProvider>
+    </BrowserRouter>
 );
 
 export default App;

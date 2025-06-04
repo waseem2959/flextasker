@@ -8,11 +8,11 @@
  * - Email verification
  */
 
+import * as jwtModule from 'jsonwebtoken';
 import { comparePassword, generateToken, hashPassword } from '../utils/crypto';
 import { db } from '../utils/database';
 import { AuthenticationError, ConflictError, ValidationError } from '../utils/error-utils';
 import { logger } from '../utils/logger';
-import * as jwtModule from 'jsonwebtoken';
 import { EmailService } from './email-service';
 
 // Create a properly typed interface for JWT operations
@@ -104,7 +104,7 @@ export class AuthService {
       const newUser = await db.user.create({
         data: {
           email: userData.email.toLowerCase(),
-          password: hashedPassword,
+          passwordHash: hashedPassword,
           firstName: userData.firstName,
           lastName: userData.lastName,
           phone: userData.phone,
@@ -144,7 +144,7 @@ export class AuthService {
           role: newUser.role,
           emailVerified: newUser.emailVerified,
           phoneVerified: newUser.phoneVerified ?? false,
-          avatar: newUser.avatar
+          avatar: newUser.avatar ?? undefined
         },
         token,
         refreshToken
@@ -180,7 +180,7 @@ export class AuthService {
       }
 
       // Check if password matches
-      const passwordMatches = await comparePassword(credentials.password, user.password);
+      const passwordMatches = await comparePassword(credentials.password, user.passwordHash);
       if (!passwordMatches) {
         throw new AuthenticationError('Invalid email or password');
       }
@@ -227,7 +227,7 @@ export class AuthService {
           role: user.role,
           emailVerified: user.emailVerified,
           phoneVerified: user.phoneVerified ?? false,
-          avatar: user.avatar
+          avatar: user.avatar ?? undefined
         },
         token,
         refreshToken
@@ -286,7 +286,7 @@ export class AuthService {
           role: tokenRecord.user.role,
           emailVerified: tokenRecord.user.emailVerified,
           phoneVerified: tokenRecord.user.phoneVerified ?? false,
-          avatar: tokenRecord.user.avatar
+          avatar: tokenRecord.user.avatar ?? undefined
         },
         token: newToken,
         refreshToken: newRefreshToken
@@ -463,7 +463,7 @@ export class AuthService {
       // Update user's password
       await db.user.update({
         where: { id: resetRecord.userId },
-        data: { password: hashedPassword }
+        data: { passwordHash: hashedPassword }
       });
 
       // Delete all password reset tokens for this user
@@ -500,7 +500,7 @@ export class AuthService {
       }
 
       // Verify current password
-      const passwordMatches = await comparePassword(currentPassword, user.password);
+      const passwordMatches = await comparePassword(currentPassword, user.passwordHash);
       if (!passwordMatches) {
         throw new ValidationError('Current password is incorrect');
       }
@@ -511,7 +511,7 @@ export class AuthService {
       // Update user's password
       await db.user.update({
         where: { id: userId },
-        data: { password: hashedPassword }
+        data: { passwordHash: hashedPassword }
       });
 
       // Invalidate all refresh tokens for this user except the current one

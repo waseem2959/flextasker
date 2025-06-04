@@ -5,12 +5,12 @@
  * It serves as an intermediary between routes and services, improving separation of concerns.
  */
 
-import { Request, Response } from 'express';
-import { BaseController } from './base-controller';
 import { taskService } from '@/services/task-service';
 import { logger } from '@/utils/logger';
+import { Request, Response } from 'express';
 import { TaskStatus } from '../../../shared/types/enums';
 import { ErrorType } from '../../../shared/types/errors';
+import { BaseController } from './base-controller';
 
 export class TaskController extends BaseController {
   /**
@@ -183,7 +183,6 @@ export class TaskController extends BaseController {
     
     return this.sendSuccess(res, task, 'Task assigned successfully');
   });
-
   /**
    * Search for tasks
    */
@@ -236,6 +235,162 @@ export class TaskController extends BaseController {
     const tasks = await taskService.searchTasks(searchParams);
     
     return this.sendSuccess(res, tasks, 'Search results retrieved successfully');
+  });
+
+  /**
+   * Update task status
+   */
+  updateTaskStatus = this.asyncHandler(async (req: Request, res: Response) => {
+    const taskId = req.params.id;
+    const userId = req.user!.id;
+    const { status, notes } = req.body;
+    
+    logger.info('Updating task status', { taskId, userId, status });
+    const task = await taskService.updateTaskStatus(taskId, userId, status, notes);
+    
+    return this.sendSuccess(res, task, 'Task status updated successfully');
+  });
+
+  /**
+   * Get my tasks (client view)
+   */
+  getMyTasks = this.asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const {
+      status,
+      page = '1',
+      limit = '10',
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+    
+    const parsedPage = parseInt(page as string, 10);
+    const parsedLimit = parseInt(limit as string, 10);
+    
+    // Validate numeric parameters
+    if (isNaN(parsedPage) || isNaN(parsedLimit)) {
+      return this.sendError(
+        res, 
+        'Invalid pagination parameters', 
+        400, 
+        ErrorType.VALIDATION
+      );
+    }
+    
+    const options = {
+      status: status as TaskStatus,
+      page: parsedPage,
+      limit: parsedLimit,
+      sortBy: sortBy as string,
+      sortOrder: sortOrder as 'asc' | 'desc'
+    };
+    
+    logger.info('Fetching user tasks', { userId, options });
+    const result = await taskService.getMyTasks(userId, options);
+    
+    return this.sendSuccess(res, result, 'Tasks retrieved successfully');
+  });
+
+  /**
+   * Get tasks I'm working on (tasker view)
+   */
+  getTasksImWorkingOn = this.asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const {
+      status,
+      page = '1',
+      limit = '10',
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+    
+    const parsedPage = parseInt(page as string, 10);
+    const parsedLimit = parseInt(limit as string, 10);
+    
+    // Validate numeric parameters
+    if (isNaN(parsedPage) || isNaN(parsedLimit)) {
+      return this.sendError(
+        res, 
+        'Invalid pagination parameters', 
+        400, 
+        ErrorType.VALIDATION
+      );
+    }
+    
+    const options = {
+      status: status as TaskStatus,
+      page: parsedPage,
+      limit: parsedLimit,
+      sortBy: sortBy as string,
+      sortOrder: sortOrder as 'asc' | 'desc'
+    };
+    
+    logger.info('Fetching assigned tasks', { userId, options });
+    const result = await taskService.getTasksImWorkingOn(userId, options);
+    
+    return this.sendSuccess(res, result, 'Assigned tasks retrieved successfully');
+  });
+
+  /**
+   * Add task attachment
+   */
+  addTaskAttachment = this.asyncHandler(async (req: Request, res: Response) => {
+    const taskId = req.params.id;
+    const userId = req.user!.id;
+    const attachmentData = req.body;
+    
+    // Validate required fields
+    if (!attachmentData.filename || !attachmentData.fileUrl) {
+      return this.sendError(
+        res, 
+        'Filename and file URL are required', 
+        400, 
+        ErrorType.VALIDATION
+      );
+    }
+    
+    logger.info('Adding task attachment', { taskId, userId, filename: attachmentData.filename });
+    const attachment = await taskService.addTaskAttachment(taskId, userId, attachmentData);
+    
+    return this.sendSuccess(res, attachment, 'Attachment added successfully', 201);
+  });
+
+  /**
+   * Remove task attachment
+   */
+  removeTaskAttachment = this.asyncHandler(async (req: Request, res: Response) => {
+    const taskId = req.params.id;
+    const attachmentId = req.params.attachmentId;
+    const userId = req.user!.id;
+    
+    logger.info('Removing task attachment', { taskId, attachmentId, userId });
+    const result = await taskService.removeTaskAttachment(taskId, attachmentId, userId);
+    
+    return this.sendSuccess(res, result, 'Attachment removed successfully');
+  });
+
+  /**
+   * Get featured tasks
+   */
+  getFeaturedTasks = this.asyncHandler(async (req: Request, res: Response) => {
+    const { limit = '5' } = req.query;
+    
+    const parsedLimit = parseInt(limit as string, 10);
+    if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 10) {
+      return this.sendError(
+        res, 
+        'Limit must be between 1 and 10', 
+        400, 
+        ErrorType.VALIDATION
+      );
+    }
+    
+    const options = { limit: parsedLimit };
+    
+    logger.info('Fetching featured tasks', { options });
+    const tasks = await taskService.getFeaturedTasks(options);
+    
+    return this.sendSuccess(res, tasks, 'Featured tasks retrieved successfully');
   });
 }
 

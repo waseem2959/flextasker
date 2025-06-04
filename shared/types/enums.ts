@@ -20,7 +20,8 @@ export enum UserRole {
  */
 export enum TaskStatus {
   OPEN = 'OPEN',              // Task is posted and accepting bids
-  IN_PROGRESS = 'IN_PROGRESS', // Task has been accepted and is being worked on
+  ACCEPTED = 'ACCEPTED',      // Task has an accepted bid but work hasn't started
+  IN_PROGRESS = 'IN_PROGRESS', // Task is being worked on
   COMPLETED = 'COMPLETED',    // Task is finished and awaiting final approval
   CANCELLED = 'CANCELLED',    // Task was cancelled by either party
   DISPUTED = 'DISPUTED'       // Task has issues that need admin resolution

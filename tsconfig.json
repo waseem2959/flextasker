@@ -33,7 +33,8 @@
       "@/hooks/*": ["src/hooks/*"],
       "@/types/*": ["src/types/*"],
       "@/utils/*": ["src/utils/*"],
-      "@/stores/*": ["src/stores/*"]
+      "@/stores/*": ["src/stores/*"],
+      "@/shared/*": ["shared/*"]
     }
   },
   "include": ["src"],

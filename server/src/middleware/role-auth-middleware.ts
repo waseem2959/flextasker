@@ -5,7 +5,7 @@
  * to protect routes based on user roles and permissions.
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { UserRole } from '../../../shared/types/enums';
 import { AppError } from '../utils/error-utils';
 import { logger } from '../utils/logger';
@@ -14,11 +14,12 @@ import { logger } from '../utils/logger';
 // Extend the Express Request type to include our custom properties
 declare global {
   namespace Express {
+    interface User {
+      id: string;
+      role: UserRole;
+    }
+    
     interface Request {
-      user?: {
-        id: string;
-        role: UserRole;
-      };
       db: {
         task: {
           findUnique: (options: { where: { id: string }, select: { createdBy: boolean, taskerId: boolean } }) => Promise<{ createdBy: string, taskerId: string | null } | null>;

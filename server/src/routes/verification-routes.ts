@@ -8,12 +8,12 @@
  * - Verification status checks
  */
 
-import { Router, Request, Response } from 'express';
-import { body } from 'express-validator';
+import { verificationController } from '@/controllers/verification-controller';
 import { authenticateToken } from '@/middleware/auth-middleware';
 import { uploadVerification } from '@/middleware/upload-middleware';
 import { validate } from '@/middleware/validation-middleware';
-import { verificationController } from '@/controllers/verification-controller';
+import { Router } from 'express';
+import { body } from 'express-validator';
 
 const router = Router();
 
@@ -64,27 +64,29 @@ router.post('/phone/verify',
       .notEmpty()
       .withMessage('Verification code is required')
   ]),
-  (_req: Request, res: Response): void => {
-    res.status(501).json({ success: false, message: 'Phone verification not implemented yet' });
-  }
+  verificationController.verifyPhoneCode
 );
 
 /**
  * Upload Identity Document
  * POST /api/v1/verification/identity/upload
  */
-// TODO: Implement uploadIdentityDocument in verification controller
 router.post('/identity/upload',
   authenticateToken,
-  (req: Request, res: Response): void => {
-    uploadVerification(req, res, (err) => {
-      if (err) {
-        res.status(400).json({ success: false, message: err.message });
-        return;
-      }
-      res.status(501).json({ success: false, message: 'Identity document upload not implemented yet' });
-    });
-  }
+  uploadVerification,
+  validate([
+    body('documentType')
+      .optional()
+      .isIn(['ID_DOCUMENT', 'ADDRESS_PROOF', 'BACKGROUND_CHECK'])
+      .withMessage('Document type must be ID_DOCUMENT, ADDRESS_PROOF, or BACKGROUND_CHECK'),
+    body('notes')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Notes must be less than 500 characters')
+  ]),
+  verificationController.uploadIdentityDocument
 );
 
 /**
@@ -109,10 +111,7 @@ router.post('/request-manual',
       .isLength({ min: 10, max: 500 })
       .withMessage('Reason must be between 10 and 500 characters'),
   ]),
-  // TODO: Implement requestManualVerification in verification controller
-  (_req: Request, res: Response): void => {
-    res.status(501).json({ success: false, message: 'Manual verification request not implemented yet' });
-  }
+  verificationController.requestManualVerification
 );
 
 export default router;

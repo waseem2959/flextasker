@@ -9,12 +9,12 @@
  * - Task attachments and metadata
  */
 
-import { Router, Request, Response, RequestHandler } from 'express';
-import { body, param, query } from 'express-validator';
+import { taskController } from '@/controllers/task-controller';
 import { authenticateToken, optionalAuth, requireRoles } from '@/middleware/auth-middleware';
 import { validate } from '@/middleware/validation-middleware';
-import { taskController } from '@/controllers/task-controller';
-import { UserRole, TaskStatus, TaskPriority, BudgetType } from '../../../shared/types/enums';
+import { Router } from 'express';
+import { body, param, query } from 'express-validator';
+import { BudgetType, TaskPriority, TaskStatus, UserRole } from '../../../shared/types/enums';
 
 const router = Router();
 
@@ -113,10 +113,7 @@ router.patch('/:id/status',
     body('notes').optional().isString().trim().isLength({ max: 500 })
       .withMessage('Notes cannot exceed 500 characters')
   ]),
-  // TODO: Implement updateTaskStatus in task controller
-  ((_req: Request, res: Response) => {
-    res.status(501).json({ success: false, message: 'Not implemented' });
-  }) as RequestHandler
+  taskController.updateTaskStatus
 );
 
 /**
@@ -164,10 +161,7 @@ router.get('/my-tasks',
     query('limit').optional().isInt({ min: 1, max: 100 })
       .withMessage('Limit must be between 1 and 100')
   ]),
-  // TODO: Implement getMyTasks in task controller
-  ((_req: Request, res: Response) => {
-    res.status(501).json({ success: false, message: 'Not implemented' });
-  }) as RequestHandler
+  taskController.getMyTasks
 );
 
 /**
@@ -185,10 +179,7 @@ router.get('/working-on',
     query('limit').optional().isInt({ min: 1, max: 100 })
       .withMessage('Limit must be between 1 and 100')
   ]),
-  // TODO: Implement getTasksImWorkingOn in task controller
-  ((_req: Request, res: Response) => {
-    res.status(501).json({ success: false, message: 'Not implemented' });
-  }) as RequestHandler
+  taskController.getTasksImWorkingOn
 );
 
 /**
@@ -198,12 +189,16 @@ router.get('/working-on',
 router.post('/:id/attachments',
   authenticateToken,
   validate([
-    param('id').isUUID().withMessage('Invalid task ID format')
+    param('id').isUUID().withMessage('Invalid task ID format'),
+    body('filename').isString().trim().isLength({ min: 1, max: 255 })
+      .withMessage('Filename is required and must be between 1 and 255 characters'),
+    body('fileUrl').isURL().withMessage('Valid file URL is required'),
+    body('fileSize').optional().isInt({ min: 0 })
+      .withMessage('File size must be a positive integer'),
+    body('mimeType').optional().isString().trim()
+      .withMessage('MIME type must be a string')
   ]),
-  // TODO: Implement addTaskAttachment in task controller
-  ((_req: Request, res: Response) => {
-    res.status(501).json({ success: false, message: 'Not implemented' });
-  }) as RequestHandler
+  taskController.addTaskAttachment
 );
 
 /**
@@ -216,10 +211,7 @@ router.delete('/:id/attachments/:attachmentId',
     param('id').isUUID().withMessage('Invalid task ID format'),
     param('attachmentId').isUUID().withMessage('Invalid attachment ID format')
   ]),
-  // TODO: Implement removeTaskAttachment in task controller
-  ((_req: Request, res: Response) => {
-    res.status(501).json({ success: false, message: 'Not implemented' });
-  }) as RequestHandler
+  taskController.removeTaskAttachment
 );
 
 /**
@@ -232,10 +224,7 @@ router.get('/featured',
     query('limit').optional().isInt({ min: 1, max: 10 })
       .withMessage('Limit must be between 1 and 10')
   ]),
-  // TODO: Implement getFeaturedTasks in task controller
-  ((_req: Request, res: Response) => {
-    res.status(501).json({ success: false, message: 'Not implemented' });
-  }) as RequestHandler
+  taskController.getFeaturedTasks
 );
 
 export default router;

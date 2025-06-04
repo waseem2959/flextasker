@@ -6,31 +6,37 @@
  */
 
 // Authentication hooks
-export { default as useAuth } from './useAuth';
+export { default as useAuth } from './use-auth';
 
 // Socket/Realtime hooks
-export { default as useSocket } from './useSocket';
-export { useSocketEvent } from './useSocket';
+export { default as useRealtime, useRealtimeEvent } from './use-realtime';
+export { default as useSocket, useSocketEvent } from './use-socket';
 
 // Task-related hooks
-export { default as useTask, useTaskList } from './useTask';
-export * from './useTasks';
+export * from './use-tasks';
 
 // Chat/Messaging hooks
-export { default as useChat } from './useChat';
+export { default as useChat } from './use-chat';
 
 // Toast notifications
-export { default as useToast, toast } from './useToast';
+export { toast, useToast } from './use-toast';
 
 // API hooks
-export * from './useApi';
+export * from './use-api';
 
 // Domain-specific hooks
-export * from './useBids';
-export * from './useUsers';
-export * from './useNotifications';
+export * from './use-bids';
+export * from './use-notifications';
+export * from './use-users';
 
 // UI and form-related hooks
-export * from './useForm';
-export * from './useMobile';
-export * from './useSidebar';
+export * from './use-form';
+// Don't export conflicting members from use-form-field
+// If you need specific non-conflicting exports from use-form-field, add them like:
+// export { NonConflictingExport1, NonConflictingExport2 } from './use-form-field';
+// Don't export conflicting members from use-form-validation
+// If you need the useFormValidation from use-form-validation, you can rename it:
+export { useFormValidation as useFormValidationAlternative } from './use-form-validation';
+export { useIsMobile } from './use-mobile';
+export * from './use-sidebar';
+

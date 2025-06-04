@@ -1,47 +1,14 @@
-import { Link } from 'react-router-dom';
-import { Layout } from '../components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CATEGORIES, TASKS } from '../data/mockData';
-import { TaskCard } from '../components/task/TaskCard';
-import { ArrowRight, MapPin, Search, CheckCircle } from 'lucide-react';
+import { CategoryIcon } from '@/components/ui/category-icons';
+import { Star } from '@/components/ui/star-rating';
+import { ArrowRight, CheckCircle, MapPin, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Layout } from '../components/layout/Layout';
+import { TaskCard } from '../components/task/task-card';
+import { CATEGORIES, TASKS } from '../data/mock-data';
 
-// Helper function to render category icons
-const renderCategoryIcon = (iconName: string) => {
-  switch(iconName) {
-    case 'home':
-      return (
-        <svg className="h-6 w-6 text-flextasker-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-      );
-    case 'briefcase':
-      return (
-        <svg className="h-6 w-6 text-flextasker-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      );
-    case 'user':
-      return (
-        <svg className="h-6 w-6 text-flextasker-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      );
-    case 'clock':
-      return (
-        <svg className="h-6 w-6 text-flextasker-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      );
-    default:
-      return (
-        <svg className="h-6 w-6 text-flextasker-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      );
-  }
-};
+// Category icons are now handled by the CategoryIcon component
 
 const Index = () => {
   // Get 3 featured tasks
@@ -49,104 +16,51 @@ const Index = () => {
   
   return (
     <Layout>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-b from-flextasker-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="order-2 lg:order-1 animate-slide-up">
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
-                Your Bridge to Getting Things Done
-              </h1>
-              <p className="mt-6 text-xl text-gray-600">
-                Post a task and connect with skilled workers who bid their price. Find the perfect match for your needs.
-              </p>
-              <div className="mt-10 flex flex-col sm:flex-row gap-4">
-                <Button asChild size="lg" className="text-base">
-                  <Link to="/post-task">Post a Task</Link>
-                </Button>
-                <Button asChild variant="outline" size="lg" className="text-base">
-                  <Link to="/tasks">Find Work</Link>
-                </Button>
-              </div>
-            </div>
-            <div className="order-1 lg:order-2 flex justify-center">
-              <div className="relative w-full max-w-lg">
-                <div className="absolute top-0 -left-4 w-72 h-72 bg-flextasker-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-                <div className="absolute top-0 -right-4 w-72 h-72 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-                <div className="absolute -bottom-8 left-20 w-72 h-72 bg-cyan-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
-                <div className="relative">
-                  <img 
-                    src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8d29ya2VyfGVufDB8fDB8fHww" 
-                    alt="Worker completing a task"
-                    className="relative rounded-lg shadow-lg max-h-96 object-cover"
-                  />
-                  <div className="absolute -right-8 -bottom-8 bg-white p-4 rounded-lg shadow-lg">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-full overflow-hidden mr-3">
-                        <img 
-                          src="https://cdn-icons-png.flaticon.com/128/4140/4140047.png"
-                          alt="Profile"
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center text-yellow-500 text-sm font-medium">
-                          ★★★★★ <span className="text-gray-700 ml-1">5.0</span>
-                        </div>
-                        <p className="text-gray-700 font-medium">Shreshta K.</p>
-                        <p className="text-xs text-gray-500">Painter</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Enhanced Hero Section */}
+      <HeroSection />
 
       {/* How It Works */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-muted/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">How FlexTasker Works</h2>
-            <p className="mt-4 text-xl text-gray-600">
+            <h2 className="text-3xl font-bold text-foreground">How FlexTasker Works</h2>
+            <p className="mt-4 text-xl text-muted-foreground">
               A simple process to get your tasks done
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+            <Card className="hover:shadow-md transition-shadow">
               <CardContent className="p-6 text-center">
-                <div className="h-12 w-12 rounded-full bg-flextasker-100 flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="h-6 w-6 text-flextasker-600" />
+                <div className="h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="h-6 w-6 text-primary-500" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Post a Task</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-bold mb-2 text-foreground">Post a Task</h3>
+                <p className="text-muted-foreground">
                   Describe what you need done, when, and your budget. Add photos and location details.
                 </p>
               </CardContent>
             </Card>
             
-            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+            <Card className="hover:shadow-md transition-shadow">
               <CardContent className="p-6 text-center">
-                <div className="h-12 w-12 rounded-full bg-flextasker-100 flex items-center justify-center mx-auto mb-4">
-                  <Search className="h-6 w-6 text-flextasker-600" />
+                <div className="h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4">
+                  <Search className="h-6 w-6 text-primary-500" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Review Bids</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-bold mb-2 text-foreground">Review Bids</h3>
+                <p className="text-muted-foreground">
                   Compare bids from skilled workers. Check profiles, ratings, and choose the right person.
                 </p>
               </CardContent>
             </Card>
             
-            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+            <Card className="hover:shadow-md transition-shadow">
               <CardContent className="p-6 text-center">
-                <div className="h-12 w-12 rounded-full bg-flextasker-100 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="h-6 w-6 text-flextasker-600" />
+                <div className="h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="h-6 w-6 text-primary-500" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Get It Done</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-bold mb-2 text-foreground">Get It Done</h3>
+                <p className="text-muted-foreground">
                   Connect with your worker, finalize details via chat, and get your task completed.
                 </p>
               </CardContent>
@@ -168,8 +82,8 @@ const Index = () => {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">Browse by Category</h2>
-            <p className="mt-4 text-xl text-gray-600">
+            <h2 className="text-3xl font-bold text-foreground">Browse by Category</h2>
+            <p className="mt-4 text-xl text-muted-foreground">
               Find skilled workers across various services
             </p>
           </div>
@@ -181,14 +95,14 @@ const Index = () => {
                 to={`/tasks?category=${encodeURIComponent(category.name)}`}
                 className="group"
               >
-                <div className="border border-gray-200 rounded-lg p-6 text-center hover:border-flextasker-200 hover:shadow-sm transition-all">
-                  <div className="h-12 w-12 rounded-full bg-flextasker-100 flex items-center justify-center mx-auto mb-4 group-hover:bg-flextasker-200 transition-colors">
-                    {renderCategoryIcon(category.icon)}
+                <div className="border border-border rounded-lg p-6 text-center hover:border-primary-300 hover:shadow-sm transition-all">
+                  <div className="h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4 group-hover:bg-primary-100 transition-colors">
+                    <CategoryIcon name={category.icon} className="group-hover:scale-110 transition-transform" />
                   </div>
-                  <h3 className="font-medium group-hover:text-flextasker-600 transition-colors">
+                  <h3 className="font-medium text-foreground group-hover:text-primary-600 transition-colors">
                     {category.name}
                   </h3>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {category.subcategories.slice(0, 3).join(', ')}
                     {category.subcategories.length > 3 && '...'}
                   </p>
@@ -199,8 +113,8 @@ const Index = () => {
           
           <div className="mt-12 text-center">
             <Link to="/tasks">
-              <Button variant="default" size="lg">
-                Browse All Tasks
+              <Button variant="outline" size="lg" className="border-[hsl(215,16%,80%)] text-[hsl(196,80%,43%)]">
+                View All Categories
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -213,7 +127,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900">Featured Tasks</h2>
-            <Link to="/tasks" className="text-flextasker-600 hover:text-flextasker-700 flex items-center font-medium">
+            <Link to="/tasks" className="text-primary-600 hover:text-primary-500 flex items-center font-medium">
               View All
               <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
@@ -238,25 +152,31 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-6 relative">
-                <div className="absolute -top-4 -left-2 text-5xl text-flextasker-200">"</div>
-                <div className="pt-4">
-                  <p className="text-gray-600 mb-4">
+            <Card className="relative overflow-hidden hover:shadow-lg transition-shadow duration-300">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-primary-600"></div>
+              <CardContent className="p-6 pt-8 relative">
+                <div className="absolute top-4 left-6 text-5xl text-primary-100 font-serif">"</div>
+                <div>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
                     I found a skilled plumber within hours who fixed my leaking sink at a price I could afford. The bidding system helped me get the best deal.
                   </p>
                   <div className="flex items-center">
-                    <div className="h-10 w-10 rounded-full overflow-hidden mr-3">
+                    <div className="h-12 w-12 rounded-full overflow-hidden mr-4 border-2 border-primary-100">
                       <img 
                         src="https://cdn-icons-png.flaticon.com/128/4140/4140048.png" 
-                        alt="Client" 
+                        alt="Rohit, satisfied client" 
                         className="h-full w-full object-cover"
+                        width={48}
+                        height={48}
+                        loading="lazy"
                       />
                     </div>
                     <div>
-                      <p className="font-medium">Rohit</p>
-                      <div className="flex items-center text-yellow-500 text-sm">
-                        ★★★★★
+                      <p className="font-medium text-foreground">Rohit</p>
+                      <div className="flex items-center text-amber-500 text-sm mt-1" aria-label="5 out of 5 stars">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={`rohit-star-${i + 1}`} className="h-4 w-4 fill-current" />
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -264,51 +184,64 @@ const Index = () => {
               </CardContent>
             </Card>
             
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-6 relative">
-                <div className="absolute -top-4 -left-2 text-5xl text-flextasker-200">"</div>
-                <div className="pt-4">
-                  <p className="text-gray-600 mb-4">
+            <Card className="relative overflow-hidden hover:shadow-lg transition-shadow duration-300">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-primary-600"></div>
+              <CardContent className="p-6 pt-8 relative">
+                <div className="absolute top-4 left-6 text-5xl text-primary-100 font-serif">"</div>
+                <div>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
                     As a painter, FlexTasker has helped me find consistent work in my area. The platform is easy to use and I can set my own rates.
                   </p>
                   <div className="flex items-center">
-                    <div className="h-10 w-10 rounded-full overflow-hidden mr-3">
+                    <div className="h-12 w-12 rounded-full overflow-hidden mr-4 border-2 border-primary-100">
                       <img 
                         src="https://cdn-icons-png.flaticon.com/128/1154/1154448.png" 
-                        alt="Worker" 
+                        alt="Priya, professional painter" 
                         className="h-full w-full object-cover"
+                        width={48}
+                        height={48}
+                        loading="lazy"
                       />
                     </div>
                     <div>
-                      <p className="font-medium">Priya</p>
-                      <div className="flex items-center text-yellow-500 text-sm">
-                        ★★★★
+                      <p className="font-medium text-foreground">Priya</p>
+                      <div className="flex items-center text-amber-500 text-sm mt-1" aria-label="4 out of 5 stars">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                          <Star key={`priya-star-${i + 1}`} className="h-4 w-4 fill-current" />
+                        ))}
+                        <Star key="priya-star-5" className="h-4 w-4 text-gray-300" />
                       </div>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-6 relative">
-                <div className="absolute -top-4 -left-2 text-5xl text-flextasker-200">"</div>
-                <div className="pt-4">
-                  <p className="text-gray-600 mb-4">
-                    The website is so intuitive! I posted my first task and had multiple bids within a few hours. The chat feature made communication seamless.
+
+            <Card className="relative overflow-hidden hover:shadow-lg transition-shadow duration-300">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-primary-600"></div>
+              <CardContent className="p-6 pt-8 relative">
+                <div className="absolute top-4 left-6 text-5xl text-primary-100 font-serif">"</div>
+                <div>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
+                    The escrow payment system gives me peace of mind when hiring for home projects. I only release payment when I'm completely satisfied with the work.
                   </p>
                   <div className="flex items-center">
-                    <div className="h-10 w-10 rounded-full overflow-hidden mr-3">
+                    <div className="h-12 w-12 rounded-full overflow-hidden mr-4 border-2 border-primary-100">
                       <img 
-                        src="https://cdn-icons-png.flaticon.com/128/11498/11498793.png" 
-                        alt="Client" 
+                        src="https://cdn-icons-png.flaticon.com/128/4140/4140051.png" 
+                        alt="Amit, homeowner" 
                         className="h-full w-full object-cover"
+                        width={48}
+                        height={48}
+                        loading="lazy"
                       />
                     </div>
                     <div>
-                      <p className="font-medium">Neha</p>
-                      <div className="flex items-center text-yellow-500 text-sm">
-                        ★★★★★
+                      <p className="font-medium text-foreground">Amit</p>
+                      <div className="flex items-center text-amber-500 text-sm mt-1" aria-label="5 out of 5 stars">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={`amit-star-${i + 1}`} className="h-4 w-4 fill-current" />
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -320,17 +253,17 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-12 bg-flextasker-600 text-white">
+      <section className="py-12 bg-primary-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold">Ready to get started?</h2>
           <p className="mt-4 text-xl max-w-2xl mx-auto">
             Join FlexTasker today and connect with skilled workers or find work opportunities near you.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-            <Button asChild size="lg" variant="default" className="bg-white text-flextasker-600 hover:bg-gray-100">
+            <Button asChild size="lg" variant="secondary" className="bg-white text-primary-600 hover:bg-surface">
               <Link to="/post-task">Post a Task</Link>
             </Button>
-            <Button asChild size="lg" variant="default" className="bg-white text-flextasker-600 hover:bg-gray-100">
+            <Button asChild size="lg" variant="secondary" className="bg-white text-primary-600 hover:bg-surface">
               <Link to="/register">Sign Up</Link>
             </Button>
           </div>

@@ -6,36 +6,22 @@
  * and type safety across the application.
  */
 
-import { TaskStatus, TaskPriority, BudgetType, BidStatus } from './enums';
-import { ValidationErrorDetail } from './errors';
+import { BudgetType, TaskPriority, TaskStatus } from './enums';
 
 /**
- * Standard success response structure
+ * Re-export canonical API response types from the main types file
+ * This ensures consistency between frontend and backend
+ */
+export type { ApiResponse, PaginatedApiResponse, PaginationInfo } from '../../src/types/api-types';
+
+/**
+ * @deprecated Use ApiResponse from api-types.ts instead
  */
 export interface ApiSuccessResponse<T = any> {
   success: true;
   message: string;
   data: T;
   timestamp: string;
-}
-
-/**
- * Pagination information structure
- */
-export interface PaginationInfo {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
-
-/**
- * Paginated response structure
- */
-export interface PaginatedApiResponse<T = any> extends ApiSuccessResponse<T[]> {
-  pagination: PaginationInfo;
 }
 
 /**
@@ -98,30 +84,10 @@ export interface CancelTaskRequest {
 
 /**
  * Bid-related API types
+ * Re-exported from canonical location for consistency
  */
 
-export interface BidSearchParams {
-  taskId?: string;
-  bidderId?: string;
-  status?: BidStatus;
-  minAmount?: number;
-  maxAmount?: number;
-  page?: number;
-  limit?: number;
-}
-
-export interface CreateBidRequest {
-  taskId: string;
-  amount: number;
-  description: string;
-  timeline: string;
-}
-
-export interface UpdateBidRequest {
-  amount?: number;
-  description?: string;
-  timeline?: string;
-}
+export type { BidSearchParams, CreateBidRequest, UpdateBidRequest } from '../../src/types/api-types';
 
 /**
  * User-related API types

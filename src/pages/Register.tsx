@@ -1,19 +1,19 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Layout } from "../components/layout/Layout";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/RadioGroup";
-import { useAuth } from '@/hooks/useAuth';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useAuth } from '@/hooks/use-auth';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Layout } from "../components/layout/Layout";
 import { UserRole } from "../types";
 
 const Register = () => {
@@ -76,26 +76,26 @@ const Register = () => {
 
   return (
     <Layout>
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-white font-primary">
         <div className="w-full max-w-md">
-          <Card className="border-0 shadow-lg animate-fade-in">
+          <Card className="border border-[hsl(215,16%,80%)] shadow-lg animate-fade-in">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">
+              <CardTitle className="text-2xl font-bold text-center text-[hsl(206,33%,16%)]">
                 Create an account
               </CardTitle>
-              <CardDescription className="text-center">
+              <CardDescription className="text-center text-[hsl(220,14%,46%)]">
                 Enter your details to create your FlexTasker account
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-md text-sm">
+                <div className="bg-[hsl(354,70%,95%)] border border-[hsl(354,70%,54%)]/50 text-[hsl(354,70%,54%)] p-3 rounded-md text-sm">
                   {error}
                 </div>
               )}
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-2">
-                  <Label htmlFor="name">First Name</Label>
+                  <Label htmlFor="name" className="text-[hsl(206,33%,16%)]">First Name</Label>
                   <Input
                     id="name"
                     type="text"
@@ -106,7 +106,7 @@ const Register = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="lastName" className="text-[hsl(206,33%,16%)]">Last Name</Label>
                   <Input
                     id="lastName"
                     type="text"
@@ -117,7 +117,7 @@ const Register = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-[hsl(206,33%,16%)]">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -128,7 +128,7 @@ const Register = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className="text-[hsl(206,33%,16%)]">Password</Label>
                   <Input
                     id="password"
                     type="password"
@@ -140,7 +140,7 @@ const Register = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Label htmlFor="confirm-password" className="text-[hsl(206,33%,16%)]">Confirm Password</Label>
                   <Input
                     id="confirm-password"
                     type="password"
@@ -152,7 +152,7 @@ const Register = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>I want to join as</Label>
+                  <Label className="text-[hsl(206,33%,16%)]">I want to join as</Label>
                   <RadioGroup
                     defaultValue="worker"
                     value={role}
@@ -160,11 +160,11 @@ const Register = () => {
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="client" id="client" />
-                      <Label htmlFor="client">Client (post tasks)</Label>
+                      <Label htmlFor="client" className="text-[hsl(220,14%,46%)]">Client (post tasks)</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="worker" id="worker" />
-                      <Label htmlFor="worker">Worker (find work)</Label>
+                      <Label htmlFor="worker" className="text-[hsl(220,14%,46%)]">Worker (find work)</Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -175,11 +175,11 @@ const Register = () => {
               </form>
             </CardContent>
             <CardFooter className="flex flex-col">
-              <div className="text-sm text-gray-500 text-center mt-2">
+              <div className="text-sm text-[hsl(220,14%,46%)] text-center mt-2">
                 Already have an account?{" "}
                 <Link
                   to="/login"
-                  className="text-flextasker-600 hover:text-flextasker-700 font-medium"
+                  className="text-[hsl(196,80%,43%)] hover:text-[hsl(192,84%,26%)] font-medium"
                 >
                   Sign in
                 </Link>

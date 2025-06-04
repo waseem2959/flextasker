@@ -30,10 +30,13 @@ export type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse;
 export interface PaginationInfo {
   page: number;
   limit: number;
-  totalItems: number;
+  total: number;              // Primary field name (matches client)
+  totalItems: number;         // Keep for backward compatibility
   totalPages: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
+  hasNext: boolean;           // Primary field names (matches client)
+  hasPrev: boolean;
+  hasNextPage: boolean;       // Keep for backward compatibility
+  hasPreviousPage?: boolean;  // Alternative for backward compatibility
 }
 
 export interface ErrorDetail {
@@ -235,14 +238,19 @@ export function createPagination(
   totalItems: number
 ): PaginationInfo {
   const totalPages = Math.ceil(totalItems / limit);
+  const hasNext = page < totalPages;
+  const hasPrev = page > 1;
   
   return {
     page,
     limit,
-    totalItems,
+    total: totalItems,           // Primary field name
+    totalItems,                  // Backward compatibility
     totalPages,
-    hasNextPage: page < totalPages,
-    hasPrevPage: page > 1
+    hasNext,                     // Primary field names
+    hasPrev,
+    hasNextPage: hasNext,        // Backward compatibility
+    hasPreviousPage: hasPrev     // Alternative naming
   };
 }
 

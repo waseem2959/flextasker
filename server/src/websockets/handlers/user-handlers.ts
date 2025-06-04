@@ -4,12 +4,12 @@
  * This module handles WebSocket events related to user presence, status, and activity.
  */
 
+import { PrismaClient } from '@prisma/client';
 import { Socket } from 'socket.io';
+import { UserRole } from '../../../../shared/types/enums';
 import { logger } from '../../utils/logger';
 import { monitorError } from '../../utils/monitoring';
 import { SocketManager } from '../socket-manager';
-import { PrismaClient } from '@prisma/client';
-import { UserRole } from '../../../../shared/types/enums';
 
 // Define UserStatus enum since it's not in the shared enums
 enum UserStatus {
@@ -260,11 +260,13 @@ export async function updateUserOnlineStatus(
     // Notify each contact
     for (const contact of contacts) {
       const contactId = contact.userId === userId ? contact.contactUserId : contact.userId;
-      socketManager.sendToUser(contactId, 'user:onlineStatus', {
-        userId: userId,
-        isOnline,
-        timestamp: new Date()
-      });
+      if (contactId) {  // Add null check
+        socketManager.sendToUser(contactId, 'user:onlineStatus', {
+          userId: userId,
+          isOnline,
+          timestamp: new Date()
+        });
+      }
     }
     
     logger.debug('Updated user online status', { userId, isOnline });

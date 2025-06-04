@@ -13,24 +13,32 @@ import { cn } from "@/lib/utils"
 // The 'export' keyword here makes buttonVariants available to other files
 export const buttonVariants = cva(
   // Base classes that apply to all button variants
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       // Different visual styles for the button
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        primary: "bg-primary-600 text-white hover:bg-primary-500 focus:ring-primary-600 shadow-sm",
+        secondary: "bg-surface text-text-primary hover:bg-border focus:ring-primary-600 border border-border",
+        ghost: "text-primary-600 hover:bg-primary-50 focus:ring-primary-600",
+        danger: "bg-error text-white hover:bg-red-600 focus:ring-error shadow-sm",
+        success: "bg-success text-white hover:bg-green-600 focus:ring-success shadow-sm",
+        outline: "border border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white focus:ring-primary-600",
+        link: "text-primary-600 underline-offset-4 hover:underline focus:ring-primary-600",
+        // Keep default for backward compatibility
+        default: "bg-primary-600 text-white hover:bg-primary-500 focus:ring-primary-600 shadow-sm",
+        destructive: "bg-error text-white hover:bg-red-600 focus:ring-error shadow-sm",
+        warning: "bg-warning text-white hover:bg-yellow-600 focus:ring-warning shadow-sm",
       },
       // Different sizes for the button
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        sm: "px-3 py-1.5 text-sm h-8",
+        md: "px-4 py-2 text-base h-10",
+        lg: "px-6 py-3 text-lg h-12",
+        icon: "h-10 w-10 p-0",
+        // Keep default for backward compatibility
+        default: "px-4 py-2 text-base h-10",
+        xl: "px-8 py-4 text-lg h-14",
       },
     },
     defaultVariants: {

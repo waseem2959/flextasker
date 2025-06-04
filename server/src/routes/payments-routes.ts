@@ -8,11 +8,11 @@
  * - Processing refunds and disputes
  */
 
-import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
+import { paymentController } from '@/controllers/payment-controller';
+import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { authenticateToken } from '../middleware/auth-middleware';
 import { validate } from '../middleware/validation-middleware';
-import { paymentController } from '@/controllers/payment-controller';
 
 const router = Router();
 
@@ -80,10 +80,7 @@ router.get('/task/:taskId',
   validate([
     param('taskId').isUUID().withMessage('Invalid task ID format')
   ]),
-  // TODO: Implement getTaskPayments in payment controller
-  ((_req: Request, res: Response) => {
-    res.status(501).json({ success: false, message: 'Not implemented' });
-  }) as RequestHandler
+  paymentController.getTaskPayments
 );
 
 /**
@@ -96,10 +93,7 @@ router.post('/methods',
     body('type').isIn(['CREDIT_CARD', 'BANK_ACCOUNT', 'DIGITAL_WALLET']).withMessage('Invalid payment method type'),
     body('details').isObject().withMessage('Payment details are required')
   ]),
-  // TODO: Implement addPaymentMethod in payment controller
-  ((_req: Request, _res: Response, next: NextFunction) => {
-    next(new Error('Not implemented'));
-  }) as RequestHandler
+  paymentController.addPaymentMethod
 );
 
 /**
@@ -108,10 +102,7 @@ router.post('/methods',
  */
 router.get('/methods',
   authenticateToken,
-  // TODO: Implement getPaymentMethods in payment controller
-  ((_req: Request, res: Response) => {
-    res.status(501).json({ success: false, message: 'Not implemented' });
-  }) as RequestHandler
+  paymentController.getPaymentMethods
 );
 
 /**
@@ -123,12 +114,7 @@ router.delete('/methods/:id',
   validate([
     param('id').isUUID().withMessage('Invalid payment method ID')
   ]),
-  // TODO: Implement deletePaymentMethod in payment controller
-  ((_req: Request, _res: Response, next: NextFunction) => {
-    const err = new Error('Not implemented');
-    (err as any).status = 501;
-    next(err);
-  }) as RequestHandler
+  paymentController.deletePaymentMethod
 );
 
 /**
@@ -154,12 +140,7 @@ router.get('/:id/receipt',
   validate([
     param('id').isUUID().withMessage('Invalid payment ID format')
   ]),
-  // TODO: Implement getPaymentReceipt in payment controller
-  ((_req: Request, _res: Response, next: NextFunction) => {
-    const err = new Error('Not implemented');
-    (err as any).status = 501;
-    next(err);
-  }) as RequestHandler
+  paymentController.getPaymentReceipt
 );
 
 export default router;

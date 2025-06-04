@@ -6,14 +6,14 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { 
-  addRecurringJob, 
-  QueueName, 
-  EmailJobData, 
+import { NotificationType, TaskStatus } from '../../../shared/types/enums';
+import {
+  addRecurringJob,
+  EmailJobData,
+  QueueName,
   TaskReminderJobData
 } from './job-queue'; // Removed unused NotificationJobData import
 import { logger } from './logger';
-import { TaskStatus, NotificationType } from '../../../shared/types/enums';
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
@@ -156,7 +156,7 @@ export async function processTaskDeadlineReminders(): Promise<void> {
           taskId: task.id,
           userId: task.assigneeId!,
           type: 'deadline',
-          dueDate: task.dueDate
+          dueDate: task.dueDate?.toISOString()
         },
         '', // No recurrence - one-time job
         {

@@ -1,5 +1,5 @@
 import { Slot } from "@radix-ui/react-slot"
-import { ChevronRight, MoreHorizontal } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -57,7 +57,7 @@ const BreadcrumbList = React.forwardRef<
     ref={ref}
     className={cn(
       // Flexbox creates the horizontal flow and handles wrapping gracefully
-      "flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5",
+      "flex flex-wrap items-center gap-1.5 break-words text-sm font-primary text-[hsl(220,14%,46%)] sm:gap-2.5",
       className // Allow overrides for specific use cases
     )}
     {...props}
@@ -79,7 +79,7 @@ const BreadcrumbItem = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <li
     ref={ref}
-    className={cn("inline-flex items-center gap-1.5", className)}
+    className={cn("inline-flex items-center gap-1.5 font-primary", className)}
     {...props}
   />
 ))
@@ -114,7 +114,7 @@ const BreadcrumbLink = React.forwardRef<
     <Comp
       ref={ref}
       // The hover effect provides immediate visual feedback - essential for usability
-      className={cn("transition-colors hover:text-foreground", className)}
+      className={cn("transition-colors text-[hsl(220,14%,46%)] hover:text-[hsl(196,80%,43%)]", className)}
       {...props}
     />
   )
@@ -142,7 +142,7 @@ const BreadcrumbPage = React.forwardRef<
     ref={ref}
     aria-disabled="true"    // Not interactive - you're already here
     aria-current="page"     // Explicit landmark for current location
-    className={cn("font-normal text-foreground", className)}
+    className={cn("font-normal text-[hsl(206,33%,16%)]", className)}
     {...props}
   />
 ))
@@ -213,18 +213,20 @@ const BreadcrumbEllipsis = ({
   className,
   ...props
 }: React.ComponentProps<"span">) => (
-  <span
-    role="presentation"     // This container exists only for visual layout
-    aria-hidden="true"      // Hide the entire visual container from screen readers
-    className={cn("flex h-9 w-9 items-center justify-center", className)}
-    {...props}
-  >
-    {/* VISUAL LAYER: What sighted users see */}
-    <MoreHorizontal className="h-4 w-4" />
-    
-    {/* SEMANTIC LAYER: What screen reader users experience */}
+  <>
+    <span 
+      className={cn("flex h-9 w-9 items-center justify-center", className)}
+      {...props}
+    >
+      <img 
+        src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW1vcmUtaG9yaXpvbnRhbCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcng9IjEiLz48Y2lyY2xlIGN4PSIxOSIgY3k9IjEyIiByeD0iMSIvPjxjaXJjbGUgY3g9IjUiIGN5PSIxMiIgcng9IjEiLz48L3N2Zz4="
+        alt="More options"
+        className="h-4 w-4"
+        aria-hidden="true"
+      />
+    </span>
     <span className="sr-only">More</span>
-  </span>
+  </>
 )
 BreadcrumbEllipsis.displayName = "BreadcrumbEllipsis"
 

@@ -6,12 +6,12 @@
  * parameter parsing, and response formatting.
  */
 
-import { Request, Response } from 'express';
-import { BaseController } from './base-controller';
 import { userService } from '@/services/user-service';
-import { z } from 'zod';
 import { logger } from '@/utils/logger';
+import { Request, Response } from 'express';
+import { z } from 'zod';
 import { ErrorType } from '../utils';
+import { BaseController } from './base-controller';
 
 // Validation schemas
 const updateProfileSchema = z.object({
@@ -86,6 +86,31 @@ export class UserController extends BaseController {
     const updatedUser = await userService.updateUser(userId, result.data);
     
     return this.sendSuccess(res, updatedUser, 'Profile updated successfully');
+  });
+
+  /**
+   * Update user avatar
+   */
+  updateAvatar = this.asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    
+    // Check if file was uploaded
+    if (!req.file) {
+      return this.sendError(
+        res,
+        'Avatar file is required',
+        400,
+        ErrorType.VALIDATION
+      );
+    }
+
+    // Construct the avatar URL/path
+    const avatarPath = `/uploads/avatars/${req.file.filename}`;
+    
+    logger.info('Updating user avatar', { userId, filename: req.file.filename });
+    const updatedUser = await userService.updateAvatar(userId, avatarPath);
+    
+    return this.sendSuccess(res, updatedUser, 'Avatar updated successfully');
   });
 
   /**
@@ -201,6 +226,25 @@ export class UserController extends BaseController {
     const stats = await userService.getUserStats(userId);
     
     return this.sendSuccess(res, stats, 'User statistics retrieved successfully');
+  });
+
+  /**
+   * Search users
+   */
+  searchUsers = this.asyncHandler(async (req: Request, res: Response) => {
+    const params = {
+      query: req.query.query as string,
+      role: req.query.role as string,
+      location: req.query.location as string,
+      minRating: req.query.minRating as string,
+      page: parseInt(req.query.page as string) || 1,
+      limit: parseInt(req.query.limit as string) || 20
+    };
+    
+    logger.info('Searching users', { params });
+    const result = await userService.searchUsers(params);
+    
+    return this.sendSuccess(res, result, 'Users retrieved successfully');
   });
 }
 

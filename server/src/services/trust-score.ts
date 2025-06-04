@@ -45,9 +45,9 @@ interface UserWithTrustData {
   id: string;
   emailVerified: boolean;
   phoneVerified: boolean;
-  trustScore: number;
+  trustScore: number | null;
   reviewsReceived: ReviewFromDatabase[];
-  postedTasks: TaskFromDatabase[];
+  ownedTasks: TaskFromDatabase[];
   assignedTasks: TaskFromDatabase[];
   verifications: VerificationFromDatabase[];
 }
@@ -67,7 +67,6 @@ interface TaskFromDatabase {
 
 interface VerificationFromDatabase {
   type: string;
-  status: string;
 }
 
 // Configuration interface for trust score weights
@@ -171,10 +170,9 @@ export class TrustScoreService {
 
       // Calculate each component of the trust score using focused methods
       const verificationScore = this.calculateVerificationScore(userData);
-      const reviewScore = this.calculateReviewScore(userData.reviewsReceived);
-      const completionScore = this.calculateCompletionScore(userData.postedTasks, userData.assignedTasks);
-      const activityScore = this.calculateActivityScore(userData.reviewsReceived, userData.postedTasks, userData.assignedTasks);
-      const recencyScore = this.calculateRecencyScore(userData.reviewsReceived, userData.postedTasks, userData.assignedTasks);
+      const reviewScore = this.calculateReviewScore(userData.reviewsReceived);      const completionScore = this.calculateCompletionScore(userData.ownedTasks, userData.assignedTasks);
+      const activityScore = this.calculateActivityScore(userData.reviewsReceived, userData.ownedTasks, userData.assignedTasks);
+      const recencyScore = this.calculateRecencyScore(userData.reviewsReceived, userData.ownedTasks, userData.assignedTasks);
 
       // Combine all scores using weighted calculation
       const totalScore = this.calculateWeightedTotalScore({
@@ -319,22 +317,25 @@ export class TrustScoreService {
    * Fetch all user data needed for trust score calculation
    */
   private async fetchUserTrustData(userId: string): Promise<UserWithTrustData | null> {
-    return await db.user.findUnique({
+    const user = await db.user.findUnique({
       where: { id: userId },
-      include: {
+      select: {
+        id: true,
+        emailVerified: true,
+        phoneVerified: true,
+        trustScore: true,
         reviewsReceived: {
           select: {
             rating: true,
             createdAt: true,
             communicationRating: true,
             qualityRating: true,
-            timelinessRating: true,
           },
           orderBy: {
             createdAt: 'desc',
           },
         },
-        postedTasks: {
+        ownedTasks: {
           select: {
             status: true,
             createdAt: true,
@@ -356,6 +357,20 @@ export class TrustScoreService {
         },
       },
     });
+
+    if (!user) return null;
+
+    // Transform the result to match UserWithTrustData interface
+    return {
+      id: user.id,
+      emailVerified: user.emailVerified,
+      phoneVerified: user.phoneVerified,
+      trustScore: user.trustScore,
+      reviewsReceived: user.reviewsReceived,
+      ownedTasks: user.ownedTasks,
+      assignedTasks: user.assignedTasks,
+      verifications: user.verifications,
+    };
   }
 
   /**
@@ -464,9 +479,8 @@ export class TrustScoreService {
    * 
    * This evaluates how reliable a user is at completing their commitments.
    * Think of it like measuring someone's track record of finishing projects.
-   */
-  private calculateCompletionScore(postedTasks: TaskFromDatabase[], assignedTasks: TaskFromDatabase[]): number {
-    const allTasks = [...postedTasks, ...assignedTasks];
+   */  private calculateCompletionScore(ownedTasks: TaskFromDatabase[], assignedTasks: TaskFromDatabase[]): number {
+    const allTasks = [...ownedTasks, ...assignedTasks];
     
     if (allTasks.length === 0) {
       return this.constants.neutralScoreForNewUsers; // Neutral score for new users
@@ -513,13 +527,12 @@ export class TrustScoreService {
    * 
    * This measures overall platform engagement and diverse participation.
    * Think of it like measuring how active and well-rounded a community member is.
-   */
-  private calculateActivityScore(
+   */  private calculateActivityScore(
     reviews: ReviewFromDatabase[], 
-    postedTasks: TaskFromDatabase[], 
+    ownedTasks: TaskFromDatabase[], 
     assignedTasks: TaskFromDatabase[]
   ): number {
-    const activityMetrics = this.calculateActivityMetrics(reviews, postedTasks, assignedTasks);
+    const activityMetrics = this.calculateActivityMetrics(reviews, ownedTasks, assignedTasks);
 
     if (activityMetrics.totalActivity === 0) {
       return 0;
@@ -541,11 +554,11 @@ export class TrustScoreService {
    */
   private calculateActivityMetrics(
     reviews: ReviewFromDatabase[], 
-    postedTasks: TaskFromDatabase[], 
+    ownedTasks: TaskFromDatabase[], 
     assignedTasks: TaskFromDatabase[]
   ): ActivityMetrics {
-    const totalActivity = reviews.length + postedTasks.length + assignedTasks.length;
-    const hasDiverseActivity = postedTasks.length > 0 && assignedTasks.length > 0;
+    const totalActivity = reviews.length + ownedTasks.length + assignedTasks.length;
+    const hasDiverseActivity = ownedTasks.length > 0 && assignedTasks.length > 0;
     const baseScore = Math.log(totalActivity + 1) * 1.5;
     const diversityBonus = this.constants.activityBonus.diversity;
 
@@ -588,7 +601,7 @@ export class TrustScoreService {
    */
   private analyzeRecency(
     reviews: ReviewFromDatabase[], 
-    postedTasks: TaskFromDatabase[], 
+    ownedTasks: TaskFromDatabase[], 
     assignedTasks: TaskFromDatabase[]
   ): RecencyAnalysis {
     const now = Date.now();
@@ -596,7 +609,7 @@ export class TrustScoreService {
     // Find most recent activity across all types
     const allActivities = [
       ...reviews.map((review: ReviewFromDatabase) => review.createdAt),
-      ...postedTasks.map((task: TaskFromDatabase) => task.createdAt),
+      ...ownedTasks.map((task: TaskFromDatabase) => task.createdAt),
       ...assignedTasks.map((task: TaskFromDatabase) => task.createdAt),
     ];
 

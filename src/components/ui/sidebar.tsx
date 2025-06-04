@@ -1,29 +1,53 @@
 import {
-  SIDEBAR_COOKIE_NAME,
-  SIDEBAR_COOKIE_MAX_AGE,
-  SIDEBAR_WIDTH_MOBILE,
-  SIDEBAR_KEYBOARD_SHORTCUT,
-  SidebarContext,
-  useSidebar,
-} from "@/lib/sidebarUtils"
-import React, { useState, useEffect, useCallback, useMemo } from "react"
+    SIDEBAR_COOKIE_MAX_AGE,
+    SIDEBAR_COOKIE_NAME,
+    SIDEBAR_KEYBOARD_SHORTCUT,
+    SIDEBAR_WIDTH_MOBILE
+} from "@/utils/ui-utils"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react"
 
-import { useIsMobile } from "@/hooks/use-mobile"
-import { cn } from "@/lib/utils"
+// Constants are defined in ui-utils, no need for duplicates
+
+// Define the sidebar context type
+interface SidebarContextType {
+  state: "expanded" | "collapsed"
+  open: boolean
+  setOpen: (value: boolean | ((prev: boolean) => boolean)) => void
+  isMobile: boolean
+  openMobile: boolean
+  setOpenMobile: React.Dispatch<React.SetStateAction<boolean>>
+  toggleSidebar: () => void
+  toggleMobileSidebar: () => void
+}
+
+// Create the React Context
+const SidebarContext = React.createContext<SidebarContextType | null>(null)
+
+// Define the useSidebar hook locally
+const useSidebar = () => {
+  const context = useContext(SidebarContext)
+  if (!context) {
+    throw new Error("useSidebar must be used within a SidebarProvider")
+  }
+  return context
+}
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useIsMobile } from "@/hooks"
+import { cn } from "@/lib/utils"
 
 
 
@@ -54,15 +78,15 @@ const SidebarProvider = React.forwardRef<
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
-    const [_open, _setOpen] = useState(defaultOpen)
-    const open = openProp ?? _open
+    const [internalOpen, setInternalOpen] = useState(defaultOpen)
+    const open = openProp ?? internalOpen
     const setOpen = useCallback(
-      (value: boolean | ((value: boolean) => boolean)) => {
+      (value: boolean | ((prev: boolean) => boolean)) => {
         const openState = typeof value === "function" ? value(open) : value
         if (setOpenProp) {
           setOpenProp(openState)
         } else {
-          _setOpen(openState)
+          setInternalOpen(openState)
         }
 
         // This sets the cookie to keep the sidebar state.
@@ -77,6 +101,11 @@ const SidebarProvider = React.forwardRef<
         ? setOpenMobile((open) => !open)
         : setOpen((open) => !open)
     }, [isMobile, setOpen, setOpenMobile])
+
+    // Helper to specifically toggle the mobile sidebar
+    const toggleMobileSidebar = useCallback(() => {
+      setOpenMobile((open) => !open)
+    }, [setOpenMobile])
 
     // Adds a keyboard shortcut to toggle the sidebar.
     useEffect(() => {
@@ -93,12 +122,9 @@ const SidebarProvider = React.forwardRef<
       window.addEventListener("keydown", handleKeyDown)
       return () => window.removeEventListener("keydown", handleKeyDown)
     }, [toggleSidebar])
-
-    // We add a state so that we can do data-state="expanded" or "collapsed".
-    // This makes it easier to style the sidebar with Tailwind classes.
     const state = open ? "expanded" : "collapsed"
-
-    const contextValue = useMemo<SidebarContext>(
+    
+    const contextValue = useMemo<SidebarContextType>(
       () => ({
         state,
         open,
@@ -107,8 +133,9 @@ const SidebarProvider = React.forwardRef<
         openMobile,
         setOpenMobile,
         toggleSidebar,
+        toggleMobileSidebar,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, toggleMobileSidebar]
     )
 
     return (
@@ -711,27 +738,28 @@ const SidebarMenuSubButton = React.forwardRef<
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
 
 export {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupAction,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInput,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuBadge,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSkeleton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarSeparator,
-  SidebarTrigger,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupAction,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarInput,
+    SidebarInset,
+    SidebarMenu,
+    SidebarMenuAction,
+    SidebarMenuBadge,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarMenuSkeleton,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
+    SidebarProvider,
+    SidebarRail,
+    SidebarSeparator,
+    SidebarTrigger
 }
+

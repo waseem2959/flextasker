@@ -4,14 +4,14 @@
  * This module handles WebSocket events related to chat functionality.
  */
 
+import { PrismaClient } from '@prisma/client';
 import { Socket } from 'socket.io';
+import { NotificationType } from '../../../../shared/types/enums';
 import { logger } from '../../utils/logger';
 import { monitorError } from '../../utils/monitoring';
-import { SocketManager } from '../socket-manager';
-import { PrismaClient } from '@prisma/client';
 import { sanitizeText } from '../../utils/security/sanitization';
+import { SocketManager } from '../socket-manager';
 import { createNotification } from './notification-handlers';
-import { NotificationType } from '../../../../shared/types/enums';
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
@@ -233,10 +233,13 @@ export function registerChatHandlers(socket: Socket, socketManager: SocketManage
       
       // Combine unique user IDs
       const userIds = new Set([
-        ...sentMessages.map((msg: { receiverId: string }) => msg.receiverId),
-        ...receivedMessages.map((msg: { senderId: string }) => msg.senderId)
+        ...sentMessages
+          .filter((msg): msg is { receiverId: string } => msg.receiverId !== null)
+          .map(msg => msg.receiverId),
+        ...receivedMessages
+          .map(msg => msg.senderId)
       ]);
-      
+
       // Get user details and latest message for each conversation
       const conversations = await Promise.all([...userIds].map(async (userId) => {
         // Get user details

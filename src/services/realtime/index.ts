@@ -1,11 +1,10 @@
 /**
- * Realtime Communication Service
+ * Realtime Services Export
  * 
- * This module provides a unified interface for real-time communication,
- * consolidating previous socket implementations into a single cohesive service.
+ * This file provides a central export point for all realtime services.
  */
 
-export * from './socketService';
-export * from './types';
-export * from './hooks';
-export { SocketEvent as SocketEventNames } from './socketEvents';
+export * from './socket-events';
+export * from './socket-service';
+export * from './socket-types';
+

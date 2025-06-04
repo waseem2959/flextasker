@@ -1,9 +1,13 @@
 import React from 'react';
-import { Box, Container, Typography, AppBar, Toolbar, Button, Drawer, List, ListItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
-import { Dashboard as DashboardIcon, Settings as SettingsIcon, People as PeopleIcon, ExitToApp as LogoutIcon } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
 import { UserRole } from '../../shared/types/enums';
+import { useAuth } from '../hooks/use-auth';
+
+// Import Lucide icons instead of Material UI
+import { LayoutDashboard, LogOut, Settings, Users } from 'lucide-react';
+
+// Import our styled components
+import { Button } from '@/components/ui/button';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -22,95 +26,78 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   if (!user || user.role !== UserRole.ADMIN) {
     return (
-      <Container sx={{ py: 4, textAlign: 'center' }}>
-        <Typography variant="h5" color="error">Access Denied</Typography>
-        <Typography variant="body1" sx={{ mt: 2 }}>
+      <div className="container py-10 text-center font-primary">
+        <h1 className="text-2xl font-bold text-[hsl(354,70%,54%)] mb-4">Access Denied</h1>
+        <p className="text-[hsl(220,14%,46%)] mb-6">
           You must be an administrator to view this page.
-        </Typography>
+        </p>
         <Button 
-          variant="contained" 
-          component={Link} 
-          to="/" 
-          sx={{ mt: 3 }}
+          asChild
+          className="mt-4" 
         >
-          Return to Home
+          <Link to="/">Return to Home</Link>
         </Button>
-      </Container>
+      </div>
     );
   }
 
-  const drawerWidth = 240;
-
   return (
-    <Box sx={{ display: 'flex' }}>
-      {/* App Bar */}
-      <AppBar 
-        position="fixed" 
-        sx={{ 
-          zIndex: theme => theme.zIndex.drawer + 1,
-          backgroundColor: theme => theme.palette.primary.main
-        }}
-      >
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Flextasker Admin
-          </Typography>
+    <div className="flex h-screen bg-white font-primary">
+      {/* Sidebar */}
+      <div className="w-64 bg-white border-r border-[hsl(215,16%,80%)] flex flex-col">
+        <div className="p-4 border-b border-[hsl(215,16%,80%)]">
+          <h1 className="text-xl font-bold text-[hsl(196,80%,43%)]">FlexTasker Admin</h1>
+        </div>
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            <li>
+              <Link 
+                to="/admin/dashboard"
+                className="flex items-center p-2 rounded-lg text-[hsl(206,33%,16%)] hover:bg-[hsl(196,80%,95%)] transition-colors"
+              >
+                <LayoutDashboard className="mr-3 h-5 w-5" />
+                <span>Dashboard</span>
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/admin/users"
+                className="flex items-center p-2 rounded-lg text-[hsl(206,33%,16%)] hover:bg-[hsl(196,80%,95%)] transition-colors"
+              >
+                <Users className="mr-3 h-5 w-5" />
+                <span>Users</span>
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/admin/tasks"
+                className="flex items-center p-2 rounded-lg text-[hsl(206,33%,16%)] hover:bg-[hsl(196,80%,95%)] transition-colors"
+              >
+                <Settings className="mr-3 h-5 w-5" />
+                <span>Tasks</span>
+              </Link>
+            </li>
+          </ul>
+        </nav>
+        <div className="p-4 border-t border-[hsl(215,16%,80%)]">
           <Button 
-            color="inherit" 
-            startIcon={<LogoutIcon />}
+            variant="outline" 
+            className="w-full flex items-center justify-center"
             onClick={() => logout()}
           >
-            Logout
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Logout</span>
           </Button>
-        </Toolbar>
-      </AppBar>
+        </div>
+      </div>
       
-      {/* Sidebar */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-          },
-        }}
-      >
-        <Toolbar /> {/* Spacer for app bar */}
-        <Box sx={{ overflow: 'auto', mt: 2 }}>
-          <List>
-            <ListItem button component={Link} to="/admin">
-              <ListItemIcon>
-                <DashboardIcon />
-              </ListItemIcon>
-              <ListItemText primary="Dashboard" />
-            </ListItem>
-            
-            <ListItem button component={Link} to="/admin/migration-dashboard">
-              <ListItemIcon>
-                <SettingsIcon />
-              </ListItemIcon>
-              <ListItemText primary="Migration Dashboard" />
-            </ListItem>
-            
-            <ListItem button component={Link} to="/admin/users">
-              <ListItemIcon>
-                <PeopleIcon />
-              </ListItemIcon>
-              <ListItemText primary="User Management" />
-            </ListItem>
-          </List>
-          <Divider />
-        </Box>
-      </Drawer>
-      
-      {/* Main content */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <Toolbar /> {/* Spacer for app bar */}
-        {children}
-      </Box>
-    </Box>
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="p-6">
+          {children}
+        </div>
+      </div>
+    </div>
   );
 };
 

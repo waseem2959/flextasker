@@ -9,9 +9,9 @@
  */
 
 import { prisma } from '../utils/database-utils';
+import { NotFoundError, ValidationError } from '../utils/error-utils';
 import { logger } from '../utils/logger';
 import { PaginationInfo } from '../utils/response-utils';
-import { NotFoundError, ValidationError } from '../utils/error-utils';
 
 /**
  * Core interfaces that define the structure of our messaging data.
@@ -32,15 +32,7 @@ export interface SendMessageData {
   fileType?: string;
 }
 
-// Additional interfaces for data handling
-interface DatabaseUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  avatar: string | null;
-}
-
+// Message interfaces
 export interface MessageWithSender {
   id: string;
   conversationId: string;
@@ -96,19 +88,7 @@ export class MessagingService {
   /**
    * Utility method to transform database user to application user format
    */
-  private transformDatabaseUser(dbUser: DatabaseUser): {
-    id: string;
-    firstName: string;
-    lastName: string;
-    avatar?: string;
-  } {
-    return {
-      id: dbUser.id,
-      firstName: dbUser.firstName,
-      lastName: dbUser.lastName,
-      avatar: dbUser.avatar ?? undefined
-    };
-  }
+
 
   /**
    * Create a new conversation
@@ -194,18 +174,27 @@ export class MessagingService {
       }
 
       // Create new conversation
-      const conversation = await prisma.conversation.create({
-        data: {
-          title: data.title ?? null,
-          taskId: data.taskId ?? null,
-          isGroup: data.participantIds.length > 2,
-          createdById: creatorId,
-          participants: {
-            create: data.participantIds.map(userId => ({
-              userId
-            }))
+      const conversation = await prisma.$transaction(async (prismaClient) => {
+        // Create conversation
+        const newConversation = await prismaClient.conversation.create({
+          data: {
+            title: data.title ?? undefined,
+            taskId: data.taskId ?? undefined,
+            isGroup: data.participantIds.length > 2,
+            participants: {
+              createMany: {
+                data: data.participantIds.map(userId => ({
+                  userId,
+                  joinedAt: new Date()
+                }))
+              }
+            }
+          },
+          include: {
+            participants: true
           }
-        }
+        });
+        return newConversation;
       });
 
       // Add initial message if provided
@@ -295,15 +284,20 @@ export class MessagingService {
       // Format the message for response
       const formattedMessage: MessageWithSender = {
         id: message.id,
-        conversationId: message.conversationId,
-        content: message.content,
-        messageType: message.messageType,
+        conversationId: message.conversationId ?? '',
+        content: message.content ?? '',
+        messageType: message.messageType ?? 'TEXT',
         fileUrl: message.fileUrl ?? undefined,
         fileName: message.fileName ?? undefined,
         fileType: message.fileType ?? undefined,
         sentAt: message.createdAt,
         readAt: message.readAt ?? undefined,
-        sender: this.transformDatabaseUser(message.sender)
+        sender: {
+          id: message.sender.id,
+          firstName: message.sender.firstName,
+          lastName: message.sender.lastName,
+          avatar: message.sender.avatar ?? undefined
+        }
       };
 
       logger.info('Message sent successfully', { messageId: message.id });
@@ -440,10 +434,13 @@ export class MessagingService {
         pagination: {
           page: page,
           limit: limit,
+          total: totalCount,
           totalItems: totalCount,
           totalPages: Math.ceil(totalCount / limit),
+          hasNext: page < Math.ceil(totalCount / limit),
           hasNextPage: page < Math.ceil(totalCount / limit),
-          hasPrevPage: page > 1
+          hasPrev: page > 1,
+          hasPreviousPage: page > 1
         }
       };
     } catch (error) {

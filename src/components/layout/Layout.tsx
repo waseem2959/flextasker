@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Navbar } from './Navbar';
+import { ScrollArea } from "../ui/scroll-area";
 import { Footer } from './Footer';
-import { ScrollArea } from "@/components/ui/ScrollArea";
+import { Navbar } from './Navbar';
 
 interface LayoutProps {
   children: React.ReactNode;

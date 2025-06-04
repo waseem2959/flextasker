@@ -4,62 +4,178 @@
  * This file serves as the central export point for all type definitions,
  * providing a clean and organized type system throughout the application.
  * 
- * IMPORTANT: To avoid duplication, all core models are defined in consolidated-models.ts
- * and re-exported here. When making changes to models, always modify the consolidated
- * file rather than duplicating definitions.
+ * Using kebab-case naming convention for all type files with descriptive suffixes (-types.ts).
+ * This ensures consistency and makes the purpose of each file immediately clear.
  */
 
-// Re-export all shared types from the shared directory
-export * from '../../shared/types/enums';
+// Import core shared enums as the canonical source
+// These are shared between frontend and backend and should be the source of truth
+import {
+    BidStatus,
+    BudgetType,
+    NotificationType,
+    TaskPriority,
+    TaskStatus,
+    UserRole
+} from '../../shared/types/enums';
 
-// Re-export error types
-export * from './errors';
+// Import additional app-specific enums that don't conflict with shared enums
+import {
+    AuthStatus,
+    BrowserType,
+    ConnectionState,
+    CurrencyCode,
+    DateFormat,
+    DeviceType,
+    DistanceUnit,
+    Environment,
+    ErrorType,
+    FeatureFlag,
+    FormFieldType,
+    HttpStatusCode,
+    Language,
+    MetricType,
+    PaymentMethod,
+    PaymentStatus,
+    ProfileVisibility,
+    RequestMethod,
+    ReviewRating,
+    SortDirection,
+    TaskCategory,
+    TaskComplexity,
+    TaskUrgency,
+    Theme,
+    TimeFormat,
+    ToastType,
+    TrackingCategory,
+    VerificationStatus
+} from './app-enums';
 
-// Re-export button-specific types
-export * from './button';
+// Re-export shared enums as the canonical source
+export {
+    BidStatus,
+    BudgetType,
+    NotificationType,
+    TaskPriority,
+    TaskStatus,
+    UserRole
+};
+
+// Re-export additional app-specific enums
+    export {
+        AuthStatus,
+        BrowserType,
+        ConnectionState,
+        CurrencyCode,
+        DateFormat,
+        DeviceType,
+        DistanceUnit,
+        Environment,
+        ErrorType,
+        FeatureFlag,
+        FormFieldType,
+        HttpStatusCode,
+        Language,
+        MetricType,
+        PaymentMethod,
+        PaymentStatus,
+        ProfileVisibility,
+        RequestMethod,
+        ReviewRating,
+        SortDirection,
+        TaskCategory,
+        TaskComplexity,
+        TaskUrgency,
+        Theme,
+        TimeFormat,
+        ToastType,
+        TrackingCategory,
+        VerificationStatus
+    };
+
+// Export button-specific types with selective exports for ButtonSize and ButtonVariant
+// to avoid conflicts with app-enums
+  export * from './button-types';
+
+// Import errors without direct export
+import * as ErrorsModule from './errors';
+
+// Export specific items from errors except the ErrorType enum to avoid conflict
+export {
+    AppError,
+    AuthError,
+    classifyError,
+    createError,
+    createErrorResponse,
+    handleApiError,
+    isAppError,
+    NetworkError,
+    NotFoundError,
+    PermissionError,
+    ServerError,
+    TimeoutError,
+    ValidationError
+} from './errors';
+
+// Export API client types
+export * from './api-client-types';
+
+// Export model types
+export * from './models-types';
+
+// Export task discriminated union types
+export * from './task-types';
+
+// Export API response types
+export * from './api-types';
+
+// Export messaging types
+export * from './messaging-types';
 
 // Import types with explicit names to avoid ambiguity errors
-
-// From API modules
-import * as ApiTypes from './api';
-import * as ApiRequestTypes from './api-requests';
-
-// From consolidated models
-import * as ConsolidatedModels from './consolidated-models';
-
-// Use consolidated models for task types
-const TaskTypes = ConsolidatedModels;
-
-// From messaging module
-import * as MessagingTypes from './messaging';
+import * as ApiClientTypes from './api-client-types';
+import * as ApiTypes from './api-types';
+import * as AppEnums from './app-enums';
+import * as ButtonTypes from './button-types';
+import * as MessagingTypes from './messaging-types';
+import * as ModelTypes from './models-types';
+import * as TaskTypes from './task-types';
 
 // Re-export with namespaces to prevent naming conflicts
-export { 
-  ApiTypes,
-  ApiRequestTypes,
-  TaskTypes,
-  ConsolidatedModels,
-  MessagingTypes
+export {
+    ApiClientTypes,
+    ApiTypes,
+    AppEnums,
+    ButtonTypes,
+    ErrorsModule,
+    MessagingTypes,
+    ModelTypes,
+    TaskTypes
 };
+
+// Export UserImpl class directly for instantiation
+  export { UserImpl } from './models-types';
 
 // Export primary types directly (these are the canonical definitions)
 // Using 'export type' syntax for proper isolation with isolatedModules
-export { UserImpl } from './consolidated-models';
-export type { 
-  User,
-  Task,
-  Bid,
-  Review,
-  LoginCredentials,
-  RegisterData,
-  AuthTokens,
-  AuthContextType
-} from './consolidated-models';
+export type {
+    AuthContextType,
+    AuthTokens,
+    Bid,
+    LoginCredentials,
+    RegisterData,
+    Review,
+    Task,
+    User
+} from './models-types';
 
-// Re-export types using the 'export type' syntax for better type isolation
-
-// Import UserRole enum for type aliasing
-import { UserRole, TaskStatus, TaskPriority, BudgetType, BidStatus } from '../../shared/types/enums';
+// Export messaging types directly for convenience
+export type {
+    Conversation,
+    Message,
+    SendMessageRequest,
+    TypingIndicator
+} from './messaging-types';
 
 // Type aliases for backward compatibility
 export type UserRoleType = UserRole;
@@ -67,13 +183,7 @@ export type TaskStatusType = TaskStatus;
 export type TaskPriorityType = TaskPriority;
 export type BudgetTypeType = BudgetType;
 export type BidStatusType = BidStatus;
+export type AppErrorType = ErrorType; // Use the ErrorType directly from app-enums.ts
 
-// API Response types for consistent data handling (kept for backward compatibility)
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message: string;
-  data?: T;
-  errors?: string[];
-  pagination?: import('./api').PaginationInfo;
-  timestamp: string;
-}
+// Re-export commonly used API Response type
+export type ApiResponse<T = any> = ApiTypes.ApiResponse<T>;

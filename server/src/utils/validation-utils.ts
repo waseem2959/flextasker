@@ -5,11 +5,11 @@
  * to ensure consistent data validation across the application.
  */
 
-import { z } from 'zod';
 import { Request } from 'express';
-import { validationResult, ValidationChain, ValidationError } from 'express-validator';
+import { ValidationChain, ValidationError, validationResult } from 'express-validator';
+import { z } from 'zod';
+import { BidStatus, BudgetType, TaskPriority, TaskStatus, UserRole } from '../../../shared/types/enums';
 import { logger } from './logger';
-import { UserRole, TaskStatus, BidStatus, TaskPriority, BudgetType } from '../../../shared/types/enums';
 
 // Note: validation-schemas.ts has been consolidated into this file
 // All schemas are now defined in the ValidationSchemas object below
@@ -197,6 +197,101 @@ export const ValidationSchemas = {
     }).refine(data => data.password === data.confirmPassword, {
       message: 'Passwords do not match',
       path: ['confirmPassword']
+    })
+  },
+  
+  // Payment-related schemas
+  Payment: {
+    create: z.object({
+      taskId: z.string().uuid({ message: 'Invalid task ID' }),
+      amount: z.number().min(0.01, { message: 'Amount must be greater than 0' })
+        .or(z.string().regex(/^\d+(\.\d{1,2})?$/).transform(Number)),
+      paymentMethod: z.string().min(1, { message: 'Payment method is required' }),
+      currency: z.string().default('USD')
+    }),
+    
+    update: z.object({
+      status: z.enum(['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED']).optional(),
+      refundAmount: z.number().min(0.01).optional(),
+      notes: z.string().optional()
+    })
+  },
+  
+  // Review-related schemas
+  Review: {
+    create: z.object({
+      taskId: z.string().uuid({ message: 'Invalid task ID' }),
+      rating: z.number().min(1).max(5),
+      title: z.string().min(3).max(100),
+      comment: z.string().min(10).max(1000)
+    }),
+    
+    update: z.object({
+      rating: z.number().min(1).max(5).optional(),
+      title: z.string().min(3).max(100).optional(),
+      comment: z.string().min(10).max(1000).optional()
+    })
+  },
+  
+  // Notification-related schemas
+  Notification: {
+    create: z.object({
+      userId: z.string().uuid({ message: 'Invalid user ID' }),
+      type: z.string().min(1),
+      title: z.string().min(1),
+      message: z.string().min(1),
+      data: z.record(z.unknown()).optional()
+    }),
+    
+    update: z.object({
+      isRead: z.boolean().optional(),
+      archived: z.boolean().optional()
+    })
+  },
+  
+  // Message-related schemas
+  Message: {
+    create: z.object({
+      conversationId: z.string().uuid({ message: 'Invalid conversation ID' }),
+      content: z.string().min(1),
+      type: z.enum(['TEXT', 'IMAGE', 'FILE']).default('TEXT'),
+      attachments: z.array(z.string().url()).optional()
+    }),
+    
+    update: z.object({
+      isRead: z.boolean().optional(),
+      content: z.string().min(1).optional()
+    })
+  },
+  
+  // Category-related schemas
+  Category: {
+    create: z.object({
+      name: z.string().min(2).max(50),
+      description: z.string().max(500).optional(),
+      icon: z.string().url().optional(),
+      isActive: z.boolean().default(true)
+    }),
+    
+    update: z.object({
+      name: z.string().min(2).max(50).optional(),
+      description: z.string().max(500).optional(),
+      icon: z.string().url().optional(),
+      isActive: z.boolean().optional()
+    })
+  },
+  
+  // Health check schemas
+  HealthCheck: {
+    response: z.object({
+      status: z.enum(['healthy', 'degraded', 'unhealthy']),
+      timestamp: z.string().datetime(),
+      version: z.string(),
+      services: z.record(z.object({
+        status: z.enum(['up', 'down']),
+        latency: z.number(),
+        error: z.string().optional()
+      }))
     })
   },
   
@@ -430,6 +525,18 @@ export function validatePasswordStrength(password: string): {
   };
 }
 
+// Individual schema exports for backward compatibility
+export const UserSchemas = ValidationSchemas.User;
+export const TaskSchemas = ValidationSchemas.Task;
+export const BidSchemas = ValidationSchemas.Bid;
+export const AuthSchemas = ValidationSchemas.Auth;
+export const PaymentSchemas = ValidationSchemas.Payment;
+export const ReviewSchemas = ValidationSchemas.Review;
+export const NotificationSchemas = ValidationSchemas.Notification;
+export const MessageSchemas = ValidationSchemas.Message;
+export const CategorySchemas = ValidationSchemas.Category;
+export const HealthCheckSchemas = ValidationSchemas.HealthCheck;
+
 export default {
   validateWithZod,
   formatZodErrors,
@@ -439,5 +546,15 @@ export default {
   isValidEmail,
   validatePasswordStrength,
   initializeValidation,
-  ValidationSchemas
+  ValidationSchemas,
+  UserSchemas,
+  TaskSchemas,
+  BidSchemas,
+  AuthSchemas,
+  PaymentSchemas,
+  ReviewSchemas,
+  NotificationSchemas,
+  MessageSchemas,
+  CategorySchemas,
+  HealthCheckSchemas
 };

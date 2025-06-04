@@ -330,7 +330,16 @@ export class NotificationService {
         return this.createDefaultNotificationPreferences(userId);
       }
 
-      return preferences;
+      // Convert the JSON types to the expected format
+      const typedPreferences: NotificationPreferences = {
+        userId: preferences.userId,
+        email: preferences.email,
+        push: preferences.push,
+        sms: preferences.sms,
+        types: preferences.types as NotificationPreferences['types'] ?? this.getDefaultNotificationTypes()
+      };
+
+      return typedPreferences;
     } catch (error) {
       logger.error('Error getting notification preferences', { error, userId });
       throw error;
@@ -340,25 +349,40 @@ export class NotificationService {
   /**
    * Update user notification preferences
    */
-  async updateNotificationPreferences(userId: string, preferences: Partial<NotificationPreferences>): Promise<NotificationPreferences> {
+  async updateNotificationPreferences(
+    userId: string,
+    preferences: Partial<NotificationPreferences>
+  ): Promise<NotificationPreferences> {
     logger.info('Updating notification preferences', { userId });
 
     try {
       // Get current preferences
       const currentPreferences = await this.getUserNotificationPreferences(userId);
 
-      // Update preferences
-      const updatedPreferences = await db.notificationPreference.update({
+      // Merge the existing types with any new types
+      const updatedTypes = preferences.types
+        ? { ...currentPreferences.types, ...preferences.types }
+        : currentPreferences.types;
+
+      // Update preferences in the database
+      const dbPreferences = await db.notificationPreference.update({
         where: { userId },
         data: {
           email: preferences.email ?? currentPreferences.email,
           push: preferences.push ?? currentPreferences.push,
           sms: preferences.sms ?? currentPreferences.sms,
-          types: preferences.types ?? currentPreferences.types
+          types: updatedTypes as any // Prisma will handle the JSON serialization
         }
       });
 
-      return updatedPreferences;
+      // Convert and return the typed preferences
+      return {
+        userId: dbPreferences.userId,
+        email: dbPreferences.email,
+        push: dbPreferences.push,
+        sms: dbPreferences.sms,
+        types: dbPreferences.types as NotificationPreferences['types']
+      };
     } catch (error) {
       logger.error('Error updating notification preferences', { error, userId });
       throw error;
@@ -373,30 +397,30 @@ export class NotificationService {
 
     try {
       // Define default preferences
-      const defaultPreferences: NotificationPreferences = {
+      const defaultPreferences = {
         userId,
         email: true,
         push: true,
         sms: false,
-        types: {
-          TASK_CREATED: { email: true, push: true, sms: false },
-          BID_RECEIVED: { email: true, push: true, sms: false },
-          BID_ACCEPTED: { email: true, push: true, sms: false },
-          BID_REJECTED: { email: true, push: true, sms: false },
-          TASK_STARTED: { email: true, push: true, sms: false },
-          TASK_COMPLETED: { email: true, push: true, sms: false },
-          PAYMENT_RECEIVED: { email: true, push: true, sms: false },
-          PAYMENT_SENT: { email: true, push: true, sms: false },
-          REVIEW_RECEIVED: { email: true, push: true, sms: false },
-          MESSAGE_RECEIVED: { email: false, push: true, sms: false },
-          SYSTEM_ALERT: { email: true, push: true, sms: false }
-        }
+        types: this.getDefaultNotificationTypes()
       };
 
       // Create preferences in database
-      return await db.notificationPreference.create({
-        data: defaultPreferences
+      const dbPreferences = await db.notificationPreference.create({
+        data: {
+          ...defaultPreferences,
+          types: defaultPreferences.types as any // Prisma will handle the JSON serialization
+        }
       });
+
+      // Convert and return the typed preferences
+      return {
+        userId: dbPreferences.userId,
+        email: dbPreferences.email,
+        push: dbPreferences.push,
+        sms: dbPreferences.sms,
+        types: dbPreferences.types as NotificationPreferences['types']
+      };
     } catch (error) {
       logger.error('Error creating default notification preferences', { error, userId });
       throw error;
@@ -522,6 +546,25 @@ export class NotificationService {
       logger.error('Error cleaning up old notifications', { error, daysToKeep });
       throw error;
     }
+  }
+
+  /**
+   * Get default notification types
+   */
+  private getDefaultNotificationTypes(): NotificationPreferences['types'] {
+    return {
+      TASK_CREATED: { email: true, push: true, sms: false },
+      BID_RECEIVED: { email: true, push: true, sms: false },
+      BID_ACCEPTED: { email: true, push: true, sms: false },
+      BID_REJECTED: { email: true, push: true, sms: false },
+      TASK_STARTED: { email: true, push: true, sms: false },
+      TASK_COMPLETED: { email: true, push: true, sms: false },
+      PAYMENT_RECEIVED: { email: true, push: true, sms: false },
+      PAYMENT_SENT: { email: true, push: true, sms: false },
+      REVIEW_RECEIVED: { email: true, push: true, sms: false },
+      MESSAGE_RECEIVED: { email: false, push: true, sms: false },
+      SYSTEM_ALERT: { email: true, push: true, sms: false }
+    };
   }
 }
 
