@@ -1,11 +1,15 @@
 import { useAuth } from '@/hooks/use-auth';
 import { useChat } from '@/hooks/use-chat';
-import { formatDateHeader, formatTime } from '@/services/date';
+import { formatDate } from '@/lib/utils';
 import { User } from '@/types';
-import { Send as SendIcon } from '@mui/icons-material';
-import { Avatar, Box, Button, CircularProgress, Divider, Paper, TextField, Typography } from '@mui/material';
+import { Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 
 interface ChatInterfaceProps {
   readonly otherUserId?: string;
@@ -97,203 +101,158 @@ export default function ChatInterface({ otherUserId: propOtherUserId }: ChatInte
   // Show loading state
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center h-96">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
     );
   }
-  
+
   // Show error state
   if (error) {
     return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography color="error">{error}</Typography>
-        <Button 
-          variant="contained" 
-          sx={{ mt: 2 }}
-          onClick={() => setError(null)}
-        >
+      <div className="p-6 text-center">
+        <p className="text-red-600 mb-4">{error}</p>
+        <Button onClick={() => setError(null)}>
           Retry
         </Button>
-      </Box>
+      </div>
     );
   }
   
   // Show empty state
   if (messages.length === 0) {
     return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography variant="body1" color="textSecondary">
+      <div className="p-6 text-center">
+        <p className="text-gray-500 mb-6">
           No messages yet. Start a conversation!
-        </Typography>
-        
+        </p>
+
         {isConnected && (
-          <Box sx={{ mt: 3, display: 'flex', alignItems: 'center' }}>
-            <TextField
-              fullWidth
+          <div className="flex items-center space-x-2">
+            <Input
               placeholder="Type a message..."
-              variant="outlined"
               value={newMessage}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              sx={{ mr: 1 }}
+              className="flex-1"
             />
             <Button
-              variant="contained"
-              color="primary"
-              endIcon={<SendIcon />}
               onClick={handleSendMessage}
               disabled={!newMessage.trim()}
+              className="flex items-center space-x-1"
             >
-              Send
+              <Send className="h-4 w-4" />
+              <span>Send</span>
             </Button>
-          </Box>
+          </div>
         )}
-      </Box>
+      </div>
     );
   }
   
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="flex flex-col h-full">
       {/* Messages */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
+      <div className="flex-1 overflow-auto p-4">
         {Object.entries(messagesByDate).map(([dateString, dateMessages]) => (
-          <Box key={dateString} sx={{ mb: 2 }}>
+          <div key={dateString} className="mb-4">
             {/* Date header */}
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                mb: 2, 
-                position: 'relative' 
-              }}
-            >
-              <Divider sx={{ position: 'absolute', width: '100%', top: '50%' }} />
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  bgcolor: 'background.default', 
-                  px: 2, 
-                  position: 'relative',
-                  color: 'text.secondary'
-                }}
-              >
-                {formatDateHeader(new Date(dateString))}
-              </Typography>
-            </Box>
+            <div className="flex justify-center mb-4 relative">
+              <Separator className="absolute w-full top-1/2" />
+              <span className="bg-background px-4 text-xs text-gray-500 relative">
+                {formatDate(new Date(dateString), 'header')}
+              </span>
+            </div>
             
             {/* Messages for this date */}
             {dateMessages.map((message: any) => {
               const isSentByMe = message.senderId === user?.id || message.authorId === user?.id;
               const messageTime = new Date(message.timestamp ?? message.createdAt ?? Date.now());
-              
+
               return (
-                <Box 
-                  key={message.id} 
-                  sx={{
-                    display: 'flex',
-                    justifyContent: isSentByMe ? 'flex-end' : 'flex-start',
-                    mb: 2
-                  }}
+                <div
+                  key={message.id}
+                  className={`flex mb-4 ${isSentByMe ? 'justify-end' : 'justify-start'}`}
                 >
                   {!isSentByMe && (
-                    <Avatar 
-                      sx={{ mr: 1, width: 32, height: 32 }}
-                      src={otherUser?.avatar ?? undefined}
-                    >
-                      {otherUser?.firstName?.charAt(0) ?? '?'}
+                    <Avatar className="mr-2 h-8 w-8">
+                      <AvatarFallback>
+                        {otherUser?.firstName?.charAt(0) ?? '?'}
+                      </AvatarFallback>
                     </Avatar>
                   )}
-                  
-                  <Box sx={{ maxWidth: '70%' }}>
-                    <Paper 
-                      elevation={1}
-                      sx={{
-                        p: 1.5,
-                        borderRadius: 2,
-                        bgcolor: isSentByMe ? 'primary.main' : 'background.paper',
-                        color: isSentByMe ? 'primary.contrastText' : 'text.primary'
-                      }}
+
+                  <div className="max-w-[70%]">
+                    <div
+                      className={`p-3 rounded-lg shadow-sm ${
+                        isSentByMe
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-white border border-gray-200'
+                      }`}
                     >
-                      <Typography variant="body1">{message.content}</Typography>
-                    </Paper>
-                    
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        display: 'block', 
-                        mt: 0.5, 
-                        color: 'text.secondary',
-                        textAlign: isSentByMe ? 'right' : 'left'
-                      }}
+                      <p className="text-sm">{message.content}</p>
+                    </div>
+
+                    <p
+                      className={`text-xs text-gray-500 mt-1 ${
+                        isSentByMe ? 'text-right' : 'text-left'
+                      }`}
                     >
-                      {formatTime(messageTime)}
-                    </Typography>
-                  </Box>
-                  
+                      {formatDate(messageTime, 'time')}
+                    </p>
+                  </div>
+
                   {isSentByMe && (
-                    <Avatar 
-                      sx={{ ml: 1, width: 32, height: 32 }}
-                      src={user?.avatar ?? undefined}
-                    >
-                      {user?.firstName?.charAt(0) ?? '?'}
+                    <Avatar className="ml-2 h-8 w-8">
+                      <AvatarFallback>
+                        {user?.firstName?.charAt(0) ?? '?'}
+                      </AvatarFallback>
                     </Avatar>
                   )}
-                </Box>
+                </div>
               );
             })}
-          </Box>
+          </div>
         ))}
-        
+
         {/* Typing indicator */}
         {typingUsers.length > 0 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', ml: 2, mb: 2 }}>
-            <Avatar 
-              sx={{ mr: 1, width: 32, height: 32 }}
-              src={otherUser?.avatar ?? undefined}
-            >
-              {otherUser?.firstName?.charAt(0) ?? '?'}
+          <div className="flex items-center ml-2 mb-4">
+            <Avatar className="mr-2 h-8 w-8">
+              <AvatarFallback>
+                {otherUser?.firstName?.charAt(0) ?? '?'}
+              </AvatarFallback>
             </Avatar>
-            
-            <Paper 
-              elevation={1}
-              sx={{
-                p: 1.5,
-                borderRadius: 2,
-                bgcolor: 'background.paper'
-              }}
-            >
-              <Typography variant="body2">Typing...</Typography>
-            </Paper>
-          </Box>
+
+            <div className="p-3 rounded-lg shadow-sm bg-white border border-gray-200">
+              <p className="text-sm text-gray-600">Typing...</p>
+            </div>
+          </div>
         )}
-      </Box>
-      
+      </div>
+
       {/* Message input */}
       {isConnected && (
-        <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <TextField
-              fullWidth
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex items-center space-x-2">
+            <Input
               placeholder="Type a message..."
-              variant="outlined"
               value={newMessage}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              sx={{ mr: 1 }}
+              className="flex-1"
             />
             <Button
-              variant="contained"
-              color="primary"
-              endIcon={<SendIcon />}
               onClick={handleSendMessage}
               disabled={!newMessage.trim()}
+              className="flex items-center space-x-1"
             >
-              Send
+              <Send className="h-4 w-4" />
+              <span>Send</span>
             </Button>
-          </Box>
-        </Box>
+          </div>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }

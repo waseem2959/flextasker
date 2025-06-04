@@ -4,6 +4,7 @@ import { CategoryIcon } from '@/components/ui/category-icons';
 import { Star } from '@/components/ui/star-rating';
 import { ArrowRight, CheckCircle, MapPin, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { HeroSection } from '../components/homepage/hero-section';
 import { Layout } from '../components/layout/Layout';
 import { TaskCard } from '../components/task/task-card';
 import { CATEGORIES, TASKS } from '../data/mock-data';

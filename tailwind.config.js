@@ -1,6 +1,11 @@
 // tailwind.config.js
 module.exports = {
-  content: ['./src/**/*.{js,ts,jsx,tsx}'],
+  content: [
+    './src/**/*.{js,ts,jsx,tsx}',
+    './index.html'
+  ],
+  // Enable JIT mode for faster builds and smaller CSS
+  mode: 'jit',
   theme: {
     extend: {
       colors: {
@@ -56,5 +61,29 @@ module.exports = {
       }
     }
   },
-  plugins: []
+  plugins: [],
+  // Optimize for production
+  corePlugins: {
+    // Disable unused core plugins to reduce CSS size
+    preflight: true,
+    container: false, // We use custom container classes
+  },
+  // Purge unused styles in production
+  purge: {
+    enabled: process.env.NODE_ENV === 'production',
+    content: [
+      './src/**/*.{js,ts,jsx,tsx}',
+      './index.html'
+    ],
+    options: {
+      safelist: [
+        // Keep dynamic classes that might be generated
+        /^bg-/,
+        /^text-/,
+        /^border-/,
+        /^hover:/,
+        /^focus:/,
+      ]
+    }
+  }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { UserRole } from '../../../shared/types/enums';
-import AdminLayout from '../../layouts/AdminLayout';
+import AdminLayout from '../../layouts/admin-layout';
 
 // Import our components
 import { Badge } from '@/components/ui/badge';

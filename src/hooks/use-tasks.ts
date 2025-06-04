@@ -8,8 +8,7 @@
 import { taskService } from '@/services/api';
 import { CreateTaskRequest, UpdateTaskRequest } from '@/services/api/task-service';
 import { AppError } from '@/services/error';
-import { Task, TaskStatus } from '@/types';
-import { ApiResponse, PaginatedApiResponse, TaskSearchParams } from '@/types/api';
+import { ApiResponse, PaginatedApiResponse, Task, TaskSearchParams, TaskStatus } from '@/types';
 import { useMutation, UseMutationResult, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 
 /**

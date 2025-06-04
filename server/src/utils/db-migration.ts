@@ -5,15 +5,12 @@
  * tracking schema versions, and ensuring consistency across environments.
  */
 
-import { PrismaClient } from '@prisma/client';
 import fs from 'fs/promises';
 import path from 'path';
-import { logger } from './logger';
-import { withTransaction } from './db-transaction';
 import { config } from './config';
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
+import { prisma } from './database';
+import { withTransaction } from './db-transaction';
+import { logger } from './logger';
 
 // Migration interface
 export interface Migration {

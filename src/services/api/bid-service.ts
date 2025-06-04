@@ -7,8 +7,7 @@
  * - Managing bid status (accept/reject/withdraw)
  */
 
-import { Bid } from '@/types';
-import { ApiResponse, BidSearchParams, CreateBidRequest, PaginatedApiResponse, UpdateBidRequest } from '@/types/api';
+import { ApiResponse, Bid, BidSearchParams, CreateBidRequest, PaginatedApiResponse, UpdateBidRequest } from '@/types';
 import { apiClient } from '../api/api-client';
 
 /**

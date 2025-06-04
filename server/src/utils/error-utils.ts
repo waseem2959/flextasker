@@ -8,11 +8,28 @@
  * - Type definitions for error details
  */
 
-import { Request, Response, NextFunction } from 'express';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { NextFunction, Request, Response } from 'express';
 import { logger } from './logger';
-// Re-export the interfaces from shared types for backward compatibility
-export { ErrorType, HttpStatusCode, ValidationErrorDetail } from '../../../shared/types/errors';
+// Import and re-export shared error types as the canonical source
+import {
+    ErrorResponse,
+    ErrorType,
+    HttpStatusCode,
+    ValidationErrorDetail,
+    ValidationErrorResponse,
+    errorTypeToStatusCode,
+    statusCodeToErrorType
+} from '../../../shared/types/errors';
+
+// Re-export for backward compatibility
+export {
+    ErrorResponse, ErrorType,
+    HttpStatusCode,
+    ValidationErrorDetail, ValidationErrorResponse,
+    errorTypeToStatusCode,
+    statusCodeToErrorType
+};
 
 // Define error detail interfaces to maintain compatibility with existing code
 /**

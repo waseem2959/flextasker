@@ -57,21 +57,56 @@ export const navigationMenuTriggerStyle = cva(
 );
 
 /**
- * Format a date to a readable string
- * 
+ * CONSOLIDATED DATE FORMATTING FUNCTION
+ * This replaces multiple date formatting implementations across the codebase
+ *
  * @example
  * formatDate(new Date(), 'MMM dd, yyyy') // => 'Jan 01, 2023'
+ * formatDate(new Date(), 'relative') // => '2 hours ago'
+ * formatDate(new Date(), 'header') // => 'Today'
  */
-export function formatDate(date: Date | string, format: string = 'MMM dd, yyyy'): string {
+export function formatDate(
+  date: Date | string,
+  format: string = 'MMM dd, yyyy',
+  includeTime: boolean = false
+): string {
   if (!date) return '';
-  
+
   const d = typeof date === 'string' ? new Date(date) : date;
-  
+
   if (isNaN(d.getTime())) {
     return 'Invalid date';
   }
-  
-  // Simple formatter that supports common patterns
+
+  // Handle special format types
+  if (format === 'relative') {
+    return formatRelativeTime(d);
+  }
+
+  if (format === 'header') {
+    return formatDateHeader(d);
+  }
+
+  if (format === 'time') {
+    return formatTime(d);
+  }
+
+  if (format === 'simple') {
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    };
+
+    if (includeTime) {
+      options.hour = '2-digit';
+      options.minute = '2-digit';
+    }
+
+    return d.toLocaleDateString('en-US', options);
+  }
+
+  // Custom format patterns
   const formats: Record<string, (d: Date) => string> = {
     'yyyy': (d) => d.getFullYear().toString(),
     'yy': (d) => d.getFullYear().toString().slice(2),
@@ -94,15 +129,66 @@ export function formatDate(date: Date | string, format: string = 'MMM dd, yyyy')
     'a': (d) => d.getHours() < 12 ? 'am' : 'pm',
     'aa': (d) => d.getHours() < 12 ? 'AM' : 'PM',
   };
-  
+
   let result = format;
-  
+
   // Replace tokens with formatted values
   Object.entries(formats).forEach(([token, formatter]) => {
     result = result.replace(token, formatter(d));
   });
-  
+
   return result;
+}
+
+/**
+ * Format relative time (e.g., "2 hours ago", "in 3 days")
+ */
+function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.round(diffMs / 1000);
+  const diffMin = Math.round(diffSec / 60);
+  const diffHr = Math.round(diffMin / 60);
+  const diffDays = Math.round(diffHr / 24);
+
+  if (Math.abs(diffSec) < 60) return 'just now';
+  if (Math.abs(diffMin) < 60) return `${Math.abs(diffMin)} minute${Math.abs(diffMin) !== 1 ? 's' : ''} ${diffMin < 0 ? 'from now' : 'ago'}`;
+  if (Math.abs(diffHr) < 24) return `${Math.abs(diffHr)} hour${Math.abs(diffHr) !== 1 ? 's' : ''} ${diffHr < 0 ? 'from now' : 'ago'}`;
+  if (Math.abs(diffDays) < 7) return `${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? 's' : ''} ${diffDays < 0 ? 'from now' : 'ago'}`;
+
+  return formatDate(date, 'MMM dd, yyyy');
+}
+
+/**
+ * Format date header (Today, Yesterday, or formatted date)
+ */
+function formatDateHeader(date: Date): string {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) {
+    return 'Today';
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  } else {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
+  }
+}
+
+/**
+ * Format time only (e.g., "2:30 PM")
+ */
+function formatTime(date: Date): string {
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }).format(date);
 }
 
 /**

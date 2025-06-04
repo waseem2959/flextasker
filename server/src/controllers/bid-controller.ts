@@ -8,10 +8,10 @@
  * - Formatting and returning appropriate responses
  */
 
-import { Request, Response } from 'express';
-import { BaseController } from './base-controller';
 import { BidService } from '@/services/bid-service';
 import { logger } from '@/utils/logger';
+import { Request, Response } from 'express';
+import { BaseController } from './base-controller';
 
 export class BidController extends BaseController {
   private readonly bidService: BidService;
@@ -119,11 +119,23 @@ export class BidController extends BaseController {
    */
   searchBids = this.asyncHandler(async (req: Request, res: Response) => {
     const criteria = req.query;
-    
+
     logger.info('Searching bids', { criteria });
     const bids = await this.bidService.searchBids(criteria);
-    
+
     return this.sendSuccess(res, bids, 'Bids retrieved successfully');
+  });
+
+  /**
+   * Get bid statistics for a task
+   */
+  getBidStatistics = this.asyncHandler(async (req: Request, res: Response) => {
+    const taskId = req.params.taskId;
+
+    logger.info('Fetching bid statistics for task', { taskId });
+    const statistics = await this.bidService.getBidStatistics(taskId);
+
+    return this.sendSuccess(res, statistics, 'Bid statistics retrieved successfully');
   });
 }
 

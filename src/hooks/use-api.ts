@@ -5,9 +5,9 @@
  * typing, consistent error handling, and integration with React Query.
  */
 
-import apiClient from '@/services/api/client';
+import { apiClient } from '@/services/api/api-client';
 import { AppError } from '@/services/error';
-import { ApiResponse, PaginatedApiResponse } from '@/types/api';
+import { ApiResponse, PaginatedApiResponse } from '@/types';
 import {
     QueryKey,
     useMutation,

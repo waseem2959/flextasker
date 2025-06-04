@@ -1,0 +1,350 @@
+# Documentation for New API Endpoints Added in Phase 2
+# These endpoints were added to fix integration gaps between frontend and backend
+
+# User Statistics Endpoints
+/users/me/stats:
+  get:
+    tags:
+      - Users
+    summary: Get current user statistics
+    description: Returns comprehensive statistics for the authenticated user including task counts, bid statistics, and review metrics.
+    security:
+      - bearerAuth: []
+    responses:
+      200:
+        description: User statistics retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '#/components/schemas/UserStatistics'
+                message:
+                  type: string
+                  example: "User statistics retrieved successfully"
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+# Review Flagging Endpoint (Alias for Report)
+/reviews/{id}/flag:
+  post:
+    tags:
+      - Reviews
+    summary: Flag a review as inappropriate
+    description: Flag a review for inappropriate content. This is an alias for the report endpoint to maintain frontend compatibility.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Review ID to flag
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - reason
+            properties:
+              reason:
+                type: string
+                description: Reason for flagging the review
+                example: "This review contains inappropriate language"
+    responses:
+      200:
+        description: Review flagged successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: "Review flagged successfully"
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      404:
+        $ref: '#/components/responses/NotFound'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+# Bid Statistics Endpoint
+/bids/statistics/task/{taskId}:
+  get:
+    tags:
+      - Bids
+    summary: Get bid statistics for a task
+    description: Returns comprehensive statistics about bids for a specific task including count, average amount, and status distribution.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        description: Task ID to get bid statistics for
+        schema:
+          type: string
+          format: uuid
+    responses:
+      200:
+        description: Bid statistics retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '#/components/schemas/BidStatistics'
+                message:
+                  type: string
+                  example: "Bid statistics retrieved successfully"
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      404:
+        $ref: '#/components/responses/NotFound'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+# Schema definitions for new endpoints
+components:
+  schemas:
+    UserStatistics:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: User ID
+        tasks:
+          type: object
+          description: Task statistics by status
+          properties:
+            OPEN:
+              type: number
+              description: Number of open tasks
+            IN_PROGRESS:
+              type: number
+              description: Number of tasks in progress
+            COMPLETED:
+              type: number
+              description: Number of completed tasks
+            CANCELLED:
+              type: number
+              description: Number of cancelled tasks
+        bids:
+          type: object
+          description: Bid statistics by status
+          properties:
+            PENDING:
+              type: number
+              description: Number of pending bids
+            ACCEPTED:
+              type: number
+              description: Number of accepted bids
+            REJECTED:
+              type: number
+              description: Number of rejected bids
+            WITHDRAWN:
+              type: number
+              description: Number of withdrawn bids
+        reviews:
+          type: object
+          description: Review statistics
+          properties:
+            averageRating:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 5
+              description: Average rating received
+            totalReviews:
+              type: number
+              description: Total number of reviews received
+        earnings:
+          type: object
+          description: Earnings statistics (if applicable)
+          properties:
+            totalEarnings:
+              type: number
+              format: float
+              description: Total earnings from completed tasks
+            pendingEarnings:
+              type: number
+              format: float
+              description: Earnings from tasks pending payment
+        completionRate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Task completion rate (0-1)
+        responseTime:
+          type: number
+          description: Average response time in hours
+
+    BidStatistics:
+      type: object
+      properties:
+        taskId:
+          type: string
+          format: uuid
+          description: Task ID
+        bidCount:
+          type: number
+          description: Total number of bids
+        averageBid:
+          type: number
+          format: float
+          description: Average bid amount
+        minBid:
+          type: number
+          format: float
+          description: Minimum bid amount
+        maxBid:
+          type: number
+          format: float
+          description: Maximum bid amount
+        pendingBids:
+          type: number
+          description: Number of pending bids
+        acceptedBids:
+          type: number
+          description: Number of accepted bids
+        rejectedBids:
+          type: number
+          description: Number of rejected bids
+        withdrawnBids:
+          type: number
+          description: Number of withdrawn bids
+        bidRange:
+          type: object
+          description: Bid amount distribution
+          properties:
+            low:
+              type: number
+              description: Number of bids in low range (bottom 33%)
+            medium:
+              type: number
+              description: Number of bids in medium range (middle 33%)
+            high:
+              type: number
+              description: Number of bids in high range (top 33%)
+        timeToFirstBid:
+          type: number
+          description: Time to first bid in minutes (if applicable)
+        competitionLevel:
+          type: string
+          enum: [low, medium, high]
+          description: Competition level based on bid count and frequency
+
+# Enhanced error responses with more detail
+components:
+  responses:
+    BadRequest:
+      description: Bad request - invalid input parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "validation_error"
+              message:
+                type: string
+                example: "Invalid input parameters"
+              details:
+                type: object
+                description: Detailed validation errors
+
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "authentication_required"
+              message:
+                type: string
+                example: "Authentication token required"
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "insufficient_permissions"
+              message:
+                type: string
+                example: "Admin access required"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "not_found"
+              message:
+                type: string
+                example: "Resource not found"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "internal_server_error"
+              message:
+                type: string
+                example: "An unexpected error occurred"

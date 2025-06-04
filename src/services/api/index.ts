@@ -4,7 +4,7 @@
  * This file exports all API-related services and hooks.
  */
 
-// Core API client
+// Core API client - consolidated implementation
 import { ApiClient, apiClient } from './api-client';
 
 // Service modules

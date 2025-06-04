@@ -58,19 +58,10 @@ export function getUserDisplayName(user: User): string {
   return 'User';
 }
 
-/**
- * Extract initials from a user's name
- * 
- * @param name - Full name to extract initials from
- * @returns Uppercase initials string
- */
-export function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase();
-}
+// getInitials function moved to @/lib/utils for consolidation
+// Import and re-export for backward compatibility
+import { getInitials as getInitialsFromUtils } from '@/lib/utils';
+export const getInitials = getInitialsFromUtils;
 
 /**
  * Generates a user avatar URL using a profile picture service

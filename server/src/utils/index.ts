@@ -8,9 +8,9 @@
 
 // Job and background processing utilities
 export {
+    QueueName,
     // Queue infrastructure
-    addJob, addRecurringJob, createQueue, getJob, getQueueMetrics, QueueName,
-    registerProcessor, removeJob, shutdown
+    addJob, addRecurringJob, createQueue, getJob, getQueueMetrics, registerProcessor, removeJob, shutdown
 } from './job-queue';
 
 export {
@@ -23,29 +23,19 @@ export {
     comparePassword, generateNumericCode, generateToken, hashPassword
 } from './crypto';
 
-// Database utilities
-export { 
-  prisma, executeDbOperation, findById, createRecord, updateRecord,
-  deleteRecord, buildPaginationOptions, getCount, getPaginatedRecords 
-} from './database-utils';
+// Database utilities - consolidated from database-utils.ts
+export { buildPaginationOptions, createRecord, db, deleteRecord, executeDbOperation, findById, getCount, getPaginatedRecords, prisma, updateRecord } from './database';
 
 // Database transaction utilities
-export {
-  withTransaction, executeTransactionBatch, withRetry
-} from './db-transaction';
+export { executeTransactionBatch, withRetry, withTransaction } from './db-transaction';
 
 // Database migration utilities
-export {
-  initializeMigrationSystem, applyPendingMigrations, 
-  isMigrationsUpToDate, validateMigrationIntegrity
-} from './db-migration';
+export { applyPendingMigrations, initializeMigrationSystem, isMigrationsUpToDate, validateMigrationIntegrity } from './db-migration';
 
 // Error handling utilities
 export {
-    AppError, AuthenticationError, AuthorizationError, 
-    ConflictError, NotFoundError, ValidationError,
-    isOperationalError, createErrorResponse, getErrorMessage,
-    errorHandlerMiddleware, ErrorType, HttpStatusCode, ValidationErrorDetail
+    AppError, AuthenticationError, AuthorizationError,
+    ConflictError, ErrorType, HttpStatusCode, NotFoundError, ValidationError, ValidationErrorDetail, createErrorResponse, errorHandlerMiddleware, getErrorMessage, isOperationalError
 } from './error-utils';
 
 // Logging utilities
@@ -61,28 +51,15 @@ export * from './api-versioning';
 export * from './controller-utils';
 
 // Response utilities
-export {
-    ApiSuccessResponse, ApiErrorResponse, ApiResponse, PaginationInfo, ErrorDetail,
-    sendSuccess, sendError, sendValidationError, sendNotFoundError,
-    sendUnauthorizedError, sendForbiddenError, sendConflictError,
-    sendPaginatedSuccess, createPagination
-} from './response-utils';
+export { ApiErrorResponse, ApiResponse, ApiSuccessResponse, ErrorDetail, PaginationInfo, createPagination, sendConflictError, sendError, sendForbiddenError, sendNotFoundError, sendPaginatedSuccess, sendSuccess, sendUnauthorizedError, sendValidationError } from './response-utils';
 
 // Validation utilities
-export { 
-    validateWithZod, formatZodErrors, composeValidators, sanitizeObject, isValidEmail,
-    validatePasswordStrength, ValidationSchemas,
-    UserSchemas, TaskSchemas, BidSchemas, AuthSchemas, 
-    PaymentSchemas, ReviewSchemas, NotificationSchemas,
-    MessageSchemas, CategorySchemas, HealthCheckSchemas,
-    initializeValidation
-} from './validation-utils';
+export { AuthSchemas, BidSchemas, CategorySchemas, HealthCheckSchemas, MessageSchemas, NotificationSchemas, PaymentSchemas, ReviewSchemas, TaskSchemas, UserSchemas, ValidationSchemas, composeValidators, formatZodErrors, initializeValidation, isValidEmail, sanitizeObject, validatePasswordStrength, validateWithZod } from './validation-utils';
 
 // Audit trail utilities
 export {
-    AuditLogEntry, AuditTrailFilter, AuditChangeSet,
-    recordAuditEvent, auditFromRequest, createEntityChangeAudit,
-    getEntityAuditHistory, recordAuthEvent, recordDataAccessEvent,
-    recordDataExportEvent, recordAdminAction, recordPermissionChange,
-    AuditEventType
+    AuditChangeSet, AuditEventType, AuditLogEntry, AuditTrailFilter, auditFromRequest, createEntityChangeAudit,
+    getEntityAuditHistory, recordAdminAction, recordAuditEvent, recordAuthEvent, recordDataAccessEvent,
+    recordDataExportEvent, recordPermissionChange
 } from './audit-utils';
+

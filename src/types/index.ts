@@ -29,7 +29,6 @@ import {
     DeviceType,
     DistanceUnit,
     Environment,
-    ErrorType,
     FeatureFlag,
     FormFieldType,
     HttpStatusCode,
@@ -71,7 +70,7 @@ export {
         DeviceType,
         DistanceUnit,
         Environment,
-        ErrorType,
+
         FeatureFlag,
         FormFieldType,
         HttpStatusCode,
@@ -156,10 +155,16 @@ export {
 // Export UserImpl class directly for instantiation
   export { UserImpl } from './models-types';
 
+// Export shared user types for consistency
+export type {
+    AdminUser, BaseUser, ClientUser, PasswordChangeRequest, TaskerUser, UserProfile, UserRegistrationRequest, UserSearchParams,
+    UsersResponse, UserUpdateRequest, UserWithRole
+} from '../../shared/types/common/user-types';
+
 // Export primary types directly (these are the canonical definitions)
 // Using 'export type' syntax for proper isolation with isolatedModules
 export type {
-    AuthContextType,
+    ApiUserResponse, AuthContextType,
     AuthTokens,
     Bid,
     LoginCredentials,
@@ -183,7 +188,7 @@ export type TaskStatusType = TaskStatus;
 export type TaskPriorityType = TaskPriority;
 export type BudgetTypeType = BudgetType;
 export type BidStatusType = BidStatus;
-export type AppErrorType = ErrorType; // Use the ErrorType directly from app-enums.ts
+// ErrorType now comes from shared/types/errors.ts for consistency
 
 // Re-export commonly used API Response type
 export type ApiResponse<T = any> = ApiTypes.ApiResponse<T>;

@@ -13,6 +13,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "jsxImportSource": "react",
     "types": ["jest","node", "@testing-library/jest-dom"],
     "forceConsistentCasingInFileNames": true,
     
@@ -37,6 +38,7 @@
       "@/shared/*": ["shared/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "src/types/react-i18next-fix.d.ts"],
+  "exclude": ["node_modules", "dist", "build", "src/test-utils", "src/**/__tests__", "src/**/*.test.*", "src/**/*.spec.*"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

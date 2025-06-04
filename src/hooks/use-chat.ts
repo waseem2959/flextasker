@@ -5,7 +5,7 @@
  * including message sending, typing indicators, and history management.
  */
 
-import consolidatedApiClient from '@/services/api/client';
+import { apiClient as consolidatedApiClient } from '@/services/api/api-client';
 // Error notification simplified
 import { toast } from '@/hooks/use-toast';
 import { realtimeService as socketService } from '@/services/realtime/socket-service';
@@ -40,7 +40,7 @@ export function useChat(conversationId: string) {
       setIsLoading(true);
       const response = await consolidatedApiClient.get(`/conversations/${conversationId}/messages`);
       if (response.success && response.data) {
-        setMessages(response.data);
+        setMessages(response.data as Message[]);
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load messages');
@@ -141,7 +141,7 @@ export function useChat(conversationId: string) {
         // But we can also add it optimistically
         if (response.success && response.data) {
           // The API might return the created message
-          setMessages((prevMessages) => [...prevMessages, response.data]);
+          setMessages((prevMessages) => [...prevMessages, response.data as Message]);
         }
         
         setError(null);

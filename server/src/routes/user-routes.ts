@@ -112,6 +112,15 @@ router.get('/search',
 );
 
 /**
+ * Get Current User Statistics
+ * GET /api/v1/users/me/stats
+ */
+router.get('/me/stats',
+  authenticateToken,
+  userController.getMyStats
+);
+
+/**
  * Get User Statistics
  * GET /api/v1/users/:id/stats
  */

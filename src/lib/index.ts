@@ -21,9 +21,8 @@ export { cn, formatCurrency, truncateText, default as uiUtils } from './ui-utils
 export * from '@/services/validation';
 export { default as validationUtils } from '@/services/validation';
 
-// Date utilities exports
-export * from './date-utils';
-export { default as dateUtils } from './date-utils';
+// Date utilities exports - now consolidated in utils.ts
+export { formatDate } from './utils';
 
 // Re-export specific constants from sidebar utils for convenience
 export {

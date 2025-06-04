@@ -1,4 +1,4 @@
-// src/stores/authStore.ts
+// src/stores/auth-store.ts
 import { authService } from '@/services/auth';
 import { User } from '@/types';
 import { create } from 'zustand';
@@ -51,11 +51,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   
   loadUser: async () => {
     set({ isLoading: true });
-    
+
     try {
       const user = await authService.getCurrentUser();
       set({ user, isAuthenticated: true, isLoading: false });
     } catch (error) {
+      // Log the error for debugging purposes
+      console.warn('Failed to load user:', error);
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },

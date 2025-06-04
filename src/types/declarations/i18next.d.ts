@@ -53,6 +53,9 @@ declare module 'react-i18next' {
   import { i18n } from 'i18next';
     import React from 'react';
 
+  // Fix ReactI18NextChildren type compatibility
+  export type ReactI18NextChildren = React.ReactNode;
+
   export function useTranslation(ns?: string | string[]): {
     t: (key: string, options?: any) => string;
     i18n: i18n;
@@ -64,14 +67,21 @@ declare module 'react-i18next' {
   };
 
   export function Trans(props: any): React.ReactElement;
-  
+
   export interface WithTranslation {
     t: (key: string, options?: any) => string;
     i18n: i18n;
     tReady: boolean;
   }
-  
+
   export function withTranslation(ns?: string | string[]): <P>(
     component: React.ComponentType<P & WithTranslation>
   ) => React.FC<P>;
+}
+
+// Global type declaration to fix ReactI18NextChildren conflicts
+declare global {
+  namespace React {
+    type ReactI18NextChildren = ReactNode;
+  }
 }

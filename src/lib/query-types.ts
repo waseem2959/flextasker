@@ -5,9 +5,9 @@
  * with proper typing for API responses and error handling.
  */
 
-import { UseQueryResult, UseMutationResult } from '@tanstack/react-query';
-import { ApiResponse, PaginatedApiResponse } from '@/types/api';
+import { ApiResponse, PaginatedApiResponse } from '@/types';
 import { AppError } from '@/types/errors';
+import { UseMutationResult, UseQueryResult } from '@tanstack/react-query';
 
 /**
  * Type for a standard API query result with proper error typing

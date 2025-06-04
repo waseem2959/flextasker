@@ -7,8 +7,7 @@
  * - Managing task status
  */
 
-import { Task } from '@/types';
-import { ApiResponse, PaginatedApiResponse } from '@/types/api';
+import { ApiResponse, PaginatedApiResponse, Task } from '@/types';
 import { apiClient } from './api-client';
 
 /**

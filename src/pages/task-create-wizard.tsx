@@ -1,6 +1,6 @@
-import React from 'react';
+
 import { TaskCreationWizard } from '@/components/task/task-creation-wizard';
-import MainLayout from '../layouts/MainLayout';
+import MainLayout from '../layouts/main-layout';
 
 const TaskCreateWizard = () => {
   return (

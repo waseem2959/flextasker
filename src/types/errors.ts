@@ -1,6 +1,24 @@
 import { AxiosError } from 'axios';
 import type { ApiResponse } from './api-types';
-import { ErrorType } from './app-enums';
+// Import shared error types as the canonical source
+import {
+    ErrorResponse,
+    ErrorType,
+    HttpStatusCode,
+    ValidationErrorDetail,
+    ValidationErrorResponse,
+    errorTypeToStatusCode,
+    statusCodeToErrorType
+} from '../../../shared/types/errors';
+
+// Re-export shared types for convenience
+export {
+    ErrorResponse, ErrorType,
+    HttpStatusCode,
+    ValidationErrorDetail, ValidationErrorResponse,
+    errorTypeToStatusCode,
+    statusCodeToErrorType
+};
 
 /**
  * Base application error class
@@ -39,12 +57,12 @@ export class AppError extends Error {
  */
 export class NetworkError extends AppError {
   public readonly originalError?: AxiosError;
-  
+
   constructor(message = 'Network error occurred', originalError?: AxiosError, details?: Record<string, any>) {
-    super(message, ErrorType.NETWORK_ERROR, 503, details, 'NETWORK_ERROR');
+    super(message, ErrorType.NETWORK, 503, details, 'NETWORK_ERROR');
     this.name = 'NetworkError';
     this.originalError = originalError;
-    
+
     Object.setPrototypeOf(this, NetworkError.prototype);
   }
 }
@@ -80,7 +98,7 @@ export class AuthorizationError extends AppError {
   constructor(message = 'Authorization failed', details?: Record<string, any>) {
     super(message, ErrorType.AUTHORIZATION, 403, details, 'PERMISSION_ERROR');
     this.name = 'AuthorizationError';
-    
+
     Object.setPrototypeOf(this, AuthorizationError.prototype);
   }
 }
@@ -223,9 +241,9 @@ export class RateLimitError extends AppError {
  */
 export class ServerError extends AppError {
   constructor(message = 'Internal server error', details?: Record<string, any>) {
-    super(message, ErrorType.SERVER_ERROR, 500, details, 'SERVER_ERROR');
+    super(message, ErrorType.SERVER, 500, details, 'SERVER_ERROR');
     this.name = 'ServerError';
-    
+
     Object.setPrototypeOf(this, ServerError.prototype);
   }
 }
@@ -295,42 +313,22 @@ export class ErrorFactory {
 
 /**
  * Classify an error based on HTTP status code
+ * Uses the shared statusCodeToErrorType function for consistency
  */
 export function classifyError(statusCode: number): ErrorType {
-  if (statusCode >= 500) {
-    return ErrorType.SERVER_ERROR;
-  }
-  
-  switch (statusCode) {
-    case 400:
-      return ErrorType.VALIDATION;
-    case 401:
-      return ErrorType.AUTHENTICATION;
-    case 403:
-      return ErrorType.AUTHORIZATION;
-    case 404:
-      return ErrorType.NOT_FOUND;
-    case 408:
-      return ErrorType.TIMEOUT;
-    case 409:
-      return ErrorType.CONFLICT;
-    case 429:
-      return ErrorType.RATE_LIMIT;
-    default:
-      return ErrorType.UNKNOWN;
-  }
+  return statusCodeToErrorType(statusCode);
 }
 
 /**
  * Create an appropriate error instance based on error type
  */
 export function createError(
-  message: string, 
-  type: ErrorType, 
+  message: string,
+  type: ErrorType,
   errors?: Record<string, string[]>
 ): AppError {
   switch (type) {
-    case ErrorType.NETWORK_ERROR:
+    case ErrorType.NETWORK:
       return new NetworkError(message);
     case ErrorType.AUTHENTICATION:
       return new AuthenticationError(message);
@@ -344,7 +342,7 @@ export function createError(
       return new ConflictError(message);
     case ErrorType.RATE_LIMIT:
       return new RateLimitError(message);
-    case ErrorType.SERVER_ERROR:
+    case ErrorType.SERVER:
       return new ServerError(message);
     case ErrorType.TIMEOUT:
       return new TimeoutError(message);

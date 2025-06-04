@@ -1,9 +1,9 @@
-import { Check } from 'lucide-react';
-import MainLayout from '../layouts/MainLayout';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Check } from 'lucide-react';
+import MainLayout from '../layouts/main-layout';
 
 interface PlanFeature {
   name: string;

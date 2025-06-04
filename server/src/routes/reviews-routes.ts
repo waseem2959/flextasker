@@ -8,11 +8,11 @@
  * - Reporting inappropriate reviews
  */
 
-import { Router } from 'express';
-import { body, query, param } from 'express-validator';
+import { reviewController } from '@/controllers/review-controller';
 import { authenticateToken, optionalAuth } from '@/middleware/auth-middleware';
 import { validate } from '@/middleware/validation-middleware';
-import { reviewController } from '@/controllers/review-controller';
+import { Router } from 'express';
+import { body, param, query } from 'express-validator';
 
 const router = Router();
 
@@ -157,6 +157,19 @@ router.post('/:id/report',
     body('details').optional().trim().isLength({ max: 500 }).withMessage('Details cannot exceed 500 characters')
   ]),
   reviewController.reportReview
+);
+
+/**
+ * Flag Review (Alias for Report - for frontend compatibility)
+ * POST /api/v1/reviews/:id/flag
+ */
+router.post('/:id/flag',
+  authenticateToken,
+  validate([
+    param('id').isUUID().withMessage('Invalid review ID format'),
+    body('reason').isString().trim().notEmpty().withMessage('Reason is required')
+  ]),
+  reviewController.flagReview
 );
 
 /**

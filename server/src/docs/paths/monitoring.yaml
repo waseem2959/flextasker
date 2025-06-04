@@ -1,0 +1,531 @@
+# Monitoring API Endpoints Documentation
+# These endpoints provide access to application monitoring data including
+# performance metrics, health checks, and system status information.
+
+/monitoring/health:
+  get:
+    tags:
+      - Monitoring
+    summary: Basic health check
+    description: Returns basic application health status. This is a public endpoint for load balancers and monitoring systems.
+    responses:
+      200:
+        description: Application is healthy
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      example: "healthy"
+                    timestamp:
+                      type: string
+                      format: date-time
+                    uptime:
+                      type: number
+                      description: Application uptime in seconds
+                    memory:
+                      type: object
+                      properties:
+                        used:
+                          type: number
+                          description: Used memory in MB
+                        total:
+                          type: number
+                          description: Total memory in MB
+                    version:
+                      type: string
+                      example: "1.0.0"
+
+/monitoring/health/detailed:
+  get:
+    tags:
+      - Monitoring
+    summary: Detailed health check
+    description: Returns comprehensive health information including alerts and service status. Admin access required.
+    security:
+      - bearerAuth: []
+    responses:
+      200:
+        description: Detailed health information
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      enum: [healthy, degraded, unhealthy]
+                    timestamp:
+                      type: string
+                      format: date-time
+                    uptime:
+                      type: number
+                    memory:
+                      type: object
+                    cpu:
+                      type: object
+                    alerts:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Alert'
+                    services:
+                      type: object
+                      properties:
+                        database:
+                          type: string
+                        cache:
+                          type: string
+                        websockets:
+                          type: string
+      403:
+        $ref: '#/components/responses/Forbidden'
+
+/monitoring/metrics:
+  get:
+    tags:
+      - Monitoring
+    summary: Performance metrics dashboard
+    description: Returns comprehensive performance metrics including API, cache, and database statistics. Admin access required.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: period
+        in: query
+        description: Time period for metrics
+        schema:
+          type: string
+          enum: [1h, 24h, 7d, 30d]
+          default: 1h
+    responses:
+      200:
+        description: Performance metrics data
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    period:
+                      type: string
+                    timestamp:
+                      type: string
+                      format: date-time
+                    summary:
+                      $ref: '#/components/schemas/MetricsSummary'
+                    detailed:
+                      $ref: '#/components/schemas/DetailedMetrics'
+                    alerts:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Alert'
+      403:
+        $ref: '#/components/responses/Forbidden'
+
+/monitoring/alerts:
+  get:
+    tags:
+      - Monitoring
+    summary: Current performance alerts
+    description: Returns current performance alerts filtered by severity. Admin access required.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: severity
+        in: query
+        description: Filter alerts by severity level
+        schema:
+          type: string
+          enum: [low, medium, high]
+    responses:
+      200:
+        description: Current alerts
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    alerts:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Alert'
+                    count:
+                      type: number
+                    timestamp:
+                      type: string
+                      format: date-time
+      403:
+        $ref: '#/components/responses/Forbidden'
+
+/monitoring/cache:
+  get:
+    tags:
+      - Monitoring
+    summary: Cache performance statistics
+    description: Returns cache performance data and optimization recommendations. Admin access required.
+    security:
+      - bearerAuth: []
+    responses:
+      200:
+        description: Cache statistics and recommendations
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    statistics:
+                      $ref: '#/components/schemas/CacheStatistics'
+                    performance:
+                      $ref: '#/components/schemas/CachePerformance'
+                    recommendations:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Recommendation'
+      403:
+        $ref: '#/components/responses/Forbidden'
+
+/monitoring/database:
+  get:
+    tags:
+      - Monitoring
+    summary: Database performance data
+    description: Returns database performance metrics and slow query analysis. Admin access required.
+    security:
+      - bearerAuth: []
+    responses:
+      200:
+        description: Database performance data
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    metrics:
+                      $ref: '#/components/schemas/DatabaseMetrics'
+                    queryStatistics:
+                      type: object
+                      additionalProperties:
+                        $ref: '#/components/schemas/QueryStats'
+                    slowQueries:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/SlowQuery'
+                    recommendations:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Recommendation'
+      403:
+        $ref: '#/components/responses/Forbidden'
+
+/monitoring/security:
+  get:
+    tags:
+      - Monitoring
+    summary: Security metrics and risk assessment
+    description: Returns security-related metrics and risk level assessment. Admin access required.
+    security:
+      - bearerAuth: []
+    responses:
+      200:
+        description: Security metrics and risk assessment
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+                  properties:
+                    metrics:
+                      $ref: '#/components/schemas/SecurityMetrics'
+                    riskLevel:
+                      type: string
+                      enum: [low, medium, high]
+                    recommendations:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/Recommendation'
+      403:
+        $ref: '#/components/responses/Forbidden'
+
+# Schema definitions for monitoring endpoints
+components:
+  schemas:
+    Alert:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Type of alert
+          example: "cache_performance"
+        message:
+          type: string
+          description: Alert message
+          example: "Low cache hit rate: 65.2%"
+        severity:
+          type: string
+          enum: [low, medium, high]
+          description: Alert severity level
+        timestamp:
+          type: string
+          format: date-time
+          description: When the alert was generated
+
+    MetricsSummary:
+      type: object
+      properties:
+        performance:
+          type: object
+          properties:
+            cacheHitRate:
+              type: string
+              example: "78.5%"
+            averageApiResponseTime:
+              type: string
+              example: "245ms"
+            averageDbQueryTime:
+              type: string
+              example: "89ms"
+            requestsPerMinute:
+              type: number
+              example: 42.3
+        health:
+          type: object
+          properties:
+            successRate:
+              type: string
+              example: "99.2%"
+            slowQueries:
+              type: number
+              example: 3
+            activeUsers:
+              type: number
+              example: 127
+            uptime:
+              type: string
+              example: "2d 14h"
+        security:
+          type: object
+          properties:
+            rateLimitHits:
+              type: number
+              example: 15
+            suspiciousRequests:
+              type: number
+              example: 2
+            authFailures:
+              type: number
+              example: 8
+
+    DetailedMetrics:
+      type: object
+      properties:
+        cache:
+          $ref: '#/components/schemas/CachePerformance'
+        database:
+          $ref: '#/components/schemas/DatabaseMetrics'
+        api:
+          $ref: '#/components/schemas/ApiMetrics'
+        security:
+          $ref: '#/components/schemas/SecurityMetrics'
+        system:
+          $ref: '#/components/schemas/SystemMetrics'
+
+    CacheStatistics:
+      type: object
+      properties:
+        size:
+          type: number
+          description: Current cache size
+        maxSize:
+          type: number
+          description: Maximum cache size
+
+    CachePerformance:
+      type: object
+      properties:
+        hits:
+          type: number
+          description: Number of cache hits
+        misses:
+          type: number
+          description: Number of cache misses
+        hitRate:
+          type: number
+          description: Cache hit rate (0-1)
+        totalRequests:
+          type: number
+          description: Total cache requests
+        averageResponseTime:
+          type: number
+          description: Average response time in milliseconds
+
+    DatabaseMetrics:
+      type: object
+      properties:
+        queryCount:
+          type: number
+          description: Total number of queries executed
+        slowQueries:
+          type: number
+          description: Number of slow queries
+        averageQueryTime:
+          type: number
+          description: Average query execution time in milliseconds
+        connectionPoolSize:
+          type: number
+          description: Database connection pool size
+        activeConnections:
+          type: number
+          description: Number of active database connections
+
+    ApiMetrics:
+      type: object
+      properties:
+        totalRequests:
+          type: number
+          description: Total API requests
+        successfulRequests:
+          type: number
+          description: Number of successful requests
+        failedRequests:
+          type: number
+          description: Number of failed requests
+        averageResponseTime:
+          type: number
+          description: Average response time in milliseconds
+        requestsPerMinute:
+          type: number
+          description: Requests per minute rate
+
+    SecurityMetrics:
+      type: object
+      properties:
+        rateLimitHits:
+          type: number
+          description: Number of rate limit violations
+        suspiciousRequests:
+          type: number
+          description: Number of suspicious requests detected
+        authenticationFailures:
+          type: number
+          description: Number of authentication failures
+        csrfAttempts:
+          type: number
+          description: Number of CSRF attack attempts
+
+    SystemMetrics:
+      type: object
+      properties:
+        memoryUsage:
+          type: number
+          description: Memory usage in MB
+        cpuUsage:
+          type: number
+          description: CPU usage percentage
+        uptime:
+          type: number
+          description: System uptime in milliseconds
+        activeUsers:
+          type: number
+          description: Number of active users
+
+    QueryStats:
+      type: object
+      properties:
+        count:
+          type: number
+          description: Number of times query was executed
+        totalTime:
+          type: number
+          description: Total execution time in milliseconds
+        avgTime:
+          type: number
+          description: Average execution time in milliseconds
+
+    SlowQuery:
+      type: object
+      properties:
+        queryName:
+          type: string
+          description: Name of the slow query
+        averageTime:
+          type: number
+          description: Average execution time in milliseconds
+        count:
+          type: number
+          description: Number of executions
+        totalTime:
+          type: number
+          description: Total execution time in milliseconds
+
+    Recommendation:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Type of recommendation
+        message:
+          type: string
+          description: Recommendation message
+        priority:
+          type: string
+          enum: [low, medium, high]
+          description: Priority level
+
+/monitoring/reset:
+  post:
+    tags:
+      - Monitoring
+    summary: Reset monitoring metrics
+    description: Resets all performance monitoring metrics. Use with caution. Admin access required.
+    security:
+      - bearerAuth: []
+    responses:
+      200:
+        description: Metrics successfully reset
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                  example: "All monitoring metrics have been reset"
+      403:
+        $ref: '#/components/responses/Forbidden'

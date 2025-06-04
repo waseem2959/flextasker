@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import MainLayout from '../layouts/MainLayout';
-import { 
-  MapPin, 
-  Calendar, 
-  CheckCircle, 
-  Star, 
-  MessageCircle,
-  Clock as ClockIcon,
-  Award as AwardIcon
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    Award as AwardIcon,
+    Calendar,
+    CheckCircle,
+    Clock as ClockIcon,
+    MapPin,
+    MessageCircle,
+    Star
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import MainLayout from '../layouts/main-layout';
 
 import { Progress } from '@/components/ui/progress';
 import { UserRole } from '../../shared/types/enums';

@@ -7,7 +7,7 @@
 import { useRealtime } from '@/hooks/use-realtime';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import apiClient from '../services/api/client';
+import { apiClient } from '../services/api/api-client';
 import { SocketEvent } from '../services/realtime/socket-events';
 import { realtimeService } from '../services/realtime/socket-service';
 

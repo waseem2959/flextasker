@@ -5,11 +5,12 @@
  * common web vulnerabilities such as XSS, CSRF, clickjacking, etc.
  */
 
-import { Request, Response, NextFunction } from 'express';
 import csrf from 'csurf';
+import { NextFunction, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
-import { logger } from '../utils/logger';
 import { AppError } from '../utils/error-utils';
+import { logger } from '../utils/logger';
 
 /**
  * CSRF protection middleware
@@ -149,6 +150,60 @@ export function securityHeaders() {
 }
 
 /**
+ * Rate limiting configuration
+ */
+const createRateLimit = (windowMs: number, max: number, message?: string) => {
+  return rateLimit({
+    windowMs,
+    max,
+    message: message ?? 'Too many requests from this IP, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req: Request, res: Response) => {
+      logger.warn('Rate limit exceeded', {
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        path: req.path,
+        method: req.method
+      });
+
+      res.status(429).json({
+        success: false,
+        error: 'Too many requests',
+        message: 'Rate limit exceeded. Please try again later.',
+        retryAfter: Math.round(windowMs / 1000)
+      });
+    }
+  });
+};
+
+/**
+ * Rate limiters for different endpoint types
+ */
+export const rateLimiters = {
+  // General API rate limit
+  api: createRateLimit(
+    1 * 60 * 1000, // 1 minute
+    60, // 60 requests per minute
+    'API rate limit exceeded, please try again in 1 minute.'
+  ),
+
+  // Authentication endpoints (stricter)
+  auth: createRateLimit(
+    15 * 60 * 1000, // 15 minutes
+    5, // 5 attempts per 15 minutes
+    'Too many authentication attempts, please try again in 15 minutes.'
+  ),
+
+  // General application rate limit
+  general: createRateLimit(
+    15 * 60 * 1000, // 15 minutes
+    100, // 100 requests per 15 minutes
+    'Too many requests from this IP, please try again in 15 minutes.'
+  )
+};
+
+/**
  * Export security middleware collection
  */
 export const security = {
@@ -156,5 +211,6 @@ export const security = {
   handleCsrfError,
   sanitizeBody,
   securityHeaders: securityHeaders(),
-  sanitizeInput
+  sanitizeInput,
+  rateLimit: rateLimiters
 };

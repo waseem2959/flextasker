@@ -217,14 +217,26 @@ export class UserController extends BaseController {
   });
 
   /**
-   * Get user statistics
+   * Get current user's statistics
+   */
+  getMyStats = this.asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+
+    logger.info('Fetching own statistics', { userId });
+    const stats = await userService.getUserStats(userId);
+
+    return this.sendSuccess(res, stats, 'User statistics retrieved successfully');
+  });
+
+  /**
+   * Get user statistics by ID
    */
   getUserStats = this.asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.params.id || req.user!.id;
-    
+    const userId = req.params.id;
+
     logger.info('Fetching user statistics', { userId });
     const stats = await userService.getUserStats(userId);
-    
+
     return this.sendSuccess(res, stats, 'User statistics retrieved successfully');
   });
 

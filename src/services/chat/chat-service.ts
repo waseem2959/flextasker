@@ -5,11 +5,10 @@
  * including message sending, typing indicators, and history management.
  */
 
+import { ApiResponse, PaginatedApiResponse, User } from '@/types';
 import { apiClient } from '../api/api-client';
-import { socketService } from '../realtime/socket-service';
-import { User } from '@/types';
-import { ApiResponse, PaginatedApiResponse } from '@/types/api';
 import { errorService } from '../error/error-service';
+import { socketService } from '../realtime/socket-service';
 
 /**
  * Message interface for chat functionality

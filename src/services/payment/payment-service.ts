@@ -5,8 +5,7 @@
  * including processing payments, checking status, and handling refunds.
  */
 
-import { Task } from '@/types';
-import { ApiResponse, PaginatedApiResponse } from '@/types/api';
+import { ApiResponse, PaginatedApiResponse, Task } from '@/types';
 import { apiClient } from '../api/api-client';
 import { errorService } from '../error/error-service';
 

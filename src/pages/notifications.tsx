@@ -2,11 +2,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatDate } from '@/lib/utils';
 import { AlertCircle, Bell, Briefcase, Clock, MessageCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import MainLayout from '../layouts/MainLayout';
+import MainLayout from '../layouts/main-layout';
 // Import the formatShortRelativeTime function from the date service
-import { formatShortRelativeTime } from '@/services/date';
 
 type NotificationType = 'message' | 'task' | 'bid' | 'alert' | 'system';
 
@@ -276,7 +276,7 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete }: Notification
               {title}
             </h3>
             <div className="text-xs text-[hsl(220,14%,46%)]">
-              {formatShortRelativeTime(time)}
+              {formatDate(time, 'relative')}
             </div>
           </div>
           <p className="text-sm text-[hsl(220,14%,46%)] mt-1">{message}</p>

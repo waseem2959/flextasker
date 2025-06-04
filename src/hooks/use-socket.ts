@@ -9,8 +9,7 @@ import { showErrorNotification } from '@/services/error/error-service';
 import { SocketEventType } from '@/services/realtime/socket-events';
 import { realtimeService } from '@/services/realtime/socket-service';
 import { ConnectionState } from '@/services/realtime/socket-types';
-import { Task, User } from '@/types';
-import { Message } from '@/types/messaging';
+import { Message, Task, User } from '@/types';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './use-auth';
 

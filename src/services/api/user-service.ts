@@ -8,13 +8,12 @@
  * - User search and retrieval
  */
 
-import { User } from '@/types';
 import {
     ApiResponse,
     LoginCredentials,
     PaginatedApiResponse,
-    RegisterData
-} from '@/types/api';
+    RegisterData, User
+} from '@/types';
 import type { UserSearchParams } from '../../../shared/types/common/user-types';
 import { apiClient } from './api-client';
 

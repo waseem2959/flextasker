@@ -162,7 +162,7 @@ FlexTasker is a comprehensive marketplace platform that connects clients with sk
 
 ## 📦 Project Structure
 
-The project follows a modular architecture as outlined in [ARCHITECTURE.md](./ARCHITECTURE.md).
+The project follows a modular architecture with clear separation of concerns.
 
 Key directories:
 
@@ -229,22 +229,18 @@ The application can be deployed using:
 2. Heroku/Railway for the backend
 3. Docker containers for both
 
-Refer to [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
-
 ## 📝 Documentation
 
-- [Architecture Guide](./ARCHITECTURE.md)
 - [API Documentation](./server/src/docs/README.md)
-- [Component Storybook](https://storybook.flextasker.com)
-- [Codebase Improvements](./CODEBASE-IMPROVEMENTS.md)
+- [Production Optimization Plan](./PRODUCTION_OPTIMIZATION_PLAN.md)
 
 ## 🤝 Contributing
 
-Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+Please follow the established code patterns and submit pull requests for any improvements.
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ## 📬 Contact
 

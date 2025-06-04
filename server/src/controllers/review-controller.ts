@@ -116,8 +116,24 @@ class ReviewController extends BaseController {
 
     logger.info('Reporting review', { reviewId, userId, reason });
     await reviewService.reportReview(reviewId, userId, reason, details);
-    
+
     return this.sendSuccess(res, null, 'Review reported successfully');
+  });
+
+  /**
+   * Flag a review (alias for report - frontend compatibility)
+   */
+  flagReview = this.asyncHandler(async (req: Request, res: Response) => {
+    const reviewId = req.params.id;
+    const userId = req.user!.id;
+    const { reason } = req.body;
+
+    logger.info('Flagging review', { reviewId, userId, reason });
+    // Map frontend reason to backend reason format
+    const mappedReason = reason.toLowerCase().includes('inappropriate') ? 'inappropriate' : 'other';
+    await reviewService.reportReview(reviewId, userId, mappedReason, reason);
+
+    return this.sendSuccess(res, null, 'Review flagged successfully');
   });
 
   /**

@@ -36,7 +36,7 @@ export * from './use-form';
 // export { NonConflictingExport1, NonConflictingExport2 } from './use-form-field';
 // Don't export conflicting members from use-form-validation
 // If you need the useFormValidation from use-form-validation, you can rename it:
-export { useFormValidation as useFormValidationAlternative } from './use-form-validation';
+// useFormValidation consolidated into @/utils/form-validation
 export { useIsMobile } from './use-mobile';
 export * from './use-sidebar';
 

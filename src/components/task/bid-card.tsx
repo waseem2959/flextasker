@@ -3,10 +3,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StarRating } from '@/components/ui/star-rating';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import {
     Award,
+    Calendar,
     CheckCircle,
     Clock,
     MapPin,
@@ -59,9 +60,7 @@ export const BidCard: React.FC<BidCardProps> = ({
   const [showFullMessage, setShowFullMessage] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
+  // getInitials function now imported from @/lib/utils
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);

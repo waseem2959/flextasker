@@ -330,9 +330,9 @@ const ReviewStep: React.FC<StepProps> = ({ data, onBack }) => {
           <Button variant="secondary" onClick={onBack}>
             Back
           </Button>
-          <Button 
+          <Button
             onClick={handleSubmit}
-            loading={isSubmitting}
+            disabled={isSubmitting}
             size="lg"
             className="min-w-32"
           >

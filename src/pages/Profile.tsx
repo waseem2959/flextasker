@@ -37,7 +37,7 @@ const Profile = () => {
                 <h2 className="text-2xl font-bold text-[hsl(206,33%,16%)]">{`${user.firstName} ${user.lastName}`}</h2>
                 <Badge className="mt-2 capitalize">{user.role}</Badge>
 
-                <StarRating rating={user.averageRating ?? 0} size={4} className="mt-2" />
+                <StarRating rating={user.averageRating ?? 0} size="md" className="mt-2" />
                 <span className="ml-2 text-sm font-medium text-[hsl(220,14%,46%)]">
                   {user.averageRating ?? 0} ({user.totalReviews ?? 0} reviews)
                 </span>

@@ -204,23 +204,8 @@ export enum ConnectionState {
   FAILED = 'failed',
 }
 
-/**
- * Error types
- */
-export enum ErrorType {
-  VALIDATION = 'validation',
-  AUTHENTICATION = 'authentication',
-  AUTHORIZATION = 'authorization',
-  NOT_FOUND = 'not_found',
-  SERVER = 'server',
-  NETWORK = 'network',
-  TIMEOUT = 'timeout',
-  UNKNOWN = 'unknown',
-  NETWORK_ERROR = 'network_error',
-  CONFLICT = 'conflict',
-  RATE_LIMIT = 'rate_limit',
-  SERVER_ERROR = 'server_error',
-}
+// ErrorType enum removed - now using shared ErrorType from shared/types/errors.ts
+// This ensures consistency between frontend and backend error handling
 
 /**
  * HTTP status codes

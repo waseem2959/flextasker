@@ -106,7 +106,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ user }) => {  //
             {/* Use averageRating instead of rating, with proper null checking */}
             {user.averageRating && user.averageRating > 0 ? (
               <>
-                <StarRating rating={user.averageRating} size={4} className="mt-2" />
+                <StarRating rating={user.averageRating} size="md" className="mt-2" />
                 <span className="ml-2 text-sm font-medium">
                   {user.averageRating.toFixed(1)} ({user.totalReviews ?? 0} reviews)
                 </span>
@@ -193,7 +193,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ user }) => {  //
               <div className="space-y-4">
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center mb-2">
-                    <StarRating rating={5} size={4} />
+                    <StarRating rating={5} size="md" />
                     <span className="ml-2 text-sm font-medium">
                       1 week ago
                     </span>

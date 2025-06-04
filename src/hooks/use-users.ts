@@ -11,7 +11,7 @@ import {
     RegisterData,
     // UpdateProfileRequest, // Removed - defined locally in user-service
     UserSearchParams
-} from '@/types/api';
+} from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 /**

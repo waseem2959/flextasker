@@ -8,7 +8,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Separator } from '@/components/ui/separator';
 import { Calendar, MapPin, Search, Star } from 'lucide-react';
 import { useState } from 'react';
-import MainLayout from '../layouts/MainLayout';
+import MainLayout from '../layouts/main-layout';
 
 interface SearchResultItem {
   id: string;

@@ -7,6 +7,7 @@
  */
 
 import { ValidationError } from '@/types/errors';
+import { useCallback, useState } from 'react';
 // Error logging removed for simplicity
 
 /**
@@ -622,6 +623,103 @@ export function createFormSubmitHandler<T extends Record<string, any>>(
   };
 }
 
+// CONSOLIDATED VALIDATION RULES (from use-form-validation.ts)
+// Simple validation rules for quick use
+export const ValidationRules = {
+  required: (message = 'This field is required') =>
+    (value: any) => (value === undefined || value === null || value === '') ? message : null,
+
+  min: (min: number, message = `Must be at least ${min}`) =>
+    (value: number) => (value < min) ? message : null,
+
+  max: (max: number, message = `Must be at most ${max}`) =>
+    (value: number) => (value > max) ? message : null,
+
+  minLength: (minLength: number, message = `Must be at least ${minLength} characters`) =>
+    (value: string) => (value.length < minLength) ? message : null,
+
+  maxLength: (maxLength: number, message = `Must be at most ${maxLength} characters`) =>
+    (value: string) => (value.length > maxLength) ? message : null,
+
+  pattern: (pattern: RegExp, message = 'Invalid format') =>
+    (value: string) => (!pattern.test(value)) ? message : null,
+
+  email: (message = 'Invalid email address') =>
+    (value: string) => (!/^\S+@\S+\.\S+$/.test(value)) ? message : null,
+
+  matches: (field: string, message = 'Fields must match') =>
+    (value: any, formValues?: Record<string, any>) =>
+      (formValues && formValues[field] !== value) ? message : null,
+};
+
+// Hook-style validation for React components
+export function useFormValidation<T extends Record<string, any>>(initialValues: T) {
+  const [values, setValues] = useState<T>(initialValues);
+  const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
+  const [touched, setTouched] = useState<Partial<Record<keyof T, boolean>>>({});
+
+  const validateField = useCallback((_name: keyof T, value: any, rules: Array<(value: any, formValues?: T) => string | null>) => {
+    for (const rule of rules) {
+      const error = rule(value, values);
+      if (error) {
+        return error;
+      }
+    }
+    return null;
+  }, [values]);
+
+  const setFieldValue = useCallback((name: keyof T, value: any) => {
+    setValues(prev => ({ ...prev, [name]: value }));
+  }, []);
+
+  const setFieldTouched = useCallback((name: keyof T, isTouched = true) => {
+    setTouched(prev => ({ ...prev, [name]: isTouched }));
+  }, []);
+
+  const setFieldError = useCallback((name: keyof T, error: string | null) => {
+    setErrors(prev => ({ ...prev, [name]: error || undefined }));
+  }, []);
+
+  const validateForm = useCallback((validationRules: Partial<Record<keyof T, Array<(value: any, formValues?: T) => string | null>>>) => {
+    const newErrors: Partial<Record<keyof T, string>> = {};
+    let isValid = true;
+
+    Object.keys(validationRules).forEach(key => {
+      const fieldName = key as keyof T;
+      const rules = validationRules[fieldName];
+      if (rules) {
+        const error = validateField(fieldName, values[fieldName], rules);
+        if (error) {
+          newErrors[fieldName] = error;
+          isValid = false;
+        }
+      }
+    });
+
+    setErrors(newErrors);
+    return isValid;
+  }, [values, validateField]);
+
+  const resetForm = useCallback(() => {
+    setValues(initialValues);
+    setErrors({});
+    setTouched({});
+  }, [initialValues]);
+
+  return {
+    values,
+    errors,
+    touched,
+    setFieldValue,
+    setFieldTouched,
+    setFieldError,
+    validateField,
+    validateForm,
+    resetForm,
+    isValid: Object.keys(errors).length === 0
+  };
+}
+
 export default {
   required,
   minLength,
@@ -638,5 +736,7 @@ export default {
   validateObjectAsync,
   createFormSubmitHandler,
   createFormValidationResult,
-  createValidationResult
+  createValidationResult,
+  ValidationRules,
+  useFormValidation
 };

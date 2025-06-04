@@ -6,8 +6,7 @@
  */
 
 import { bidService } from '@/services/api';
-import { BidStatus } from '@/types';
-import { BidSearchParams, CreateBidRequest, UpdateBidRequest } from '@/types/api';
+import { BidSearchParams, BidStatus, CreateBidRequest, UpdateBidRequest } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 /**

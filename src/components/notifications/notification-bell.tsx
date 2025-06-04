@@ -1,33 +1,26 @@
 /**
  * Notification Bell Component
- * 
+ *
  * Displays a notification bell icon with badge showing unread count
  * and a dropdown menu to view notifications.
  */
 
-import {
-  Check as CheckIcon,
-  Notifications as NotificationsIcon
-} from '@mui/icons-material';
-import {
-  Avatar,
-  Badge,
-  Box,
-  Button,
-  CircularProgress,
-  Divider,
-  IconButton,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Menu,
-  MenuItem,
-  Typography
-} from '@mui/material';
 import { formatDistanceToNow } from 'date-fns';
-import { useState } from 'react';
+import { Bell, Check } from 'lucide-react';
+
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
 import { useNotifications } from '../../hooks/use-notifications';
+
 // Import the NotificationType enum from where it's defined
 // In a real app, this would come from a central types file
 enum NotificationType {
@@ -53,166 +46,130 @@ export interface Notification {
 // Map notification types to icons
 const getNotificationIcon = (_type: NotificationType) => {
   // This could be expanded with different icons for different notification types
-  return <NotificationsIcon color="primary" />;
+  return <Bell className="h-4 w-4 text-primary-600" />;
 };
 
 export function NotificationBell() {
-  // Render notification content based on state
-  const renderNotificationContent = () => {
-    if (loading) {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-          <CircularProgress size={30} />
-        </Box>
-      );
-    }
-    
-    if (error) {
-      return (
-        <MenuItem disabled>
-          <Typography color="error">Failed to load notifications</Typography>
-        </MenuItem>
-      );
-    }
-    
-    if (notifications.length === 0) {
-      return (
-        <MenuItem disabled>
-          <Typography variant="body2" color="text.secondary">
-            No notifications yet
-          </Typography>
-        </MenuItem>
-      );
-    }
-    
-    return (
-      <List sx={{ width: '100%', p: 0 }}>
-        {notifications.map((notification: Notification) => (
-          <ListItem
-            key={notification.id}
-            alignItems="flex-start"
-            sx={{
-              bgcolor: notification.isRead ? 'transparent' : 'action.hover',
-              borderBottom: '1px solid',
-              borderColor: 'divider'
-            }}
-            onClick={() => handleNotificationClick(notification.id)}
-            component="button"
-          >
-            <ListItemAvatar>
-              <Avatar sx={{ bgcolor: 'primary.light' }}>
-                {getNotificationIcon(notification.type as unknown as NotificationType)}
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary={notification.message}
-              secondary={
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  component="span"
-                >
-                  {formatDistanceToNow(new Date(notification.createdAt instanceof Date ? notification.createdAt.toISOString() : notification.createdAt), { addSuffix: true })}
-                </Typography>
-              }
-            />
-          </ListItem>
-        ))}
-      </List>
-    );
-  };
-  const { 
-    notifications, 
-    unreadCount, 
-    loading, 
-    error, 
-    markAsRead, 
-    markAllAsRead 
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    error,
+    markAsRead,
+    markAllAsRead
   } = useNotifications();
-  
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  
-  // Open notifications menu
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  
-  // Close notifications menu
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-  
+
   // Handle notification click
   const handleNotificationClick = (notificationId: string) => {
     markAsRead(notificationId);
     // Navigate or perform action based on notification type
     // This would be implemented based on specific requirements
   };
-  
+
   // Handle mark all as read
   const handleMarkAllAsRead = () => {
     markAllAsRead();
   };
-  
+
   return (
-    <>
-      <IconButton
-        aria-label={`${unreadCount} notifications`}
-        aria-controls={open ? 'notifications-menu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
-        onClick={handleClick}
-        color="inherit"
-      >
-        <Badge badgeContent={unreadCount} color="error">
-          <NotificationsIcon />
-        </Badge>
-      </IconButton>
-      
-      <Menu
-        id="notifications-menu"
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-        slotProps={{
-          paper: {
-            style: {
-              maxHeight: 400,
-              width: '350px',
-            },
-          }
-        }}
-        aria-labelledby="notifications-button"
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      >
-        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">Notifications</Typography>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          aria-label={`${unreadCount} notifications`}
+        >
+          <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Button 
-              startIcon={<CheckIcon />} 
-              size="small" 
-              onClick={handleMarkAllAsRead}
+            <Badge
+              variant="destructive"
+              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0"
             >
-              Mark all as read
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-80">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4">
+          <h3 className="font-semibold text-lg">Notifications</h3>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleMarkAllAsRead}
+              className="text-xs"
+            >
+              <Check className="h-3 w-3 mr-1" />
+              Mark all read
             </Button>
           )}
-        </Box>
-        
-        <Divider />
-        
-        {renderNotificationContent()}
-        
+        </div>
+
+        <DropdownMenuSeparator />
+
+        {/* Content */}
+        <div className="max-h-96 overflow-y-auto">
+          {loading ? (
+            <div className="flex justify-center p-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+            </div>
+          ) : error ? (
+            <DropdownMenuItem disabled className="text-red-600 justify-center">
+              Failed to load notifications
+            </DropdownMenuItem>
+          ) : notifications.length === 0 ? (
+            <DropdownMenuItem disabled className="text-gray-500 justify-center">
+              No notifications yet
+            </DropdownMenuItem>
+          ) : (
+            notifications.map((notification: Notification) => (
+              <DropdownMenuItem
+                key={notification.id}
+                className={`flex items-start space-x-3 p-4 cursor-pointer ${
+                  !notification.isRead ? 'bg-blue-50' : ''
+                }`}
+                onClick={() => handleNotificationClick(notification.id)}
+              >
+                <Avatar className="h-8 w-8 bg-primary-100">
+                  <AvatarFallback>
+                    {getNotificationIcon(notification.type as unknown as NotificationType)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {notification.message}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {formatDistanceToNow(
+                      new Date(notification.createdAt instanceof Date ?
+                        notification.createdAt.toISOString() :
+                        notification.createdAt
+                      ),
+                      { addSuffix: true }
+                    )}
+                  </p>
+                </div>
+              </DropdownMenuItem>
+            ))
+          )}
+        </div>
+
         {notifications.length > 0 && (
-          <Box sx={{ p: 1, display: 'flex', justifyContent: 'center' }}>
-            <Button size="small" color="primary">
-              View all notifications
-            </Button>
-          </Box>
+          <>
+            <DropdownMenuSeparator />
+            <div className="p-2">
+              <Button variant="ghost" size="sm" className="w-full">
+                View all notifications
+              </Button>
+            </div>
+          </>
         )}
-      </Menu>
-    </>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

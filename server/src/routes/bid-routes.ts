@@ -9,12 +9,12 @@
  * - Retrieving bid statistics
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { bidController } from '@/controllers/bid-controller';
+import { NextFunction, Request, Response, Router } from 'express';
 import { body, param, query } from 'express-validator';
+import { BidStatus, UserRole } from '../../../shared/types/enums';
 import { authenticateToken, requireRoles } from '../middleware/auth-middleware';
 import { validate } from '../middleware/validation-middleware';
-import { bidController } from '@/controllers/bid-controller';
-import { UserRole, BidStatus } from '../../../shared/types/enums';
 
 const router = Router();
 
@@ -158,20 +158,13 @@ router.get('/received',
 /**
  * Get Bid Statistics for Task
  * GET /api/v1/bids/statistics/task/:taskId
- * 
- * Note: This endpoint is not directly implemented. Use the task bids endpoint and calculate statistics client-side.
  */
 router.get('/statistics/task/:taskId',
   authenticateToken,
   validate([
     param('taskId').isUUID().withMessage('Valid task ID is required')
   ]),
-  (_req: Request, res: Response, _next: NextFunction) => {
-    res.status(501).json({
-      success: false,
-      error: 'Not implemented. Please use /tasks/:taskId/bids and calculate statistics client-side.'
-    });
-  }
+  bidController.getBidStatistics
 );
 
 /**

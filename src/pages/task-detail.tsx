@@ -1,4 +1,5 @@
 import { Layout } from '@/components/layout/Layout';
+import { BidList } from '@/components/task/bid-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -526,15 +527,15 @@ const TaskDetail = () => {
                         estimatedDuration: `${bid.estimatedCompletionDays} days`,
                         createdAt: bid.createdAt
                       }))}
-                      onAcceptBid={(bidId) => {
+                      onAcceptBid={(bidId: string) => {
                         console.log('Accept bid:', bidId);
                         // Handle bid acceptance
                       }}
-                      onMessageProvider={(providerId) => {
+                      onMessageProvider={(providerId: string) => {
                         console.log('Message provider:', providerId);
                         // Handle messaging
                       }}
-                      onViewProfile={(providerId) => {
+                      onViewProfile={(providerId: string) => {
                         console.log('View profile:', providerId);
                         // Handle profile viewing
                       }}

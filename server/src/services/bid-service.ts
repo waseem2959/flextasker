@@ -351,14 +351,14 @@ export class BidService {
    */
   async searchBids(criteria: any): Promise<any[]> {
     const { taskId, userId, status, page = 1, limit = 10 } = criteria;
-    
+
     // Build the where clause based on provided criteria
     const where: any = {};
-    
+
     if (taskId) where.taskId = taskId;
     if (userId) where.userId = userId;
     if (status) where.status = status;
-    
+
     // Execute the query with pagination
     const bids = await prisma.bid.findMany({
       where,
@@ -386,8 +386,70 @@ export class BidService {
       skip: (page - 1) * limit,
       take: limit
     });
-    
+
     return bids;
+  }
+
+  /**
+   * Get bid statistics for a task
+   */
+  async getBidStatistics(taskId: string): Promise<any> {
+    // Verify task exists
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: { id: true }
+    });
+
+    if (!task) {
+      throw new NotFoundError('Task not found');
+    }
+
+    // Get all bids for the task
+    const bids = await prisma.bid.findMany({
+      where: { taskId },
+      select: {
+        amount: true,
+        status: true
+      }
+    });
+
+    if (bids.length === 0) {
+      return {
+        taskId,
+        bidCount: 0,
+        averageBid: 0,
+        minBid: 0,
+        maxBid: 0,
+        pendingBids: 0,
+        acceptedBids: 0,
+        rejectedBids: 0,
+        withdrawnBids: 0
+      };
+    }
+
+    // Calculate statistics
+    const amounts = bids.map(bid => bid.amount);
+    const averageBid = amounts.reduce((sum, amount) => sum + amount, 0) / amounts.length;
+    const minBid = Math.min(...amounts);
+    const maxBid = Math.max(...amounts);
+
+    // Count by status
+    const statusCounts = bids.reduce((counts, bid) => {
+      counts[bid.status] = (counts[bid.status] || 0) + 1;
+      return counts;
+    }, {} as Record<string, number>);
+
+    return {
+      taskId,
+      bidCount: bids.length,
+      averageBid: Math.round(averageBid * 100) / 100, // Round to 2 decimal places
+      minBid,
+      maxBid,
+      pendingBids: statusCounts[BidStatus.PENDING] || 0,
+      acceptedBids: statusCounts[BidStatus.ACCEPTED] || 0,
+      rejectedBids: statusCounts[BidStatus.REJECTED] || 0,
+      withdrawnBids: statusCounts[BidStatus.WITHDRAWN] || 0
+    };
   }
 }
 

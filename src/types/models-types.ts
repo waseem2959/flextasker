@@ -1,13 +1,15 @@
 /**
  * Core Data Models with TypeScript Improvements
- * 
+ *
  * This file serves as the central definition point for all core domain models
  * with improved TypeScript typing for better type safety.
- * 
+ *
  * All models are defined here to ensure consistency and prevent duplication.
  */
 
 import { BidStatus, BudgetType, TaskPriority, TaskStatus, UserRole } from './index';
+// Import shared user types as the canonical source
+import { BaseUser } from '../../../shared/types/common/user-types';
 
 /**
  * Category definition
@@ -20,29 +22,29 @@ export interface Category {
 }
 
 /**
- * Enhanced User interface with improved type safety
+ * User interface - extends shared BaseUser with frontend-specific computed properties
+ * This ensures consistency with backend while adding frontend conveniences
  */
-export interface User {
-  name: string | undefined;
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: UserRole;
+export interface User extends BaseUser {
+  // Computed property for full name
+  name?: string;
+
+  // Frontend-specific optional fields
   avatar?: string | null;
-  trustScore: number;
-  emailVerified: boolean;
-  phoneVerified: boolean;
+  trustScore?: number;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
+
+  // Convert string dates to Date objects for frontend use
   createdAt: Date;
-  
-  // Optional fields that might not always be present
-  bio?: string | null;
-  phone?: string | null;
+  updatedAt: Date;
+  lastActive?: Date | null;
+
+  // Optional location fields (flattened from shared structure)
   city?: string | null;
   state?: string | null;
   country?: string | null;
-  lastActive?: Date | null;
-  
+
   // Computed fields for UI
   averageRating?: number;
   totalReviews?: number;
@@ -54,22 +56,33 @@ export interface User {
  * This class provides the actual implementation for computed properties
  */
 export class UserImpl implements User {
+  // Required BaseUser fields
   id!: string;
+  email!: string;
+  username!: string;
   firstName!: string;
   lastName!: string;
-  email!: string;
   role!: UserRole;
-  trustScore!: number;
-  emailVerified!: boolean;
-  phoneVerified!: boolean;
   createdAt!: Date;
+  updatedAt!: Date;
+  isActive!: boolean;
+  isSuspended!: boolean;
+
+  // Optional BaseUser fields
+  profilePictureUrl?: string;
+
+  // Frontend-specific fields
+  name?: string;
   avatar?: string | null;
+  trustScore?: number;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
+  lastActive?: Date | null;
   bio?: string | null;
   phone?: string | null;
   city?: string | null;
   state?: string | null;
   country?: string | null;
-  lastActive?: Date | null;
   averageRating?: number;
   totalReviews?: number;
   completedTasks?: number;
@@ -77,11 +90,14 @@ export class UserImpl implements User {
   constructor(userData: Partial<User>) {
     // Object.assign copies all enumerable properties from userData to this instance
     Object.assign(this, userData);
+
+    // Set computed name property
+    this.name = this.getFullName();
   }
 
   // Computed property that combines firstName and lastName
-  get name(): string {
-    return `${this.firstName} ${this.lastName}`;
+  getFullName(): string {
+    return `${this.firstName} ${this.lastName}`.trim();
   }
 
   // Static factory method to create User instances from API responses
@@ -90,26 +106,40 @@ export class UserImpl implements User {
       ...apiUser,
       // Convert string dates to Date objects
       createdAt: apiUser.createdAt ? new Date(apiUser.createdAt) : new Date(),
+      updatedAt: apiUser.updatedAt ? new Date(apiUser.updatedAt) : new Date(),
       lastActive: apiUser.lastActive ? new Date(apiUser.lastActive) : null,
       // Ensure role is a valid UserRole enum value
-      role: apiUser.role || UserRole.USER
+      role: apiUser.role ?? UserRole.USER,
+      // Set default values for required BaseUser fields
+      username: apiUser.username ?? apiUser.email.split('@')[0],
+      isActive: apiUser.isActive ?? true,
+      isSuspended: apiUser.isSuspended ?? false
     });
   }
 }
 
 /**
  * Interface for API user response data
+ * This represents the raw data structure received from the backend API
  */
 export interface ApiUserResponse {
+  // Required BaseUser fields (as strings from API)
   id: string;
+  email: string;
+  username?: string;
   firstName: string;
   lastName: string;
-  email: string;
   role: UserRole;
-  trustScore: number;
-  emailVerified: boolean;
-  phoneVerified: boolean;
   createdAt: string;
+  updatedAt: string;
+  isActive?: boolean;
+  isSuspended?: boolean;
+  profilePictureUrl?: string;
+
+  // Frontend-specific optional fields
+  trustScore?: number;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
   lastActive?: string | null;
   avatar?: string | null;
   bio?: string | null;
