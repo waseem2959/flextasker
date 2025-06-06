@@ -9,7 +9,7 @@
 
 import { BidStatus, BudgetType, TaskPriority, TaskStatus, UserRole } from './index';
 // Import shared user types as the canonical source
-import { BaseUser } from '../../../shared/types/common/user-types';
+import { BaseUser } from '../../shared/types/common/user-types';
 
 /**
  * Category definition
@@ -25,12 +25,14 @@ export interface Category {
  * User interface - extends shared BaseUser with frontend-specific computed properties
  * This ensures consistency with backend while adding frontend conveniences
  */
-export interface User extends BaseUser {
+export interface User extends Omit<BaseUser, 'createdAt' | 'updatedAt'> {
   // Computed property for full name
   name?: string;
 
   // Frontend-specific optional fields
   avatar?: string | null;
+  phone?: string | null;
+  bio?: string | null;
   trustScore?: number;
   emailVerified?: boolean;
   phoneVerified?: boolean;
@@ -109,7 +111,7 @@ export class UserImpl implements User {
       updatedAt: apiUser.updatedAt ? new Date(apiUser.updatedAt) : new Date(),
       lastActive: apiUser.lastActive ? new Date(apiUser.lastActive) : null,
       // Ensure role is a valid UserRole enum value
-      role: apiUser.role ?? UserRole.USER,
+      role: (apiUser as any).role ?? UserRole.USER,
       // Set default values for required BaseUser fields
       username: apiUser.username ?? apiUser.email.split('@')[0],
       isActive: apiUser.isActive ?? true,
@@ -165,6 +167,7 @@ export interface Task {
   budget: number;
   budgetType: BudgetType;
   isRemote: boolean;
+  isUrgent?: boolean;
   location?: string;
   tags: string[];
   requirements: string[];

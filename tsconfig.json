@@ -11,10 +11,13 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "noEmit": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "types": ["jest","node", "@testing-library/jest-dom"],
+    "types": ["jest", "node"],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
     "forceConsistentCasingInFileNames": true,
     
     /* Linting - matching your backend's strictness */
@@ -39,6 +42,6 @@
     }
   },
   "include": ["src", "src/types/react-i18next-fix.d.ts"],
-  "exclude": ["node_modules", "dist", "build", "src/test-utils", "src/**/__tests__", "src/**/*.test.*", "src/**/*.spec.*"],
+  "exclude": ["node_modules", "dist", "build", "src/test-utils", "src/**/__tests__", "src/**/*.test.*", "src/**/*.spec.*", "jest.config.cjs", "jest.setup.js"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

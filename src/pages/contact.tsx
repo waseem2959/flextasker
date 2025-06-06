@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/components/ui/use-toast';
 import { Mail, MapPin, MessageSquare, Phone } from 'lucide-react';
 import { useState } from 'react';
-import MainLayout from '../layouts/MainLayout';
+import MainLayout from '../layouts/main-layout';
 
 interface ContactFormState {
   name: string;

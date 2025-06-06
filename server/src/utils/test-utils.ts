@@ -96,13 +96,46 @@ export function generateTestToken(userData: {
 }
 
 /**
+ * Get auth token for a user (alias for generateTestToken)
+ */
+export function getAuthToken(userData: {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: any;
+}) {
+  return generateTestToken(userData);
+}
+
+/**
+ * Create a test Express app for testing
+ */
+export function createTestApp(): Application {
+  // This would normally import and configure the Express app
+  // For now, return a mock app
+  const express = require('express');
+  const app = express();
+
+  // Basic middleware
+  app.use(express.json());
+
+  // Mock routes for testing
+  app.get('/health', (_req: any, res: any) => {
+    res.json({ status: 'ok' });
+  });
+
+  return app;
+}
+
+/**
  * Create a test user in the database
  */
 export async function createTestUser(userData: {
   email: string;
   firstName: string;
   lastName: string;
-  role?: UserRole;
+  role?: string;
   password?: string;
 }) {
   const { email, firstName, lastName, role = UserRole.USER, password = 'TestPassword123!' } = userData;
@@ -121,7 +154,7 @@ export async function createTestUser(userData: {
         firstName,
         lastName,
         passwordHash: password, // We store directly as passwordHash for tests
-        role,
+        role: role || 'USER', // Default to USER role
         emailVerified: true
       }
     });

@@ -4,13 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ProgressIndicator } from '@/components/ui/progress-indicator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarIcon, CheckCircle } from 'lucide-react';
-import React, { useState } from 'react';
+import { ArrowLeft, ArrowRight, CalendarIcon, CheckCircle } from 'lucide-react';
+import React, { useCallback, useState } from 'react';
 
 interface TaskData {
   title: string;
@@ -344,8 +345,20 @@ const ReviewStep: React.FC<StepProps> = ({ data, onBack }) => {
   );
 };
 
-export const TaskCreationWizard: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState(1);
+interface TaskCreationWizardProps {
+  onComplete?: (taskData: TaskData) => Promise<void>;
+  onCancel?: () => void;
+  initialData?: Partial<TaskData>;
+  className?: string;
+}
+
+export const TaskCreationWizard: React.FC<TaskCreationWizardProps> = ({
+  onComplete,
+  onCancel,
+  initialData = {},
+  className
+}) => {
+  const [currentStep, setCurrentStep] = useState(0); // 0-based indexing for ProgressIndicator
   const [taskData, setTaskData] = useState<TaskData>({
     title: '',
     description: '',
@@ -361,57 +374,63 @@ export const TaskCreationWizard: React.FC = () => {
       amount: 0,
       type: 'fixed'
     },
-    requirements: []
+    requirements: [],
+    ...initialData
   });
 
   const steps = [
-    { id: 1, title: 'Task Details', component: TaskDetailsStep },
-    { id: 2, title: 'Location & Schedule', component: LocationStep },
-    { id: 3, title: 'Budget & Requirements', component: BudgetStep },
-    { id: 4, title: 'Review & Post', component: ReviewStep }
+    { id: 'details', title: 'Task Details', description: 'Describe what you need done', component: TaskDetailsStep },
+    { id: 'location', title: 'Location & Schedule', description: 'Set location and timing', component: LocationStep },
+    { id: 'budget', title: 'Budget & Requirements', description: 'Set your budget', component: BudgetStep },
+    { id: 'review', title: 'Review & Post', description: 'Review and publish your task', component: ReviewStep }
   ];
 
-  const updateTaskData = (updates: Partial<TaskData>) => {
+  const updateTaskData = useCallback((updates: Partial<TaskData>) => {
     setTaskData(prev => ({ ...prev, ...updates }));
-  };
+  }, []);
 
-  const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, steps.length));
-  const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
+  const nextStep = useCallback(() => {
+    setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
+  }, [steps.length]);
+
+  const prevStep = useCallback(() => {
+    setCurrentStep(prev => Math.max(prev - 1, 0));
+  }, []);
+
+  const handleStepClick = useCallback((stepIndex: number) => {
+    // Allow navigation to any step for now (can add validation later)
+    setCurrentStep(stepIndex);
+  }, []);
+
+  // Progress steps for indicator
+  const progressSteps = steps.map((step, index) => ({
+    id: step.id,
+    title: step.title,
+    description: step.description,
+    isCompleted: index < currentStep,
+    isActive: index === currentStep,
+  }));
 
   return (
-    <div className="task-creation-wizard max-w-4xl mx-auto p-6">
-      {/* Progress Indicator */}
-      <div className="progress-steps flex justify-between mb-8">
-        {steps.map((step, index) => (
-          <div 
-            key={step.id} 
-            className={cn(
-              "flex items-center space-x-2",
-              currentStep >= step.id && "text-primary-600",
-              currentStep < step.id && "text-text-secondary"
-            )}
-          >
-            <div className={cn(
-              "flex items-center justify-center w-8 h-8 rounded-full border-2 transition-colors",
-              currentStep > step.id && "bg-primary-600 border-primary-600 text-white",
-              currentStep === step.id && "border-primary-600 text-primary-600",
-              currentStep < step.id && "border-border text-text-secondary"
-            )}>
-              {currentStep > step.id ? (
-                <CheckCircle className="w-5 h-5" />
-              ) : (
-                <span className="text-sm font-medium">{step.id}</span>
-              )}
-            </div>
-            <span className="text-sm font-medium hidden sm:block">{step.title}</span>
-            {index < steps.length - 1 && (
-              <div className={cn(
-                "hidden sm:block w-16 h-0.5 ml-2",
-                currentStep > step.id ? "bg-primary-600" : "bg-border"
-              )} />
-            )}
-          </div>
-        ))}
+    <div className={cn("task-creation-wizard max-w-4xl mx-auto p-6", className)}>
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-heading font-bold text-neutral-900 mb-2">
+          Create a New Task
+        </h1>
+        <p className="text-neutral-600 font-body">
+          Follow these steps to post your task and find the right person for the job.
+        </p>
+      </div>
+
+      {/* Enhanced Progress Indicator */}
+      <div className="mb-8">
+        <ProgressIndicator
+          steps={progressSteps}
+          currentStep={currentStep}
+          onStepClick={handleStepClick}
+          className="mb-6"
+        />
       </div>
       
       {/* Step Content */}
@@ -424,7 +443,7 @@ export const TaskCreationWizard: React.FC = () => {
           transition={{ duration: 0.2 }}
           className="step-content"
         >
-          {React.createElement(steps[currentStep - 1].component, {
+          {React.createElement(steps[currentStep].component, {
             data: taskData,
             onUpdate: updateTaskData,
             onNext: nextStep,
@@ -432,6 +451,41 @@ export const TaskCreationWizard: React.FC = () => {
           })}
         </motion.div>
       </AnimatePresence>
+
+      {/* Enhanced Navigation */}
+      <div className="flex items-center justify-between mt-8 pt-6 border-t border-neutral-200">
+        <Button
+          variant="ghost"
+          onClick={currentStep === 0 ? onCancel : prevStep}
+          className="text-neutral-600 hover:text-neutral-800 font-body"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          {currentStep === 0 ? 'Cancel' : 'Previous'}
+        </Button>
+
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-neutral-500 font-body">
+            Step {currentStep + 1} of {steps.length}
+          </span>
+
+          <Button
+            onClick={currentStep === steps.length - 1 ? () => onComplete?.(taskData) : nextStep}
+            className="bg-primary-900 hover:bg-primary-800 text-white font-heading font-semibold"
+          >
+            {currentStep === steps.length - 1 ? (
+              <>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Post Task
+              </>
+            ) : (
+              <>
+                Next
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

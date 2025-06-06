@@ -59,6 +59,11 @@ export * from './scroll-area';
 export * from './toggle';
 export * from './toggle-group';
 
+// === ENHANCED MARKETPLACE COMPONENTS ===
+export * from './category-grid';
+export * from './price-range-slider';
+export * from './progress-indicator';
+
 // === ERROR HANDLING ===
 export * from './error-boundary';
 export * from './error-message';

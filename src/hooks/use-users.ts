@@ -7,10 +7,10 @@
 
 import { userService } from '@/services/api';
 import {
-    LoginCredentials,
-    RegisterData,
-    // UpdateProfileRequest, // Removed - defined locally in user-service
-    UserSearchParams
+  LoginCredentials,
+  RegisterData,
+  // UpdateProfileRequest, // Removed - defined locally in user-service
+  UserSearchParams
 } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -99,8 +99,8 @@ export function useUpdateProfile() {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       
       // If user ID is available, update specific user queries
-      if (response.data?.id) {
-        queryClient.invalidateQueries({ queryKey: ['user', response.data.id] });
+      if ((response.data as any)?.id) {
+        queryClient.invalidateQueries({ queryKey: ['user', (response.data as any).id] });
       }
     }
   });

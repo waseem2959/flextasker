@@ -9,19 +9,19 @@
 
 import { logger } from '../services/logging';
 import {
-    BidStatus, BudgetType,
-    Task as RegularTask,
-    TaskPriority, TaskStatus, UserRole
+  BidStatus, BudgetType,
+  Task as RegularTask,
+  TaskPriority, TaskStatus, UserRole
 } from '../types';
 import {
-    AcceptedTask,
-    CancelledTask,
-    CompletedTask,
-    Task as DiscriminatedTask,
-    DisputedTask,
-    InProgressTask,
-    OpenTask,
-    TaskBase
+  AcceptedTask,
+  CancelledTask,
+  CompletedTask,
+  Task as DiscriminatedTask,
+  DisputedTask,
+  InProgressTask,
+  OpenTask,
+  TaskBase
 } from '../types/task-types';
 
 /**
@@ -189,8 +189,8 @@ export function toDiscriminatedTask(task: RegularTask): DiscriminatedTask {
     category: task.category,
     budget: task.budget,
     location: task.location,
-    clientId: task.owner.id,
-    clientName: `${task.owner.firstName} ${task.owner.lastName}`,
+    clientId: (task.owner as any).id,
+    clientName: `${(task.owner as any).firstName} ${(task.owner as any).lastName}`,
     clientAvatar: task.owner.avatar,
     createdAt: task.createdAt,
     updatedAt: task.createdAt, // Using createdAt as updatedAt since Task doesn't have updatedAt
@@ -199,8 +199,8 @@ export function toDiscriminatedTask(task: RegularTask): DiscriminatedTask {
   
   // Create defaults for fields that might not exist on the original task
   const taskerDetails = task.assignee ? {
-    taskerId: task.assignee.id,
-    taskerName: `${task.assignee.firstName} ${task.assignee.lastName}`,
+    taskerId: (task.assignee as any).id,
+    taskerName: `${(task.assignee as any).firstName} ${(task.assignee as any).lastName}`,
     taskerAvatar: task.assignee.avatar
   } : {
     taskerId: '',
@@ -261,7 +261,7 @@ export function toDiscriminatedTask(task: RegularTask): DiscriminatedTask {
         ...baseTask,
         status: TaskStatus.CANCELLED,
         cancelledAt: new Date(),
-        cancelledBy: task.owner.id,
+        cancelledBy: (task.owner as any).id,
         cancellationReason: ''
       };
       

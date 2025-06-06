@@ -67,8 +67,22 @@ Object.defineProperty(window, 'sessionStorage', {
   value: sessionStorageMock,
 });
 
-// Mock fetch
+// Mock fetch and Request API
 global.fetch = jest.fn();
+global.Request = jest.fn().mockImplementation((url, init) => ({
+  url,
+  method: init?.method || 'GET',
+  headers: init?.headers || {},
+  body: init?.body,
+}));
+global.Response = jest.fn().mockImplementation((body, init) => ({
+  ok: init?.status ? init.status < 400 : true,
+  status: init?.status || 200,
+  statusText: init?.statusText || 'OK',
+  headers: init?.headers || {},
+  json: () => Promise.resolve(body),
+  text: () => Promise.resolve(typeof body === 'string' ? body : JSON.stringify(body)),
+}));
 
 // Mock URL.createObjectURL
 Object.defineProperty(URL, 'createObjectURL', {

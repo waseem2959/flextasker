@@ -1,0 +1,4344 @@
+# Complete Guide to Building a Modern Service Marketplace Platform
+
+## Table of Contents
+
+1. [Introduction and Market Context](#introduction-and-market-context)
+2. [Technical Architecture Foundation](#technical-architecture-foundation)
+3. [Design System and UI/UX Standards](#design-system-and-uiux-standards)
+4. [Core Marketplace Functionality](#core-marketplace-functionality)
+5. [Trust, Safety, and Compliance](#trust-safety-and-compliance)
+6. [Payment Infrastructure](#payment-infrastructure)
+7. [Search and Discovery Systems](#search-and-discovery-systems)
+8. [Mobile Development Strategy](#mobile-development-strategy)
+9. [Communication and Messaging](#communication-and-messaging)
+10. [User Experience Flows](#user-experience-flows)
+11. [Performance and Scalability](#performance-and-scalability)
+12. [Analytics and Metrics](#analytics-and-metrics)
+13. [International Expansion](#international-expansion)
+14. [Implementation Roadmap](#implementation-roadmap)
+15. [Future-Proofing Your Platform](#future-proofing-your-platform)
+
+---
+
+## Introduction and Market Context
+
+The marketplace economy has reached unprecedented scale in 2024-2025, processing **$11.55 trillion** in digital payments globally. With 30% of global consumer purchases flowing through online marketplaces, building a competitive platform requires mastering both technical excellence and user experience design. This guide synthesizes insights from leading platforms like Airtasker, Uber, Airbnb, and TaskRabbit to provide a complete blueprint for marketplace success.
+
+### Market Standards Evolution
+
+The distinction between essential features and competitive differentiators has crystallized. What was innovative in 2020 – like AI-powered search or mobile-first design – now represents the baseline. Modern marketplaces must deliver sophisticated functionality while maintaining the simplicity that drives user adoption.
+
+---
+
+## Technical Architecture Foundation
+
+### Technology Stack Selection
+
+Building on Airtasker's proven evolution from Backbone.js to React, modern marketplaces should adopt:
+
+#### Frontend Architecture
+```javascript
+// Modern React Component Structure
+const TaskCard = ({ task }) => {
+  const [expanded, setExpanded] = useState(false);
+  
+  return (
+    <StyledCard>
+      <TaskHeader>
+        <Title>{task.title}</Title>
+        <Budget>${task.budget}</Budget>
+      </TaskHeader>
+      <TaskBody expanded={expanded}>
+        <Description>{task.description}</Description>
+        <Location>{task.location}</Location>
+      </TaskBody>
+    </StyledCard>
+  );
+};
+```
+
+**Core Technologies:**
+- **Framework**: React 18+ with TypeScript for type safety
+- **State Management**: Redux Toolkit or Zustand for simpler applications
+- **Styling**: Styled Components or Emotion for component-scoped CSS
+- **Build Tools**: Vite for development speed, Webpack for production optimization
+
+#### Backend Infrastructure
+```javascript
+// Microservices Architecture Example
+const UserService = {
+  createUser: async (userData) => {
+    // Validate user data
+    const validated = await validateUserData(userData);
+    
+    // Store in PostgreSQL
+    const user = await db.users.create(validated);
+    
+    // Publish event for other services
+    await eventBus.publish('user.created', user);
+    
+    // Cache in Redis
+    await cache.set(`user:${user.id}`, user);
+    
+    return user;
+  }
+};
+```
+
+**Infrastructure Components:**
+- **Primary Database**: PostgreSQL for relational data
+- **Caching Layer**: Redis for session management and frequent queries
+- **Real-time**: WebSocket servers (Socket.io or custom implementation)
+- **Message Queue**: RabbitMQ or AWS SQS for async processing
+- **Search Engine**: Elasticsearch for complex queries
+- **CDN**: CloudFlare for global content delivery
+
+### API Architecture
+
+Following Airtasker's contract-first approach with their Spot tool:
+
+```typescript
+// RESTful API Design
+interface TaskEndpoints {
+  // Resource-based routing
+  POST   /api/v1/tasks              // Create task
+  GET    /api/v1/tasks              // List tasks
+  GET    /api/v1/tasks/:id          // Get task details
+  PUT    /api/v1/tasks/:id          // Update task
+  DELETE /api/v1/tasks/:id          // Delete task
+  
+  // Nested resources
+  GET    /api/v1/tasks/:id/offers   // Get task offers
+  POST   /api/v1/tasks/:id/offers   // Make an offer
+}
+
+// Response format standardization
+interface ApiResponse<T> {
+  data: T;
+  meta: {
+    page: number;
+    totalPages: number;
+    totalCount: number;
+  };
+  links: {
+    self: string;
+    next?: string;
+    prev?: string;
+  };
+}
+```
+
+---
+
+## Design System and UI/UX Standards
+
+### Typography Foundation
+
+Implementing a dual-typeface system similar to Airtasker:
+
+```css
+/* Typography System */
+:root {
+  /* Font Families */
+  --font-heading: 'Formula', 'Inter', sans-serif;  /* Headlines */
+  --font-body: 'Manrope', 'Open Sans', sans-serif; /* Body text */
+  
+  /* Type Scale (Perfect Fourth - 1.333 ratio) */
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.5rem;     /* 24px */
+  --font-size-2xl: 2rem;      /* 32px */
+  --font-size-3xl: 2.5rem;    /* 40px */
+  --font-size-4xl: 3rem;      /* 48px */
+  
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-base: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+}
+
+/* Heading Styles */
+h1 {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-4xl);
+  line-height: var(--line-height-tight);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+}
+
+/* Body Text */
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-primary);
+}
+```
+
+### Color System
+
+Our marketplace uses a sophisticated teal-to-mint gradient palette that conveys trust, innovation, and growth. This carefully optimized color system ensures excellent readability, accessibility, and visual harmony across all platform touchpoints.
+
+```css
+/* Optimized Marketplace Color System */
+:root {
+  /* Primary Brand Colors - Teal to Mint Gradient */
+  --color-primary-950: #084A5A;  /* Darkest - High contrast text */
+  --color-primary-900: #0C6478;  /* Deep Teal - Headers, Primary CTAs */
+  --color-primary-800: #0F7A88;  /* Dark Teal - Hover states */
+  --color-primary-700: #15919B;  /* Medium Teal - Active states, Links */
+  --color-primary-600: #0BB3AA;  /* Light Teal - Secondary actions */
+  --color-primary-500: #09D1C7;  /* Bright Cyan - Primary brand color */
+  --color-primary-400: #2AD5A5;  /* Cyan-Mint - Highlights */
+  --color-primary-300: #46DFB1;  /* Mint Green - Success states */
+  --color-primary-200: #63E5A7;  /* Light Mint - Positive feedback */
+  --color-primary-100: #80EE98;  /* Bright Mint - Light backgrounds */
+  --color-primary-50:  #E6FBF0;  /* Mint Tint - Subtle backgrounds */
+  
+  /* Neutral Palette with Teal Undertones */
+  --color-neutral-900: #1A2B2F;  /* Almost black - Primary text */
+  --color-neutral-800: #2D3F44;  /* Dark gray - Secondary text */
+  --color-neutral-700: #405459;  /* Medium dark - Muted text */
+  --color-neutral-600: #546A70;  /* Medium gray - Disabled text */
+  --color-neutral-500: #6B8189;  /* Mid gray - Borders */
+  --color-neutral-400: #8499A1;  /* Light gray - Subtle borders */
+  --color-neutral-300: #9FB2BA;  /* Lighter gray - Hover backgrounds */
+  --color-neutral-200: #C4D1D6;  /* Very light - Section backgrounds */
+  --color-neutral-100: #E3EAEC;  /* Near white - Subtle backgrounds */
+  --color-neutral-50:  #F5F8F9;  /* Off white - Page backgrounds */
+  --color-neutral-0:   #FFFFFF;  /* Pure white - Cards, modals */
+  
+  /* Semantic Colors for User Feedback */
+  --color-success-700: #2A9D6C;
+  --color-success-500: #46DFB1;  /* Using mint green from palette */
+  --color-success-300: #7AEAC3;
+  --color-success-100: #E6FBF3;
+  
+  --color-error-700: #C73E1A;
+  --color-error-500: #EF5A30;
+  --color-error-300: #F58B6B;
+  --color-error-100: #FEF0EC;
+  
+  --color-warning-700: #CC8800;
+  --color-warning-500: #FFAA00;
+  --color-warning-300: #FFD166;
+  --color-warning-100: #FFF8E6;
+  
+  --color-info-700: #0793A3;
+  --color-info-500: #09D1C7;  /* Using bright cyan from palette */
+  --color-info-300: #5DE4DB;
+  --color-info-100: #E6FCFA;
+  
+  /* Applied Color Tokens */
+  --color-brand: var(--color-primary-500);
+  --color-brand-dark: var(--color-primary-900);
+  --color-brand-light: var(--color-primary-100);
+  
+  --color-text-primary: var(--color-neutral-900);
+  --color-text-secondary: var(--color-neutral-700);
+  --color-text-muted: var(--color-neutral-600);
+  --color-text-inverse: var(--color-neutral-0);
+  
+  --color-bg-primary: var(--color-neutral-0);
+  --color-bg-secondary: var(--color-neutral-50);
+  --color-bg-tertiary: var(--color-neutral-100);
+  
+  --color-link: var(--color-primary-700);
+  --color-link-hover: var(--color-primary-600);
+  --color-focus: var(--color-primary-500);
+  --color-selection: var(--color-primary-100);
+  
+  --color-border: var(--color-neutral-300);
+  --color-border-strong: var(--color-neutral-400);
+  --color-border-interactive: var(--color-primary-500);
+}
+```
+
+### Spacing System
+
+Using an 8px base unit for consistent spacing:
+
+```css
+/* Spacing Scale */
+:root {
+  --space-0: 0;
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+  --space-20: 5rem;    /* 80px */
+  --space-24: 6rem;    /* 96px */
+  --space-32: 8rem;    /* 128px */
+}
+
+/* Container Widths */
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .container { max-width: 640px; }
+}
+
+@media (min-width: 768px) {
+  .container { 
+    max-width: 768px;
+    padding: 0 var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container { max-width: 1024px; }
+}
+
+@media (min-width: 1280px) {
+  .container { 
+    max-width: 1280px;
+    padding: 0 var(--space-8);
+  }
+}
+```
+
+### Component Design Patterns
+
+#### Card Components
+```css
+/* Base Card Style with New Color System */
+.card {
+  background: var(--color-neutral-0);
+  border-radius: 8px;
+  padding: var(--space-6);
+  box-shadow: 0 2px 8px rgba(12, 100, 120, 0.08);
+  transition: all 0.2s ease;
+  border: 1px solid var(--color-neutral-200);
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(9, 209, 199, 0.12);
+  border-color: var(--color-primary-300);
+  transform: translateY(-2px);
+}
+
+/* Task Card Specific */
+.task-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 200px;
+}
+
+.task-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+}
+
+.task-card__budget {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-700);
+}
+
+.task-card__category {
+  background: var(--color-primary-50);
+  color: var(--color-primary-800);
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.task-card__status--open {
+  background: var(--color-info-100);
+  color: var(--color-info-700);
+}
+
+.task-card__status--assigned {
+  background: var(--color-warning-100);
+  color: var(--color-warning-700);
+}
+
+.task-card__status--completed {
+  background: var(--color-success-100);
+  color: var(--color-success-700);
+}
+```
+
+#### Button System
+```css
+/* Button Base with New Colors */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px; /* Touch target size */
+}
+
+/* Primary Button - Deep Teal */
+.btn-primary {
+  background: var(--color-primary-900);
+  color: var(--color-neutral-0);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-800);
+  box-shadow: 0 2px 8px rgba(12, 100, 120, 0.25);
+}
+
+.btn-primary:active {
+  background: var(--color-primary-950);
+  transform: scale(0.98);
+}
+
+/* Secondary Button - Bright Cyan */
+.btn-secondary {
+  background: var(--color-primary-500);
+  color: var(--color-neutral-900);
+}
+
+.btn-secondary:hover {
+  background: var(--color-primary-400);
+  box-shadow: 0 2px 8px rgba(9, 209, 199, 0.25);
+}
+
+/* Success Button - Mint Green */
+.btn-success {
+  background: var(--color-primary-300);
+  color: var(--color-neutral-900);
+}
+
+.btn-success:hover {
+  background: var(--color-primary-200);
+}
+
+/* Ghost Button */
+.btn-ghost {
+  background: transparent;
+  color: var(--color-primary-700);
+  border: 2px solid var(--color-primary-700);
+}
+
+.btn-ghost:hover {
+  background: var(--color-primary-50);
+  border-color: var(--color-primary-600);
+  color: var(--color-primary-600);
+}
+
+/* Button Sizes */
+.btn-sm {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  min-height: 36px;
+}
+
+.btn-lg {
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--font-size-lg);
+  min-height: 52px;
+}
+```
+
+---
+
+## Core Marketplace Functionality
+
+### User Registration and Onboarding
+
+Modern marketplaces demand streamlined onboarding that reduces friction while collecting necessary information:
+
+```javascript
+// Progressive Onboarding Flow
+const OnboardingFlow = {
+  steps: [
+    {
+      id: 'account-type',
+      component: AccountTypeSelection,
+      required: true,
+      fields: ['userType'] // 'customer' or 'provider'
+    },
+    {
+      id: 'basic-info',
+      component: BasicInfoForm,
+      required: true,
+      fields: ['email', 'password', 'name']
+    },
+    {
+      id: 'profile-setup',
+      component: ProfileSetup,
+      required: false,
+      fields: ['avatar', 'bio', 'location']
+    },
+    {
+      id: 'verification',
+      component: VerificationStep,
+      required: (user) => user.type === 'provider',
+      fields: ['identity', 'skills', 'portfolio']
+    }
+  ]
+};
+
+// Implementation with skip capability
+const Onboarding = () => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [userData, setUserData] = useState({});
+  
+  const handleStepComplete = (stepData) => {
+    setUserData({ ...userData, ...stepData });
+    
+    // Allow skipping optional steps
+    const nextRequiredStep = OnboardingFlow.steps
+      .slice(currentStep + 1)
+      .findIndex(step => step.required);
+    
+    if (nextRequiredStep === -1) {
+      completeOnboarding(userData);
+    } else {
+      setCurrentStep(currentStep + nextRequiredStep + 1);
+    }
+  };
+  
+  return (
+    <OnboardingContainer>
+      <ProgressBar 
+        current={currentStep} 
+        total={OnboardingFlow.steps.length} 
+      />
+      {React.createElement(
+        OnboardingFlow.steps[currentStep].component,
+        { onComplete: handleStepComplete, userData }
+      )}
+    </OnboardingContainer>
+  );
+};
+```
+
+### Task/Service Posting Flow
+
+Following Airtasker's proven 5-step process with our custom color scheme:
+
+```javascript
+// Task Creation Wizard with New Color System
+const TaskCreationSteps = [
+  {
+    step: 1,
+    title: 'What do you need done?',
+    component: CategorySelection,
+    validation: (data) => data.category && data.subcategory
+  },
+  {
+    step: 2,
+    title: 'Describe your task',
+    component: TaskDetailsForm,
+    validation: (data) => 
+      data.title?.length >= 10 && 
+      data.description?.length >= 25
+  },
+  {
+    step: 3,
+    title: 'Where and when?',
+    component: LocationTimeSelector,
+    validation: (data) => data.location && data.date
+  },
+  {
+    step: 4,
+    title: 'What\'s your budget?',
+    component: BudgetSelector,
+    validation: (data) => 
+      data.budget >= 5 && 
+      data.budget <= 9999
+  },
+  {
+    step: 5,
+    title: 'Review and post',
+    component: TaskReview,
+    validation: (data) => true
+  }
+];
+
+// Progress Indicator with New Colors
+const ProgressIndicator = styled.div`
+  .progress-bar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    position: relative;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--color-neutral-300);
+      z-index: 0;
+    }
+  }
+
+  .progress-step {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--color-neutral-200);
+    border: 2px solid var(--color-neutral-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s ease;
+    
+    &.active {
+      background: var(--color-primary-500);
+      border-color: var(--color-primary-500);
+      color: var(--color-neutral-0);
+      transform: scale(1.1);
+    }
+    
+    &.completed {
+      background: var(--color-primary-300);
+      border-color: var(--color-primary-300);
+      color: var(--color-neutral-900);
+      
+      &::after {
+        content: '✓';
+        position: absolute;
+        font-size: 20px;
+      }
+    }
+  }
+`;
+
+// Category Selection Grid with New Colors
+const CategoryGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+
+  .category-card {
+    background: var(--color-neutral-0);
+    border: 2px solid var(--color-neutral-200);
+    border-radius: 12px;
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      border-color: var(--color-primary-300);
+      background: var(--color-primary-50);
+      transform: translateY(-2px);
+    }
+    
+    &.selected {
+      border-color: var(--color-primary-500);
+      background: var(--color-primary-50);
+      
+      .category-icon {
+        color: var(--color-primary-700);
+      }
+    }
+    
+    .category-icon {
+      font-size: 32px;
+      color: var(--color-neutral-600);
+      margin-bottom: 8px;
+      transition: color 0.2s ease;
+    }
+    
+    .category-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-neutral-800);
+    }
+  }
+`;
+```
+
+### Search and Discovery Implementation
+
+```javascript
+// Advanced Search with New Color Scheme
+const SearchInterface = styled.div`
+  .search-container {
+    background: var(--color-neutral-0);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(12, 100, 120, 0.08);
+  }
+  
+  .search-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .search-input {
+    flex: 1;
+    height: 48px;
+    padding: 0 16px 0 48px;
+    border: 2px solid var(--color-neutral-300);
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    
+    &:focus {
+      border-color: var(--color-primary-500);
+      box-shadow: 0 0 0 3px rgba(9, 209, 199, 0.1);
+      outline: none;
+    }
+    
+    &::placeholder {
+      color: var(--color-neutral-500);
+    }
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-neutral-600);
+  }
+  
+  .filter-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    
+    .filter-tag {
+      background: var(--color-primary-50);
+      color: var(--color-primary-800);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      border: 1px solid var(--color-primary-200);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: var(--color-primary-100);
+        border-color: var(--color-primary-300);
+      }
+      
+      &.active {
+        background: var(--color-primary-500);
+        color: var(--color-neutral-0);
+        border-color: var(--color-primary-500);
+      }
+    }
+  }
+  
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 24px;
+  }
+`;
+
+// Price Range Slider with New Colors
+const PriceRangeSlider = styled.div`
+  .slider-track {
+    height: 6px;
+    background: var(--color-neutral-300);
+    border-radius: 3px;
+    position: relative;
+    margin: 20px 0;
+  }
+  
+  .slider-fill {
+    position: absolute;
+    height: 100%;
+    background: linear-gradient(90deg, 
+      var(--color-primary-500) 0%, 
+      var(--color-primary-300) 100%
+    );
+    border-radius: 3px;
+  }
+  
+  .slider-thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--color-primary-700);
+    border: 3px solid var(--color-neutral-0);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    
+    &:active {
+      cursor: grabbing;
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+  }
+  
+  .price-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    
+    span {
+      color: var(--color-neutral-700);
+      font-size: 14px;
+      font-weight: 500;
+    }
+  }
+`;
+```
+
+---
+
+## Trust, Safety, and Compliance
+
+### Identity Verification System
+
+```javascript
+// Multi-tier Verification Process
+const VerificationLevels = {
+  BASIC: {
+    requirements: ['email', 'phone'],
+    badge: 'Verified Member',
+    trustScore: 1
+  },
+  IDENTITY: {
+    requirements: ['government_id', 'selfie'],
+    badge: 'ID Verified',
+    trustScore: 3
+  },
+  PROFESSIONAL: {
+    requirements: ['business_license', 'insurance', 'portfolio'],
+    badge: 'Pro Verified',
+    trustScore: 5
+  }
+};
+
+// Document verification flow
+const IdentityVerification = () => {
+  const [step, setStep] = useState('upload');
+  const [documents, setDocuments] = useState({});
+  
+  const handleDocumentUpload = async (file, type) => {
+    // Client-side validation
+    if (!validateDocument(file, type)) {
+      return showError('Invalid document format');
+    }
+    
+    // Upload to secure storage
+    const uploadResult = await uploadSecureDocument(file, {
+      encryption: true,
+      maxRetention: '90_days'
+    });
+    
+    // Initiate verification
+    const verification = await initiateVerification({
+      documentId: uploadResult.id,
+      documentType: type,
+      userId: currentUser.id
+    });
+    
+    setDocuments({
+      ...documents,
+      [type]: {
+        status: 'processing',
+        verificationId: verification.id
+      }
+    });
+  };
+  
+  return (
+    <VerificationContainer>
+      {step === 'upload' && (
+        <DocumentUpload
+          acceptedTypes={['passport', 'drivers_license', 'national_id']}
+          onUpload={handleDocumentUpload}
+          guidelines={
+            <Guidelines>
+              <li>Document must be valid and not expired</li>
+              <li>All corners must be visible</li>
+              <li>Text must be clearly readable</li>
+              <li>No glare or shadows</li>
+            </Guidelines>
+          }
+        />
+      )}
+      
+      {step === 'selfie' && (
+        <SelfieCapture
+          requirements={[
+            'Good lighting on your face',
+            'Remove glasses if possible',
+            'Neutral expression',
+            'Head and shoulders visible'
+          ]}
+          onCapture={handleSelfieCapture}
+        />
+      )}
+    </VerificationContainer>
+  );
+};
+```
+
+### Review and Rating System
+
+```javascript
+// Two-sided Review System
+const ReviewSystem = {
+  // Review prompts based on user type
+  prompts: {
+    customer: {
+      provider: [
+        { key: 'quality', label: 'Quality of work' },
+        { key: 'communication', label: 'Communication' },
+        { key: 'punctuality', label: 'Timeliness' },
+        { key: 'value', label: 'Value for money' }
+      ]
+    },
+    provider: {
+      customer: [
+        { key: 'clarity', label: 'Task clarity' },
+        { key: 'communication', label: 'Communication' },
+        { key: 'payment', label: 'Payment promptness' },
+        { key: 'respect', label: 'Respectfulness' }
+      ]
+    }
+  },
+  
+  // Fraud detection rules
+  fraudDetection: {
+    patterns: [
+      'multiple_reviews_same_ip',
+      'rapid_succession_reviews',
+      'identical_text_patterns',
+      'new_account_burst_activity'
+    ],
+    actions: {
+      flag: (review) => review.trustScore < 0.3,
+      quarantine: (review) => review.trustScore < 0.1,
+      autoRemove: (review) => review.confirmed_fraud
+    }
+  }
+};
+
+// Review Component with Multi-dimensional Rating
+const ReviewForm = ({ taskId, revieweeId, revieweeType }) => {
+  const [ratings, setRatings] = useState({});
+  const [comment, setComment] = useState('');
+  const [photos, setPhotos] = useState([]);
+  
+  const prompts = ReviewSystem.prompts[currentUser.type][revieweeType];
+  
+  const handleSubmit = async () => {
+    // Calculate overall rating
+    const overallRating = Object.values(ratings)
+      .reduce((sum, rating) => sum + rating, 0) / 
+      Object.keys(ratings).length;
+    
+    // Submit review
+    const review = await submitReview({
+      taskId,
+      revieweeId,
+      ratings,
+      overallRating,
+      comment,
+      photos,
+      metadata: {
+        deviceId: getDeviceFingerprint(),
+        sessionDuration: getSessionDuration(),
+        interactionCount: getInteractionCount()
+      }
+    });
+    
+    // Trigger fraud detection
+    await runFraudDetection(review.id);
+  };
+  
+  return (
+    <ReviewContainer>
+      <RatingSection>
+        {prompts.map(prompt => (
+          <RatingRow key={prompt.key}>
+            <Label>{prompt.label}</Label>
+            <StarRating
+              value={ratings[prompt.key] || 0}
+              onChange={(value) => 
+                setRatings({ ...ratings, [prompt.key]: value })
+              }
+            />
+          </RatingRow>
+        ))}
+      </RatingSection>
+      
+      <CommentSection>
+        <Textarea
+          value={comment}
+          onChange={setComment}
+          placeholder="Share details about your experience..."
+          minLength={20}
+          maxLength={500}
+        />
+        <CharacterCount>
+          {comment.length}/500
+        </CharacterCount>
+      </CommentSection>
+      
+      <PhotoUpload
+        photos={photos}
+        onUpload={setPhotos}
+        maxPhotos={5}
+      />
+      
+      <SubmitButton
+        onClick={handleSubmit}
+        disabled={Object.keys(ratings).length < prompts.length}
+      >
+        Submit Review
+      </SubmitButton>
+    </ReviewContainer>
+  );
+};
+```
+
+### Compliance Implementation
+
+```javascript
+// GDPR/CCPA Compliance Manager
+class PrivacyComplianceManager {
+  constructor() {
+    this.consentTypes = {
+      ESSENTIAL: 'essential',
+      ANALYTICS: 'analytics',
+      MARKETING: 'marketing',
+      THIRD_PARTY: 'third_party'
+    };
+  }
+  
+  // Cookie consent banner
+  renderConsentBanner() {
+    return `
+      <div class="consent-banner" id="privacy-consent">
+        <div class="consent-content">
+          <h3>We value your privacy</h3>
+          <p>We use cookies to enhance your experience. By continuing, you agree to our use of cookies.</p>
+          
+          <div class="consent-options">
+            <label>
+              <input type="checkbox" checked disabled />
+              Essential (Required)
+            </label>
+            <label>
+              <input type="checkbox" id="consent-analytics" />
+              Analytics
+            </label>
+            <label>
+              <input type="checkbox" id="consent-marketing" />
+              Marketing
+            </label>
+          </div>
+          
+          <div class="consent-actions">
+            <button onclick="acceptSelected()">Accept Selected</button>
+            <button onclick="acceptAll()" class="primary">Accept All</button>
+            <a href="/privacy-policy">Privacy Policy</a>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  // Data export for GDPR requests
+  async exportUserData(userId) {
+    const userData = await Promise.all([
+      this.getProfileData(userId),
+      this.getTransactionHistory(userId),
+      this.getMessageHistory(userId),
+      this.getActivityLog(userId)
+    ]);
+    
+    return {
+      generatedAt: new Date().toISOString(),
+      user: userData[0],
+      transactions: userData[1],
+      messages: userData[2],
+      activityLog: userData[3],
+      format: 'json',
+      checksum: generateChecksum(userData)
+    };
+  }
+  
+  // Right to deletion
+  async deleteUserData(userId, confirmation) {
+    if (!confirmation.verified) {
+      throw new Error('Deletion requires verified confirmation');
+    }
+    
+    // Soft delete with retention for legal requirements
+    await this.anonymizeUser(userId);
+    await this.scheduleHardDeletion(userId, '30_days');
+    
+    return {
+      status: 'scheduled',
+      deletionDate: addDays(new Date(), 30),
+      dataRetained: ['transaction_records', 'tax_documents']
+    };
+  }
+}
+```
+
+---
+
+## Payment Infrastructure
+
+### Multi-Gateway Payment System
+
+```javascript
+// Payment Gateway Abstraction
+class PaymentGatewayManager {
+  constructor() {
+    this.gateways = {
+      stripe: new StripeGateway(),
+      paypal: new PayPalGateway(),
+      square: new SquareGateway()
+    };
+    
+    this.escrowService = new EscrowService();
+  }
+  
+  // Process payment with automatic gateway selection
+  async processPayment(paymentData) {
+    const { amount, currency, method, metadata } = paymentData;
+    
+    // Select optimal gateway based on criteria
+    const gateway = this.selectGateway({
+      amount,
+      currency,
+      country: metadata.country,
+      paymentMethod: method
+    });
+    
+    try {
+      // Create payment intent
+      const intent = await gateway.createPaymentIntent({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: currency.toLowerCase(),
+        metadata: {
+          taskId: metadata.taskId,
+          userId: metadata.userId,
+          platform_fee: this.calculatePlatformFee(amount)
+        }
+      });
+      
+      // Hold in escrow
+      if (metadata.requiresEscrow) {
+        await this.escrowService.holdFunds({
+          paymentIntentId: intent.id,
+          releaseConditions: metadata.releaseConditions,
+          disputePeriod: '48_hours'
+        });
+      }
+      
+      return {
+        success: true,
+        paymentId: intent.id,
+        clientSecret: intent.client_secret
+      };
+      
+    } catch (error) {
+      await this.logPaymentError(error, paymentData);
+      throw new PaymentProcessingError(error.message);
+    }
+  }
+  
+  // Dynamic commission calculation
+  calculatePlatformFee(amount) {
+    const feeStructure = {
+      tiers: [
+        { max: 50, percentage: 0.20 },    // 20% for tasks up to $50
+        { max: 200, percentage: 0.15 },   // 15% for tasks $51-$200
+        { max: 500, percentage: 0.10 },   // 10% for tasks $201-$500
+        { max: null, percentage: 0.08 }   // 8% for tasks over $500
+      ],
+      minimum: 2.50 // Minimum fee
+    };
+    
+    const tier = feeStructure.tiers.find(t => !t.max || amount <= t.max);
+    const calculatedFee = amount * tier.percentage;
+    
+    return Math.max(calculatedFee, feeStructure.minimum);
+  }
+}
+
+// Escrow Service Implementation
+class EscrowService {
+  async holdFunds({ paymentIntentId, releaseConditions, disputePeriod }) {
+    const escrowAccount = await this.createEscrowAccount({
+      paymentIntentId,
+      status: 'held',
+      releaseConditions,
+      disputeDeadline: addHours(new Date(), 
+        parseInt(disputePeriod.split('_')[0])
+      )
+    });
+    
+    // Set up automated release
+    await this.scheduleAutomaticRelease(
+      escrowAccount.id,
+      escrowAccount.disputeDeadline
+    );
+    
+    return escrowAccount;
+  }
+  
+  async releaseFunds(escrowId, authorization) {
+    const escrow = await this.getEscrowAccount(escrowId);
+    
+    // Validate release conditions
+    const conditionsMet = await this.validateReleaseConditions(
+      escrow.releaseConditions,
+      authorization
+    );
+    
+    if (!conditionsMet) {
+      throw new Error('Release conditions not met');
+    }
+    
+    // Process payout
+    const payout = await this.processPayout({
+      amount: escrow.amount - escrow.platformFee,
+      recipient: escrow.recipientId,
+      currency: escrow.currency
+    });
+    
+    // Update escrow status
+    await this.updateEscrowStatus(escrowId, 'released', {
+      releasedAt: new Date(),
+      payoutId: payout.id
+    });
+    
+    return payout;
+  }
+}
+```
+
+### Payment UI Components
+
+```javascript
+// Payment Method Selector
+const PaymentMethodSelector = () => {
+  const [selectedMethod, setSelectedMethod] = useState(null);
+  const [savedMethods, setSavedMethods] = useState([]);
+  const [showNewCard, setShowNewCard] = useState(false);
+  
+  useEffect(() => {
+    loadSavedPaymentMethods().then(setSavedMethods);
+  }, []);
+  
+  return (
+    <PaymentMethodContainer>
+      <SavedMethods>
+        {savedMethods.map(method => (
+          <PaymentMethodCard
+            key={method.id}
+            selected={selectedMethod?.id === method.id}
+            onClick={() => setSelectedMethod(method)}
+          >
+            <CardIcon type={method.brand} />
+            <CardDetails>
+              <CardNumber>•••• {method.last4}</CardNumber>
+              <CardExpiry>Expires {method.exp_month}/{method.exp_year}</CardExpiry>
+            </CardDetails>
+            {method.isDefault && <DefaultBadge>Default</DefaultBadge>}
+          </PaymentMethodCard>
+        ))}
+      </SavedMethods>
+      
+      <AddNewMethod onClick={() => setShowNewCard(true)}>
+        <PlusIcon />
+        <span>Add new payment method</span>
+      </AddNewMethod>
+      
+      {showNewCard && (
+        <NewCardForm onComplete={(method) => {
+          setSavedMethods([...savedMethods, method]);
+          setSelectedMethod(method);
+          setShowNewCard(false);
+        }} />
+      )}
+      
+      <AlternativeMethods>
+        <PaymentButton
+          type="paypal"
+          onClick={() => initiatePayPalPayment()}
+        />
+        <PaymentButton
+          type="apple-pay"
+          onClick={() => initiateApplePayPayment()}
+          disabled={!window.ApplePaySession}
+        />
+        <PaymentButton
+          type="google-pay"
+          onClick={() => initiateGooglePayPayment()}
+        />
+      </AlternativeMethods>
+    </PaymentMethodContainer>
+  );
+};
+```
+
+---
+
+## Search and Discovery Systems
+
+### AI-Powered Search Implementation
+
+```javascript
+// Elasticsearch Integration with ML Ranking
+class SearchEngine {
+  constructor() {
+    this.client = new ElasticsearchClient({
+      node: process.env.ELASTICSEARCH_URL,
+      auth: {
+        apiKey: process.env.ELASTICSEARCH_API_KEY
+      }
+    });
+    
+    this.mlRanker = new MLRankingService();
+  }
+  
+  async search(query, filters, userId) {
+    // Build Elasticsearch query
+    const esQuery = {
+      index: 'tasks',
+      body: {
+        query: {
+          bool: {
+            must: [
+              {
+                multi_match: {
+                  query,
+                  fields: ['title^3', 'description^2', 'category'],
+                  type: 'best_fields',
+                  fuzziness: 'AUTO'
+                }
+              }
+            ],
+            filter: this.buildFilters(filters),
+            should: [
+              // Boost recent tasks
+              {
+                range: {
+                  created_at: {
+                    gte: 'now-7d',
+                    boost: 1.5
+                  }
+                }
+              },
+              // Boost verified providers
+              {
+                term: {
+                  'provider.verified': {
+                    value: true,
+                    boost: 2
+                  }
+                }
+              }
+            ]
+          }
+        },
+        // Get more results for ML re-ranking
+        size: 100,
+        _source: ['id', 'title', 'description', 'price', 'location', 'provider']
+      }
+    };
+    
+    // Execute search
+    const searchResults = await this.client.search(esQuery);
+    
+    // Apply ML ranking
+    const userContext = await this.getUserContext(userId);
+    const rankedResults = await this.mlRanker.rank(
+      searchResults.body.hits.hits,
+      userContext,
+      {
+        features: [
+          'user_location_distance',
+          'price_competitiveness',
+          'provider_rating',
+          'category_match_score',
+          'historical_interaction_score'
+        ]
+      }
+    );
+    
+    // Return top results
+    return {
+      results: rankedResults.slice(0, 20),
+      total: searchResults.body.hits.total.value,
+      aggregations: await this.getSearchAggregations(esQuery)
+    };
+  }
+  
+  buildFilters(filters) {
+    const esFilters = [];
+    
+    if (filters.category?.length > 0) {
+      esFilters.push({
+        terms: { 'category.keyword': filters.category }
+      });
+    }
+    
+    if (filters.priceRange) {
+      esFilters.push({
+        range: {
+          price: {
+            gte: filters.priceRange.min,
+            lte: filters.priceRange.max
+          }
+        }
+      });
+    }
+    
+    if (filters.location) {
+      esFilters.push({
+        geo_distance: {
+          distance: `${filters.location.radius}km`,
+          location: {
+            lat: filters.location.lat,
+            lon: filters.location.lng
+          }
+        }
+      });
+    }
+    
+    return esFilters;
+  }
+}
+
+// Geospatial Search Optimization
+class GeospatialSearch {
+  constructor() {
+    this.quadtree = new Quadtree({
+      x: -180,
+      y: -90,
+      width: 360,
+      height: 180
+    });
+  }
+  
+  // Index providers by location
+  indexProvider(provider) {
+    this.quadtree.insert({
+      x: provider.location.lng,
+      y: provider.location.lat,
+      id: provider.id,
+      data: {
+        rating: provider.rating,
+        completedTasks: provider.completedTasks,
+        responseTime: provider.avgResponseTime
+      }
+    });
+  }
+  
+  // Find nearby providers
+  findNearbyProviders(location, radius, limit = 50) {
+    // Convert radius to bounding box
+    const bounds = this.getBoundingBox(location, radius);
+    
+    // Query quadtree
+    const candidates = this.quadtree.retrieve(bounds);
+    
+    // Calculate exact distances and rank
+    const providers = candidates
+      .map(candidate => ({
+        ...candidate,
+        distance: this.calculateDistance(
+          location,
+          { lat: candidate.y, lng: candidate.x }
+        )
+      }))
+      .filter(p => p.distance <= radius)
+      .sort((a, b) => {
+        // Multi-factor sorting
+        const scoreA = this.calculateProviderScore(a);
+        const scoreB = this.calculateProviderScore(b);
+        return scoreB - scoreA;
+      })
+      .slice(0, limit);
+    
+    return providers;
+  }
+  
+  calculateProviderScore(provider) {
+    // Weighted scoring algorithm
+    const weights = {
+      distance: -0.3,      // Closer is better
+      rating: 0.4,         // Higher rating is better
+      completedTasks: 0.2, // Experience matters
+      responseTime: -0.1   // Faster response is better
+    };
+    
+    return (
+      weights.distance * (provider.distance / 10) +
+      weights.rating * provider.data.rating +
+      weights.completedTasks * Math.log(provider.data.completedTasks + 1) +
+      weights.responseTime * (provider.data.responseTime / 60)
+    );
+  }
+}
+```
+
+### Visual Search Implementation
+
+```javascript
+// Image-based Task Search
+class VisualSearchService {
+  constructor() {
+    this.imageProcessor = new ImageProcessor();
+    this.featureExtractor = new TensorFlowFeatureExtractor();
+    this.similaritySearch = new FaissIndex();
+  }
+  
+  async searchByImage(imageFile) {
+    // Process and validate image
+    const processedImage = await this.imageProcessor.process(imageFile, {
+      maxSize: 1024,
+      format: 'jpeg',
+      quality: 0.85
+    });
+    
+    // Extract visual features
+    const features = await this.featureExtractor.extract(processedImage);
+    
+    // Find similar tasks
+    const similarTasks = await this.similaritySearch.search(
+      features,
+      { k: 20, threshold: 0.8 }
+    );
+    
+    // Enhance results with metadata
+    return Promise.all(
+      similarTasks.map(async (match) => {
+        const task = await this.getTaskDetails(match.id);
+        return {
+          ...task,
+          similarity: match.score,
+          matchedFeatures: match.features
+        };
+      })
+    );
+  }
+}
+```
+
+---
+
+## Mobile Development Strategy
+
+### React Native Implementation
+
+```javascript
+// Cross-platform Mobile App Structure
+const App = () => {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#2196f3',
+          },
+          headerTintColor: '#fff',
+          headerTitleStyle: {
+            fontFamily: 'Formula-Bold',
+          },
+        }}
+      >
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="TaskDetails" 
+          component={TaskDetailsScreen}
+        />
+        <Stack.Screen 
+          name="CreateTask" 
+          component={CreateTaskFlow}
+        />
+      </Stack.Navigator>
+      
+      <TabNavigator />
+    </NavigationContainer>
+  );
+};
+
+// Bottom Tab Navigation
+const TabNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: '#2196f3',
+        tabBarInactiveTintColor: '#757575',
+        tabBarStyle: {
+          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+          height: Platform.OS === 'ios' ? 80 : 60,
+        },
+      }}
+    >
+      <Tab.Screen
+        name="Browse"
+        component={BrowseScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <SearchIcon color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="MyTasks"
+        component={MyTasksScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <TaskIcon color={color} size={size} />
+          ),
+          tabBarBadge: unreadCount > 0 ? unreadCount : null,
+        }}
+      />
+      <Tab.Screen
+        name="Messages"
+        component={MessagesScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MessageIcon color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <ProfileIcon color={color} size={size} />
+          ),
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
+
+// Platform-specific Optimizations
+const TaskCard = ({ task }) => {
+  const animation = useRef(new Animated.Value(0)).current;
+  
+  const handlePress = () => {
+    // Haptic feedback on iOS
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    
+    // Navigate with animation
+    Animated.spring(animation, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start(() => {
+      navigation.navigate('TaskDetails', { taskId: task.id });
+    });
+  };
+  
+  return (
+    <Pressable
+      onPress={handlePress}
+      style={({ pressed }) => [
+        styles.card,
+        pressed && styles.cardPressed,
+      ]}
+    >
+      <Animated.View
+        style={[
+          styles.cardContent,
+          {
+            transform: [
+              {
+                scale: animation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [1, 0.95],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <Text style={styles.title}>{task.title}</Text>
+        <Text style={styles.budget}>${task.budget}</Text>
+        <View style={styles.footer}>
+          <Text style={styles.location}>
+            <LocationIcon size={12} /> {task.location}
+          </Text>
+          <Text style={styles.timeAgo}>
+            {formatTimeAgo(task.createdAt)}
+          </Text>
+        </View>
+      </Animated.View>
+    </Pressable>
+  );
+};
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  cardPressed: {
+    opacity: 0.9,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#212121',
+    marginBottom: 8,
+  },
+  budget: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#2196f3',
+    marginBottom: 12,
+  },
+});
+```
+
+### Push Notifications
+
+```javascript
+// Push Notification Service
+class PushNotificationService {
+  async initialize() {
+    // Request permissions
+    const { status } = await Notifications.requestPermissionsAsync();
+    
+    if (status !== 'granted') {
+      console.log('Notification permissions denied');
+      return;
+    }
+    
+    // Get push token
+    const token = await Notifications.getExpoPushTokenAsync();
+    await this.registerToken(token.data);
+    
+    // Set up notification handlers
+    Notifications.addNotificationReceivedListener(this.handleNotification);
+    Notifications.addNotificationResponseReceivedListener(
+      this.handleNotificationResponse
+    );
+  }
+  
+  async sendTaskNotification(userId, notification) {
+    const userTokens = await this.getUserTokens(userId);
+    
+    const messages = userTokens.map(token => ({
+      to: token,
+      sound: 'default',
+      title: notification.title,
+      body: notification.body,
+      data: notification.data,
+      categoryId: notification.category,
+      badge: await this.getUnreadCount(userId),
+    }));
+    
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(messages),
+    });
+  }
+  
+  // Notification Categories
+  categories = {
+    NEW_OFFER: {
+      actions: [
+        { id: 'view', title: 'View Offer' },
+        { id: 'accept', title: 'Accept', foreground: true },
+        { id: 'decline', title: 'Decline', destructive: true },
+      ],
+    },
+    TASK_UPDATE: {
+      actions: [
+        { id: 'view', title: 'View Details' },
+        { id: 'reply', title: 'Reply', textInput: true },
+      ],
+    },
+  };
+}
+```
+
+---
+
+## Communication and Messaging with New Color System
+
+### Real-time Chat Implementation
+
+```javascript
+// Chat UI Component with Teal-Mint Theme
+const ChatInterface = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-neutral-50);
+  
+  .chat-header {
+    background: var(--color-primary-900);
+    color: var(--color-neutral-0);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 4px rgba(12, 100, 120, 0.1);
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--color-primary-100);
+    }
+    
+    .user-info {
+      flex: 1;
+      
+      .user-name {
+        font-weight: 600;
+        font-size: 16px;
+      }
+      
+      .user-status {
+        font-size: 14px;
+        color: var(--color-primary-100);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        
+        .status-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: var(--color-primary-300);
+        }
+      }
+    }
+  }
+  
+  .message-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .message {
+    display: flex;
+    gap: 12px;
+    max-width: 70%;
+    
+    &.own {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+      
+      .message-bubble {
+        background: var(--color-primary-500);
+        color: var(--color-neutral-900);
+        
+        &::before {
+          content: '';
+          position: absolute;
+          right: -8px;
+          top: 12px;
+          border-left: 8px solid var(--color-primary-500);
+          border-top: 6px solid transparent;
+          border-bottom: 6px solid transparent;
+        }
+      }
+    }
+    
+    .message-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    
+    .message-content {
+      flex: 1;
+      
+      .message-bubble {
+        background: var(--color-neutral-0);
+        border: 1px solid var(--color-neutral-200);
+        border-radius: 12px;
+        padding: 12px 16px;
+        position: relative;
+        
+        &::before {
+          content: '';
+          position: absolute;
+          left: -8px;
+          top: 12px;
+          border-right: 8px solid var(--color-neutral-0);
+          border-top: 6px solid transparent;
+          border-bottom: 6px solid transparent;
+        }
+        
+        .message-text {
+          color: var(--color-neutral-900);
+          line-height: 1.5;
+        }
+        
+        .message-time {
+          font-size: 12px;
+          color: var(--color-neutral-600);
+          margin-top: 4px;
+        }
+      }
+    }
+  }
+  
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    background: var(--color-neutral-100);
+    border-radius: 12px;
+    width: fit-content;
+    
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-neutral-600);
+      animation: typing 1.4s infinite;
+      
+      &:nth-child(2) { animation-delay: 0.2s; }
+      &:nth-child(3) { animation-delay: 0.4s; }
+    }
+  }
+  
+  @keyframes typing {
+    0%, 60%, 100% {
+      transform: translateY(0);
+      opacity: 0.7;
+    }
+    30% {
+      transform: translateY(-10px);
+      opacity: 1;
+    }
+  }
+  
+  .input-container {
+    background: var(--color-neutral-0);
+    border-top: 1px solid var(--color-neutral-200);
+    padding: 16px 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    
+    .attachment-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--color-neutral-300);
+      background: var(--color-neutral-0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--color-neutral-600);
+      
+      &:hover {
+        border-color: var(--color-primary-300);
+        color: var(--color-primary-700);
+        background: var(--color-primary-50);
+      }
+    }
+    
+    .message-input {
+      flex: 1;
+      min-height: 40px;
+      max-height: 120px;
+      padding: 10px 16px;
+      border: 2px solid var(--color-neutral-300);
+      border-radius: 20px;
+      resize: none;
+      font-size: 15px;
+      line-height: 1.4;
+      transition: all 0.2s ease;
+      
+      &:focus {
+        outline: none;
+        border-color: var(--color-primary-500);
+      }
+      
+      &::placeholder {
+        color: var(--color-neutral-500);
+      }
+    }
+    
+    .send-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--color-primary-900);
+      color: var(--color-neutral-0);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: var(--color-primary-800);
+        transform: scale(1.05);
+      }
+      
+      &:active {
+        transform: scale(0.95);
+      }
+      
+      &:disabled {
+        background: var(--color-neutral-400);
+        cursor: not-allowed;
+        transform: none;
+      }
+    }
+  }
+`;
+
+// Video Call UI with New Colors
+const VideoCallContainer = styled.div`
+  position: fixed;
+  inset: 0;
+  background: var(--color-neutral-900);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  
+  .remote-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .local-video {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 180px;
+    height: 120px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--color-neutral-0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .call-controls {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 16px;
+    background: rgba(26, 43, 47, 0.9); /* neutral-900 with opacity */
+    padding: 16px 24px;
+    border-radius: 40px;
+    backdrop-filter: blur(10px);
+    
+    .control-button {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: none;
+      background: var(--color-neutral-700);
+      color: var(--color-neutral-0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: var(--color-neutral-600);
+        transform: scale(1.1);
+      }
+      
+      &.active {
+        background: var(--color-primary-500);
+        color: var(--color-neutral-900);
+      }
+      
+      &.end-call {
+        background: var(--color-error-500);
+        color: var(--color-neutral-0);
+        
+        &:hover {
+          background: var(--color-error-600);
+        }
+      }
+    }
+  }
+`;
+```
+
+## Mobile Development with New Color System
+
+### React Native Implementation
+
+```javascript
+// Mobile styles with Teal-Mint theme
+const styles = StyleSheet.create({
+  // Container styles
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F8F9', // neutral-50
+  },
+  
+  // Card styles
+  card: {
+    backgroundColor: '#FFFFFF', // neutral-0
+    borderRadius: 8,
+    padding: 16,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderWidth: 1,
+    borderColor: '#C4D1D6', // neutral-200
+    ...Platform.select({
+      ios: {
+        shadowColor: '#0C6478', // primary-900
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  
+  cardPressed: {
+    borderColor: '#46DFB1', // primary-300
+    ...Platform.select({
+      ios: {
+        shadowOpacity: 0.12,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  
+  // Typography
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A2B2F', // neutral-900
+    marginBottom: 8,
+  },
+  
+  budget: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#15919B', // primary-700
+    marginBottom: 12,
+  },
+  
+  subtitle: {
+    fontSize: 14,
+    color: '#546A70', // neutral-600
+    lineHeight: 20,
+  },
+  
+  // Button styles
+  primaryButton: {
+    backgroundColor: '#0C6478', // primary-900
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  
+  secondaryButton: {
+    backgroundColor: '#09D1C7', // primary-500
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  secondaryButtonText: {
+    color: '#1A2B2F', // neutral-900
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  
+  // Status indicators
+  statusBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+  },
+  
+  statusOpen: {
+    backgroundColor: '#E6FCFA', // info-100
+  },
+  
+  statusOpenText: {
+    color: '#0793A3', // info-700
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  
+  statusInProgress: {
+    backgroundColor: '#FFF8E6', // warning-100
+  },
+  
+  statusInProgressText: {
+    color: '#CC8800', // warning-700
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  
+  statusCompleted: {
+    backgroundColor: '#E6FBF3', // success-100
+  },
+  
+  statusCompletedText: {
+    color: '#2A9D6C', // success-700
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  
+  // Tab bar
+  tabBar: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E3EAEC', // neutral-100
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+    paddingTop: 10,
+  },
+  
+  tabBarLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  
+  tabBarActiveTint: '#0C6478', // primary-900
+  tabBarInactiveTint: '#6B8189', // neutral-500
+  
+  // Input fields
+  input: {
+    height: 48,
+    borderWidth: 2,
+    borderColor: '#9FB2BA', // neutral-300
+    borderRadius: 6,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: '#1A2B2F', // neutral-900
+    backgroundColor: '#FFFFFF',
+  },
+  
+  inputFocused: {
+    borderColor: '#09D1C7', // primary-500
+  },
+  
+  // Navigation header
+  headerStyle: {
+    backgroundColor: '#0C6478', // primary-900
+  },
+  
+  headerTintColor: '#FFFFFF',
+  
+  headerTitleStyle: {
+    fontWeight: '600',
+    fontSize: 18,
+  },
+});
+
+// Bottom Tab Navigation with new colors
+const TabNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: '#0C6478', // primary-900
+        tabBarInactiveTintColor: '#6B8189', // neutral-500
+        tabBarStyle: styles.tabBar,
+        tabBarLabelStyle: styles.tabBarLabel,
+      }}
+    >
+      <Tab.Screen
+        name="Browse"
+        component={BrowseScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <SearchIcon color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="MyTasks"
+        component={MyTasksScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <TaskIcon color={color} size={size} />
+          ),
+          tabBarBadge: unreadCount > 0 ? unreadCount : null,
+          tabBarBadgeStyle: {
+            backgroundColor: '#46DFB1', // primary-300
+            color: '#1A2B2F', // neutral-900
+          },
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
+```
+
+## Analytics Dashboard with New Color Theme
+
+```javascript
+// BI Dashboard Component with Teal-Mint Theme
+const DashboardStyles = styled.div`
+  .dashboard-container {
+    background: var(--color-neutral-50);
+    min-height: 100vh;
+    padding: 24px;
+  }
+  
+  .dashboard-header {
+    background: var(--color-neutral-0);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(12, 100, 120, 0.06);
+    
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--color-primary-900);
+      margin-bottom: 16px;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      
+      .date-range-picker {
+        padding: 8px 16px;
+        border: 2px solid var(--color-neutral-300);
+        border-radius: 6px;
+        background: var(--color-neutral-0);
+        color: var(--color-neutral-900);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          border-color: var(--color-primary-300);
+        }
+        
+        &.active {
+          border-color: var(--color-primary-500);
+          background: var(--color-primary-50);
+        }
+      }
+    }
+  }
+  
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  
+  .metric-card {
+    background: var(--color-neutral-0);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(12, 100, 120, 0.06);
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(9, 209, 199, 0.1);
+    }
+    
+    .metric-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      
+      .metric-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-neutral-700);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .metric-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: var(--color-primary-50);
+        color: var(--color-primary-700);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+    
+    .metric-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-neutral-900);
+      margin-bottom: 8px;
+      
+      &.currency {
+        color: var(--color-primary-700);
+      }
+    }
+    
+    .metric-trend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      
+      &.positive {
+        color: var(--color-success-700);
+        
+        .trend-icon {
+          background: var(--color-success-100);
+          color: var(--color-success-700);
+        }
+      }
+      
+      &.negative {
+        color: var(--color-error-700);
+        
+        .trend-icon {
+          background: var(--color-error-100);
+          color: var(--color-error-700);
+        }
+      }
+      
+      .trend-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+  }
+  
+  .chart-container {
+    background: var(--color-neutral-0);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(12, 100, 120, 0.06);
+    margin-bottom: 24px;
+    
+    .chart-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-neutral-900);
+      margin-bottom: 20px;
+    }
+    
+    .chart-legend {
+      display: flex;
+      gap: 24px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--color-neutral-200);
+      
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--color-neutral-700);
+        
+        .legend-color {
+          width: 16px;
+          height: 4px;
+          border-radius: 2px;
+          
+          &.primary { background: var(--color-primary-500); }
+          &.success { background: var(--color-primary-300); }
+          &.warning { background: var(--color-warning-500); }
+        }
+      }
+    }
+  }
+  
+  .activity-feed {
+    background: var(--color-neutral-0);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(12, 100, 120, 0.06);
+    
+    .feed-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-neutral-900);
+      margin-bottom: 20px;
+    }
+    
+    .activity-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--color-neutral-100);
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--color-primary-50);
+        color: var(--color-primary-700);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      
+      .activity-details {
+        flex: 1;
+        
+        .activity-text {
+          color: var(--color-neutral-800);
+          font-size: 14px;
+          line-height: 1.5;
+          
+          .highlight {
+            font-weight: 600;
+            color: var(--color-primary-700);
+          }
+        }
+        
+        .activity-time {
+          font-size: 12px;
+          color: var(--color-neutral-600);
+          margin-top: 4px;
+        }
+      }
+    }
+  }
+`;
+```
+
+### Task Completion Flow
+
+```javascript
+// Task Lifecycle Management
+const TaskLifecycle = {
+  states: {
+    DRAFT: 'draft',
+    OPEN: 'open',
+    ASSIGNED: 'assigned',
+    IN_PROGRESS: 'in_progress',
+    PENDING_REVIEW: 'pending_review',
+    COMPLETED: 'completed',
+    CANCELLED: 'cancelled',
+    DISPUTED: 'disputed'
+  },
+  
+  transitions: {
+    draft: ['open', 'cancelled'],
+    open: ['assigned', 'cancelled'],
+    assigned: ['in_progress', 'cancelled'],
+    in_progress: ['pending_review', 'disputed'],
+    pending_review: ['completed', 'disputed'],
+    completed: ['disputed'], // Within dispute period
+    disputed: ['completed', 'cancelled']
+  },
+  
+  // State change handlers
+  async transitionTo(taskId, newState, metadata) {
+    const task = await this.getTask(taskId);
+    const currentState = task.state;
+    
+    // Validate transition
+    if (!this.transitions[currentState]?.includes(newState)) {
+      throw new InvalidStateTransition(currentState, newState);
+    }
+    
+    // Execute state change
+    await this.updateTaskState(taskId, newState, metadata);
+    
+    // Trigger side effects
+    await this.handleStateChange(task, newState, metadata);
+  },
+  
+  async handleStateChange(task, newState, metadata) {
+    switch (newState) {
+      case 'assigned':
+        await this.notifyAssignment(task, metadata.providerId);
+        await this.createEscrowHold(task);
+        break;
+        
+      case 'in_progress':
+        await this.notifyTaskStart(task);
+        await this.startTimeTracking(task);
+        break;
+        
+      case 'pending_review':
+        await this.notifyCompletion(task);
+        await this.scheduleAutoComplete(task, '48h');
+        break;
+        
+      case 'completed':
+        await this.releasePayment(task);
+        await this.triggerReviewPrompts(task);
+        await this.updateProviderStats(task);
+        break;
+        
+      case 'disputed':
+        await this.freezePayment(task);
+        await this.assignMediator(task);
+        await this.notifyDispute(task);
+        break;
+    }
+  }
+};
+
+// Task Completion UI
+const TaskCompletionFlow = ({ taskId }) => {
+  const [step, setStep] = useState('confirm');
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState('');
+  const [photos, setPhotos] = useState([]);
+  
+  const completeTask = async () => {
+    try {
+      // Mark task as complete
+      await TaskLifecycle.transitionTo(taskId, 'pending_review', {
+        completedAt: new Date(),
+        completionPhotos: photos
+      });
+      
+      // Submit review if provided
+      if (rating > 0) {
+        await submitReview({
+          taskId,
+          rating,
+          review,
+          photos
+        });
+      }
+      
+      // Navigate to success screen
+      navigation.navigate('TaskCompleted', { taskId });
+      
+    } catch (error) {
+      showError('Failed to complete task');
+    }
+  };
+  
+  return (
+    <CompletionContainer>
+      {step === 'confirm' && (
+        <ConfirmationStep>
+          <Title>Mark task as complete?</Title>
+          <Description>
+            Once marked complete, payment will be released to the Tasker
+          </Description>
+          
+          <PhotoUpload
+            label="Add completion photos (optional)"
+            photos={photos}
+            onUpload={setPhotos}
+            maxPhotos={5}
+          />
+          
+          <Actions>
+            <Button variant="secondary" onPress={() => navigation.goBack()}>
+              Not Yet
+            </Button>
+            <Button variant="primary" onPress={() => setStep('review')}>
+              Yes, Complete
+            </Button>
+          </Actions>
+        </ConfirmationStep>
+      )}
+      
+      {step === 'review' && (
+        <ReviewStep>
+          <Title>How was your experience?</Title>
+          
+          <StarRating
+            value={rating}
+            onChange={setRating}
+            size={40}
+          />
+          
+          <Textarea
+            placeholder="Share details about your experience..."
+            value={review}
+            onChange={setReview}
+            minLength={20}
+          />
+          
+          <Actions>
+            <Button variant="secondary" onPress={() => completeTask()}>
+              Skip Review
+            </Button>
+            <Button
+              variant="primary"
+              onPress={completeTask}
+              disabled={rating === 0}
+            >
+              Submit & Complete
+            </Button>
+          </Actions>
+        </ReviewStep>
+      )}
+    </CompletionContainer>
+  );
+};
+```
+
+### Dispute Resolution System
+
+```javascript
+// Dispute Management
+class DisputeResolutionSystem {
+  constructor() {
+    this.mediatorPool = new MediatorPool();
+    this.evidenceStore = new SecureEvidenceStore();
+  }
+  
+  async initiateDispute(taskId, reason, evidence) {
+    // Create dispute record
+    const dispute = await this.createDispute({
+      taskId,
+      initiatorId: currentUser.id,
+      reason,
+      evidence,
+      status: 'open',
+      createdAt: new Date()
+    });
+    
+    // Freeze funds
+    await this.freezeEscrowFunds(taskId);
+    
+    // Assign mediator
+    const mediator = await this.mediatorPool.assignMediator({
+      category: task.category,
+      amount: task.budget,
+      complexity: this.assessComplexity(reason, evidence)
+    });
+    
+    // Notify all parties
+    await this.notifyParties({
+      dispute,
+      mediator,
+      task
+    });
+    
+    return dispute;
+  }
+  
+  // Evidence Collection UI
+  renderEvidenceCollection() {
+    return (
+      <EvidenceForm>
+        <Section>
+          <SectionTitle>What went wrong?</SectionTitle>
+          <RadioGroup
+            options={[
+              { value: 'quality', label: 'Quality of work' },
+              { value: 'incomplete', label: 'Task not completed' },
+              { value: 'damage', label: 'Property damage' },
+              { value: 'behavior', label: 'Inappropriate behavior' },
+              { value: 'other', label: 'Other issue' }
+            ]}
+            value={disputeReason}
+            onChange={setDisputeReason}
+          />
+        </Section>
+        
+        <Section>
+          <SectionTitle>Describe the issue</SectionTitle>
+          <Textarea
+            placeholder="Provide detailed information about what happened..."
+            value={description}
+            onChange={setDescription}
+            minLength={50}
+            rows={6}
+          />
+        </Section>
+        
+        <Section>
+          <SectionTitle>Supporting evidence</SectionTitle>
+          <EvidenceUpload
+            types={['photos', 'documents', 'chat_logs']}
+            onUpload={handleEvidenceUpload}
+            maxSize="10MB"
+          />
+          
+          <EvidenceList>
+            {evidence.map(item => (
+              <EvidenceItem key={item.id}>
+                <Icon type={item.type} />
+                <Name>{item.name}</Name>
+                <RemoveButton onClick={() => removeEvidence(item.id)}>
+                  <CloseIcon />
+                </RemoveButton>
+              </EvidenceItem>
+            ))}
+          </EvidenceList>
+        </Section>
+        
+        <Actions>
+          <Button variant="secondary" onClick={cancel}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={submitDispute}
+            disabled={!canSubmit}
+          >
+            Submit Dispute
+          </Button>
+        </Actions>
+      </EvidenceForm>
+    );
+  }
+}
+```
+
+---
+
+## Performance and Scalability
+
+### Performance Optimization Strategies
+
+```javascript
+// Performance Monitoring
+class PerformanceManager {
+  constructor() {
+    this.metrics = {
+      LCP: [], // Largest Contentful Paint
+      INP: [], // Interaction to Next Paint
+      CLS: [], // Cumulative Layout Shift
+      TTFB: [] // Time to First Byte
+    };
+  }
+  
+  // Core Web Vitals monitoring
+  initializeWebVitals() {
+    // LCP Observer
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        this.metrics.LCP.push({
+          value: entry.startTime,
+          element: entry.element?.tagName,
+          url: window.location.href,
+          timestamp: Date.now()
+        });
+        
+        // Send to analytics if above threshold
+        if (entry.startTime > 2500) {
+          this.reportMetric('LCP', entry.startTime, 'poor');
+        }
+      }
+    }).observe({ type: 'largest-contentful-paint', buffered: true });
+    
+    // INP Observer (Interaction to Next Paint)
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (entry.duration > 200) {
+          this.reportMetric('INP', entry.duration, 'needs-improvement');
+        }
+      }
+    }).observe({ type: 'event', buffered: true });
+  }
+  
+  // Lazy loading implementation
+  implementLazyLoading() {
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          img.src = img.dataset.src;
+          img.classList.add('loaded');
+          imageObserver.unobserve(img);
+        }
+      });
+    }, {
+      rootMargin: '50px'
+    });
+    
+    // Observe all images with data-src
+    document.querySelectorAll('img[data-src]').forEach(img => {
+      imageObserver.observe(img);
+    });
+  }
+}
+
+// Code Splitting Strategy
+const routes = {
+  Home: React.lazy(() => import('./pages/Home')),
+  TaskDetails: React.lazy(() => import('./pages/TaskDetails')),
+  CreateTask: React.lazy(() => import('./pages/CreateTask')),
+  Messages: React.lazy(() => import('./pages/Messages')),
+  Profile: React.lazy(() => import('./pages/Profile')),
+  Admin: React.lazy(() => import('./pages/Admin'))
+};
+
+// Render with Suspense
+const App = () => {
+  return (
+    <Router>
+      <Suspense fallback={<LoadingScreen />}>
+        <Routes>
+          {Object.entries(routes).map(([path, Component]) => (
+            <Route
+              key={path}
+              path={`/${path.toLowerCase()}`}
+              element={<Component />}
+            />
+          ))}
+        </Routes>
+      </Suspense>
+    </Router>
+  );
+};
+```
+
+### Database Optimization
+
+```javascript
+// Database Query Optimization
+class DatabaseOptimizer {
+  // Implement connection pooling
+  constructor() {
+    this.pool = new Pool({
+      host: process.env.DB_HOST,
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      max: 20, // Maximum pool size
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+    });
+  }
+  
+  // Optimized task search with proper indexing
+  async searchTasks(criteria) {
+    const query = `
+      WITH filtered_tasks AS (
+        SELECT 
+          t.id,
+          t.title,
+          t.description,
+          t.budget,
+          t.status,
+          t.created_at,
+          t.location,
+          ST_Distance(t.location, $1::geography) as distance,
+          u.id as user_id,
+          u.name as user_name,
+          u.avatar_url,
+          u.rating,
+          COUNT(DISTINCT o.id) as offer_count
+        FROM tasks t
+        INNER JOIN users u ON t.user_id = u.id
+        LEFT JOIN offers o ON t.id = o.task_id
+        WHERE 
+          t.status = 'open'
+          AND t.category_id = ANY($2::int[])
+          AND t.budget BETWEEN $3 AND $4
+          AND ST_DWithin(t.location, $1::geography, $5)
+        GROUP BY t.id, u.id
+      )
+      SELECT 
+        *,
+        ts_rank(
+          to_tsvector('english', title || ' ' || description),
+          plainto_tsquery('english', $6)
+        ) as relevance_score
+      FROM filtered_tasks
+      WHERE 
+        to_tsvector('english', title || ' ' || description) @@ 
+        plainto_tsquery('english', $6)
+      ORDER BY 
+        CASE 
+          WHEN $7 = 'distance' THEN distance
+          WHEN $7 = 'price_low' THEN budget
+          WHEN $7 = 'price_high' THEN -budget
+          WHEN $7 = 'newest' THEN -extract(epoch from created_at)
+          ELSE -relevance_score
+        END
+      LIMIT $8 OFFSET $9;
+    `;
+    
+    // Create necessary indexes
+    await this.ensureIndexes([
+      'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_tasks_location ON tasks USING GIST (location)',
+      'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_tasks_category_status ON tasks (category_id, status)',
+      'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_tasks_search ON tasks USING GIN (to_tsvector(\'english\', title || \' \' || description))',
+      'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_tasks_budget ON tasks (budget)',
+      'CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_tasks_created ON tasks (created_at DESC)'
+    ]);
+    
+    return this.pool.query(query, [
+      criteria.location,
+      criteria.categories,
+      criteria.budgetMin,
+      criteria.budgetMax,
+      criteria.radius,
+      criteria.searchTerm,
+      criteria.sortBy,
+      criteria.limit,
+      criteria.offset
+    ]);
+  }
+}
+
+// Redis Caching Layer
+class CacheManager {
+  constructor() {
+    this.redis = new Redis({
+      host: process.env.REDIS_HOST,
+      port: process.env.REDIS_PORT,
+      password: process.env.REDIS_PASSWORD,
+      retryStrategy: (times) => {
+        const delay = Math.min(times * 50, 2000);
+        return delay;
+      }
+    });
+  }
+  
+  // Cache with automatic invalidation
+  async cacheable(key, fetcher, options = {}) {
+    const { ttl = 3600, invalidateOn = [] } = options;
+    
+    // Try to get from cache
+    const cached = await this.redis.get(key);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+    
+    // Fetch fresh data
+    const data = await fetcher();
+    
+    // Store in cache
+    await this.redis.setex(key, ttl, JSON.stringify(data));
+    
+    // Set up invalidation triggers
+    invalidateOn.forEach(event => {
+      this.subscribeToInvalidation(event, key);
+    });
+    
+    return data;
+  }
+  
+  // Cache warming strategy
+  async warmCache() {
+    const criticalQueries = [
+      { key: 'popular_categories', fetcher: this.getPopularCategories },
+      { key: 'trending_tasks', fetcher: this.getTrendingTasks },
+      { key: 'top_providers', fetcher: this.getTopProviders }
+    ];
+    
+    await Promise.all(
+      criticalQueries.map(({ key, fetcher }) =>
+        this.cacheable(key, fetcher, { ttl: 7200 })
+      )
+    );
+  }
+}
+```
+
+### Scalability Architecture
+
+```javascript
+// Microservices Architecture
+const services = {
+  UserService: {
+    port: 3001,
+    endpoints: ['/users', '/auth', '/profiles'],
+    database: 'users_db',
+    cache: 'users_cache'
+  },
+  TaskService: {
+    port: 3002,
+    endpoints: ['/tasks', '/offers', '/assignments'],
+    database: 'tasks_db',
+    cache: 'tasks_cache'
+  },
+  PaymentService: {
+    port: 3003,
+    endpoints: ['/payments', '/escrow', '/payouts'],
+    database: 'payments_db',
+    cache: 'payments_cache'
+  },
+  NotificationService: {
+    port: 3004,
+    endpoints: ['/notifications', '/push', '/email'],
+    database: 'notifications_db',
+    queue: 'notification_queue'
+  },
+  AnalyticsService: {
+    port: 3005,
+    endpoints: ['/analytics', '/reports', '/metrics'],
+    database: 'analytics_db',
+    timeseries: 'influxdb'
+  }
+};
+
+// API Gateway Implementation
+class APIGateway {
+  constructor() {
+    this.services = new Map();
+    this.rateLimiter = new RateLimiter();
+    this.circuitBreaker = new CircuitBreaker();
+  }
+  
+  async route(request) {
+    // Apply rate limiting
+    const rateLimitCheck = await this.rateLimiter.check(
+      request.userId,
+      request.endpoint
+    );
+    
+    if (!rateLimitCheck.allowed) {
+      throw new RateLimitExceeded(rateLimitCheck.resetAt);
+    }
+    
+    // Determine target service
+    const service = this.getServiceForEndpoint(request.endpoint);
+    
+    // Apply circuit breaker
+    return this.circuitBreaker.execute(service, async () => {
+      const response = await this.forwardRequest(service, request);
+      
+      // Apply response caching if applicable
+      if (request.method === 'GET' && response.cacheable) {
+        await this.cacheResponse(request, response);
+      }
+      
+      return response;
+    });
+  }
+  
+  // Load balancing across service instances
+  async forwardRequest(service, request) {
+    const instances = await this.getHealthyInstances(service);
+    const instance = this.selectInstance(instances, request);
+    
+    return fetch(`http://${instance.host}:${instance.port}${request.path}`, {
+      method: request.method,
+      headers: {
+        ...request.headers,
+        'X-Request-ID': request.id,
+        'X-User-ID': request.userId
+      },
+      body: request.body
+    });
+  }
+  
+  // Weighted round-robin load balancing
+  selectInstance(instances, request) {
+    const weights = instances.map(instance => ({
+      instance,
+      weight: this.calculateWeight(instance)
+    }));
+    
+    const totalWeight = weights.reduce((sum, w) => sum + w.weight, 0);
+    let random = Math.random() * totalWeight;
+    
+    for (const { instance, weight } of weights) {
+      random -= weight;
+      if (random <= 0) {
+        return instance;
+      }
+    }
+    
+    return instances[0]; // Fallback
+  }
+}
+```
+
+---
+
+## Analytics and Metrics
+
+### Comprehensive Analytics Implementation
+
+```javascript
+// Analytics Service
+class AnalyticsService {
+  constructor() {
+    this.mixpanel = new Mixpanel(process.env.MIXPANEL_TOKEN);
+    this.amplitude = new Amplitude(process.env.AMPLITUDE_KEY);
+    this.segment = new Analytics(process.env.SEGMENT_WRITE_KEY);
+    this.customMetrics = new CustomMetricsCollector();
+  }
+  
+  // Track user events with context
+  trackEvent(eventName, properties = {}) {
+    const enrichedProperties = {
+      ...properties,
+      // User context
+      userId: currentUser?.id,
+      userType: currentUser?.type,
+      sessionId: getSessionId(),
+      
+      // Device context
+      platform: getPlatform(),
+      deviceType: getDeviceType(),
+      screenResolution: getScreenResolution(),
+      
+      // Location context
+      country: getUserCountry(),
+      region: getUserRegion(),
+      timezone: getUserTimezone(),
+      
+      // Time context
+      timestamp: Date.now(),
+      localTime: new Date().toISOString(),
+      dayOfWeek: new Date().getDay(),
+      hourOfDay: new Date().getHours(),
+      
+      // Performance context
+      pageLoadTime: getPageLoadTime(),
+      timeOnPage: getTimeOnPage(),
+      
+      // Business context
+      abTestVariants: getActiveABTests(),
+      featureFlags: getFeatureFlags()
+    };
+    
+    // Send to multiple providers
+    this.mixpanel.track(eventName, enrichedProperties);
+    this.amplitude.logEvent(eventName, enrichedProperties);
+    this.segment.track({
+      event: eventName,
+      properties: enrichedProperties
+    });
+    
+    // Custom metrics collection
+    this.customMetrics.record(eventName, enrichedProperties);
+  }
+  
+  // Marketplace-specific metrics
+  calculateMarketplaceMetrics() {
+    return {
+      // Liquidity metrics
+      liquidity: {
+        timeToFirstOffer: this.calculateTimeToFirstOffer(),
+        fillRate: this.calculateFillRate(),
+        supplyDemandRatio: this.calculateSupplyDemandRatio(),
+        geographicCoverage: this.calculateGeographicCoverage()
+      },
+      
+      // Growth metrics
+      growth: {
+        gmv: this.calculateGMV(),
+        gmvGrowthRate: this.calculateGMVGrowth(),
+        userGrowthRate: this.calculateUserGrowth(),
+        retentionCohorts: this.calculateRetentionCohorts()
+      },
+      
+      // Quality metrics
+      quality: {
+        averageRating: this.calculateAverageRating(),
+        disputeRate: this.calculateDisputeRate(),
+        completionRate: this.calculateCompletionRate(),
+        repeatRate: this.calculateRepeatRate()
+      },
+      
+      // Financial metrics
+      financial: {
+        takeRate: this.calculateTakeRate(),
+        unitEconomics: this.calculateUnitEconomics(),
+        ltv: this.calculateLTV(),
+        cac: this.calculateCAC(),
+        paybackPeriod: this.calculatePaybackPeriod()
+      }
+    };
+  }
+  
+  // Real-time dashboard
+  async getDashboardMetrics() {
+    const realTimeData = await this.getRealTimeData();
+    const historicalData = await this.getHistoricalData();
+    
+    return {
+      realTime: {
+        activeUsers: realTimeData.activeUsers,
+        openTasks: realTimeData.openTasks,
+        pendingOffers: realTimeData.pendingOffers,
+        processingPayments: realTimeData.processingPayments,
+        
+        // Live activity feed
+        recentActivity: realTimeData.activities.map(activity => ({
+          type: activity.type,
+          user: activity.user,
+          task: activity.task,
+          timestamp: activity.timestamp,
+          location: activity.location
+        }))
+      },
+      
+      today: {
+        tasksPosted: historicalData.today.tasksPosted,
+        tasksCompleted: historicalData.today.tasksCompleted,
+        gmv: historicalData.today.gmv,
+        newUsers: historicalData.today.newUsers,
+        revenue: historicalData.today.revenue
+      },
+      
+      trends: {
+        gmvTrend: this.calculateTrend(historicalData.gmv, '7d'),
+        userTrend: this.calculateTrend(historicalData.users, '7d'),
+        taskTrend: this.calculateTrend(historicalData.tasks, '7d')
+      }
+    };
+  }
+  
+  // Funnel analysis
+  analyzeFunnel(funnelName) {
+    const funnels = {
+      taskCreation: [
+        'task_creation_started',
+        'category_selected',
+        'details_completed',
+        'location_set',
+        'budget_set',
+        'task_posted'
+      ],
+      
+      providerOnboarding: [
+        'signup_started',
+        'email_verified',
+        'profile_completed',
+        'identity_verified',
+        'first_offer_made'
+      ],
+      
+      taskCompletion: [
+        'task_assigned',
+        'work_started',
+        'work_completed',
+        'payment_released',
+        'review_submitted'
+      ]
+    };
+    
+    const steps = funnels[funnelName];
+    const conversions = [];
+    
+    for (let i = 0; i < steps.length - 1; i++) {
+      const currentStep = steps[i];
+      const nextStep = steps[i + 1];
+      
+      const currentCount = this.getEventCount(currentStep);
+      const nextCount = this.getEventCount(nextStep);
+      
+      conversions.push({
+        from: currentStep,
+        to: nextStep,
+        count: nextCount,
+        rate: nextCount / currentCount,
+        dropoff: 1 - (nextCount / currentCount)
+      });
+    }
+    
+    return {
+      funnel: funnelName,
+      steps,
+      conversions,
+      overallConversion: conversions[conversions.length - 1].count / 
+                        this.getEventCount(steps[0])
+    };
+  }
+}
+
+// Custom Metrics Collector
+class CustomMetricsCollector {
+  constructor() {
+    this.influxDB = new InfluxDB({
+      url: process.env.INFLUXDB_URL,
+      token: process.env.INFLUXDB_TOKEN,
+      org: process.env.INFLUXDB_ORG,
+      bucket: process.env.INFLUXDB_BUCKET
+    });
+  }
+  
+  async record(metric, value, tags = {}) {
+    const point = new Point(metric)
+      .floatField('value', value)
+      .timestamp(new Date());
+    
+    // Add tags
+    Object.entries(tags).forEach(([key, val]) => {
+      point.tag(key, val);
+    });
+    
+    await this.influxDB.writeApi.writePoint(point);
+  }
+  
+  // Query metrics with aggregation
+  async query(metric, aggregation, timeRange, groupBy) {
+    const query = `
+      from(bucket: "${process.env.INFLUXDB_BUCKET}")
+        |> range(start: -${timeRange})
+        |> filter(fn: (r) => r._measurement == "${metric}")
+        |> ${aggregation}()
+        ${groupBy ? `|> group(columns: ["${groupBy}"])` : ''}
+    `;
+    
+    return this.influxDB.queryApi.collectRows(query);
+  }
+}
+```
+
+### Business Intelligence Dashboard
+
+```javascript
+// BI Dashboard Component
+const BusinessIntelligenceDashboard = () => {
+  const [metrics, setMetrics] = useState(null);
+  const [dateRange, setDateRange] = useState('7d');
+  const [refreshInterval, setRefreshInterval] = useState(30000);
+  
+  useEffect(() => {
+    const loadMetrics = async () => {
+      const data = await analyticsService.getDashboardMetrics();
+      setMetrics(data);
+    };
+    
+    loadMetrics();
+    const interval = setInterval(loadMetrics, refreshInterval);
+    
+    return () => clearInterval(interval);
+  }, [dateRange, refreshInterval]);
+  
+  return (
+    <DashboardContainer>
+      <Header>
+        <Title>Marketplace Analytics</Title>
+        <Controls>
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+            options={['24h', '7d', '30d', '90d', '1y']}
+          />
+          <RefreshControl
+            interval={refreshInterval}
+            onChange={setRefreshInterval}
+          />
+        </Controls>
+      </Header>
+      
+      <MetricsGrid>
+        <MetricCard
+          title="Gross Merchandise Value"
+          value={formatCurrency(metrics?.today.gmv)}
+          trend={metrics?.trends.gmvTrend}
+          icon={<DollarIcon />}
+        />
+        
+        <MetricCard
+          title="Active Users"
+          value={formatNumber(metrics?.realTime.activeUsers)}
+          subtitle="Currently online"
+          icon={<UsersIcon />}
+        />
+        
+        <MetricCard
+          title="Tasks Posted Today"
+          value={formatNumber(metrics?.today.tasksPosted)}
+          trend={metrics?.trends.taskTrend}
+          icon={<TaskIcon />}
+        />
+        
+        <MetricCard
+          title="Platform Revenue"
+          value={formatCurrency(metrics?.today.revenue)}
+          subtitle={`${calculateTakeRate(metrics)}% take rate`}
+          icon={<RevenueIcon />}
+        />
+      </MetricsGrid>
+      
+      <ChartsSection>
+        <ChartContainer>
+          <ChartTitle>GMV Over Time</ChartTitle>
+          <LineChart
+            data={metrics?.historicalGMV}
+            xAxis="date"
+            yAxis="value"
+            color="#2196f3"
+          />
+        </ChartContainer>
+        
+        <ChartContainer>
+          <ChartTitle>User Growth</ChartTitle>
+          <AreaChart
+            data={metrics?.userGrowth}
+            series={['new_users', 'active_users', 'total_users']}
+            stacked
+          />
+        </ChartContainer>
+        
+        <ChartContainer>
+          <ChartTitle>Category Distribution</ChartTitle>
+          <PieChart
+            data={metrics?.categoryDistribution}
+            labelKey="category"
+            valueKey="count"
+          />
+        </ChartContainer>
+        
+        <ChartContainer>
+          <ChartTitle>Conversion Funnel</ChartTitle>
+          <FunnelChart
+            data={metrics?.conversionFunnel}
+            stages={['Visit', 'Signup', 'Post Task', 'Complete']}
+          />
+        </ChartContainer>
+      </ChartsSection>
+      
+      <LiveActivityFeed>
+        <FeedTitle>Live Activity</FeedTitle>
+        <ActivityList>
+          {metrics?.realTime.recentActivity.map(activity => (
+            <ActivityItem key={activity.id}>
+              <ActivityIcon type={activity.type} />
+              <ActivityDetails>
+                <ActivityText>
+                  {formatActivity(activity)}
+                </ActivityText>
+                <ActivityTime>
+                  {formatTimeAgo(activity.timestamp)}
+                </ActivityTime>
+              </ActivityDetails>
+            </ActivityItem>
+          ))}
+        </ActivityList>
+      </LiveActivityFeed>
+    </DashboardContainer>
+  );
+};
+```
+
+---
+
+## International Expansion
+
+### Localization Strategy
+
+```javascript
+// Internationalization System
+class InternationalizationManager {
+  constructor() {
+    this.supportedLocales = [
+      { code: 'en-US', name: 'English (US)', currency: 'USD' },
+      { code: 'en-GB', name: 'English (UK)', currency: 'GBP' },
+      { code: 'es-ES', name: 'Español', currency: 'EUR' },
+      { code: 'fr-FR', name: 'Français', currency: 'EUR' },
+      { code: 'de-DE', name: 'Deutsch', currency: 'EUR' },
+      { code: 'ja-JP', name: '日本語', currency: 'JPY' },
+      { code: 'zh-CN', name: '中文', currency: 'CNY' }
+    ];
+    
+    this.translations = new TranslationManager();
+    this.currencyConverter = new CurrencyConverter();
+  }
+  
+  // Dynamic locale detection
+  detectUserLocale() {
+    const factors = [
+      { source: 'user_preference', weight: 1.0 },
+      { source: 'browser_language', weight: 0.8 },
+      { source: 'ip_geolocation', weight: 0.6 },
+      { source: 'accept_language', weight: 0.4 }
+    ];
+    
+    const scores = this.supportedLocales.map(locale => {
+      let score = 0;
+      
+      factors.forEach(factor => {
+        const match = this.checkLocaleFactor(locale, factor.source);
+        score += match * factor.weight;
+      });
+      
+      return { locale, score };
+    });
+    
+    return scores.sort((a, b) => b.score - a.score)[0].locale;
+  }
+  
+  // Content adaptation beyond translation
+  adaptContent(content, targetLocale) {
+    const adaptations = {
+      // Date formatting
+      dates: (date) => {
+        return new Intl.DateTimeFormat(targetLocale.code, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }).format(date);
+      },
+      
+      // Number formatting
+      numbers: (number) => {
+        return new Intl.NumberFormat(targetLocale.code).format(number);
+      },
+      
+      // Currency display
+      currency: (amount) => {
+        return new Intl.NumberFormat(targetLocale.code, {
+          style: 'currency',
+          currency: targetLocale.currency
+        }).format(amount);
+      },
+      
+      // Address formatting
+      address: (address) => {
+        const formats = {
+          'en-US': `${address.street}, ${address.city}, ${address.state} ${address.zip}`,
+          'en-GB': `${address.street}, ${address.city}, ${address.postcode}`,
+          'ja-JP': `〒${address.zip} ${address.prefecture}${address.city}${address.street}`
+        };
+        
+        return formats[targetLocale.code] || formats['en-US'];
+      },
+      
+      // Name formatting
+      name: (firstName, lastName) => {
+        const formats = {
+          'ja-JP': `${lastName} ${firstName}`,
+          'zh-CN': `${lastName}${firstName}`,
+          'default': `${firstName} ${lastName}`
+        };
+        
+        const format = formats[targetLocale.code] || formats.default;
+        return format;
+      }
+    };
+    
+    return adaptations;
+  }
+  
+  // Market-specific features
+  getMarketFeatures(country) {
+    const marketFeatures = {
+      US: {
+        paymentMethods: ['credit_card', 'paypal', 'apple_pay', 'google_pay'],
+        taxSystem: 'sales_tax',
+        idVerification: ['drivers_license', 'passport'],
+        regulations: ['marketplace_facilitator_tax']
+      },
+      UK: {
+        paymentMethods: ['credit_card', 'debit_card', 'paypal', 'bank_transfer'],
+        taxSystem: 'vat',
+        idVerification: ['passport', 'driving_licence', 'national_id'],
+        regulations: ['ir35', 'gdpr']
+      },
+      AU: {
+        paymentMethods: ['credit_card', 'paypal', 'bpay', 'afterpay'],
+        taxSystem: 'gst',
+        idVerification: ['drivers_license', 'passport', 'medicare_card'],
+        regulations: ['abn_requirement']
+      },
+      JP: {
+        paymentMethods: ['credit_card', 'konbini', 'bank_transfer', 'line_pay'],
+        taxSystem: 'consumption_tax',
+        idVerification: ['mynumber_card', 'drivers_license', 'passport'],
+        regulations: ['specific_commercial_transaction_act']
+      }
+    };
+    
+    return marketFeatures[country] || marketFeatures.US;
+  }
+}
+
+// Multi-currency Support
+class CurrencyManager {
+  constructor() {
+    this.exchangeRates = new Map();
+    this.updateInterval = 3600000; // 1 hour
+    this.provider = new ExchangeRateProvider();
+  }
+  
+  async convertPrice(amount, fromCurrency, toCurrency) {
+    if (fromCurrency === toCurrency) return amount;
+    
+    const rate = await this.getExchangeRate(fromCurrency, toCurrency);
+    const converted = amount * rate;
+    
+    // Apply market-specific rounding
+    return this.roundToMarketConvention(converted, toCurrency);
+  }
+  
+  roundToMarketConvention(amount, currency) {
+    const conventions = {
+      USD: 2,  // $10.99
+      EUR: 2,  // €10,99
+      GBP: 2,  // £10.99
+      JPY: 0,  // ¥1099
+      KRW: 0,  // ₩10990
+    };
+    
+    const decimals = conventions[currency] || 2;
+    return Number(amount.toFixed(decimals));
+  }
+  
+  // Display prices with psychological pricing
+  formatPriceForDisplay(amount, currency, locale) {
+    const psychologicalPricing = {
+      USD: (amt) => amt - 0.01,  // $9.99 instead of $10.00
+      EUR: (amt) => amt - 0.01,  // €9,99
+      GBP: (amt) => amt - 0.01,  // £9.99
+      JPY: (amt) => Math.floor(amt / 10) * 10 - 1  // ¥999 instead of ¥1000
+    };
+    
+    const adjusted = psychologicalPricing[currency]?.(amount) || amount;
+    
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(adjusted);
+  }
+}
+```
+
+### Regional Compliance
+
+```javascript
+// Compliance Manager for Different Regions
+class RegionalComplianceManager {
+  async applyRegionalCompliance(region) {
+    const complianceRules = {
+      EU: {
+        privacy: {
+          cookieConsent: 'explicit',
+          dataRetention: '5_years_max',
+          rightToErasure: true,
+          dataPortability: true,
+          privacyByDesign: true
+        },
+        marketplace: {
+          platformLiability: 'enhanced',
+          transparencyRules: ['fees', 'rankings', 'reviews'],
+          consumerProtection: 'high'
+        }
+      },
+      
+      US: {
+        privacy: {
+          stateSpecific: {
+            CA: ['CCPA', 'CPRA'],
+            VA: ['VCDPA'],
+            CO: ['CPA']
+          },
+          childProtection: 'COPPA'
+        },
+        marketplace: {
+          section230: true,
+          salesTaxCollection: 'by_state',
+          w9Collection: 'required_600_threshold'
+        }
+      },
+      
+      UK: {
+        privacy: {
+          ukGDPR: true,
+          dataProtectionAct: '2018',
+          pecr: true // Privacy and Electronic Communications
+        },
+        marketplace: {
+          ir35: 'off_payroll_working',
+          vatRegistration: 'required_85k_threshold'
+        }
+      },
+      
+      AU: {
+        privacy: {
+          privacyAct: true,
+          notifiableDataBreaches: true,
+          appPrivacyCode: true
+        },
+        marketplace: {
+          gstCollection: 'required',
+          abnVerification: true,
+          acccCompliance: true
+        }
+      }
+    };
+    
+    return complianceRules[region];
+  }
+  
+  // Age verification for different markets
+  async verifyAgeCompliance(user, market) {
+    const ageRequirements = {
+      general: 18,
+      alcohol_related: 21,
+      financial_services: 18,
+      gambling_adjacent: 21
+    };
+    
+    const marketSpecific = {
+      US: { minimum: 13, parental_consent: 18 },
+      EU: { minimum: 16, parental_consent: 16 },
+      UK: { minimum: 13, parental_consent: 18 }
+    };
+    
+    const requirement = marketSpecific[market] || marketSpecific.US;
+    
+    if (user.age < requirement.minimum) {
+      throw new AgeRestrictionError('User does not meet minimum age');
+    }
+    
+    if (user.age < requirement.parental_consent) {
+      return { requiresParentalConsent: true };
+    }
+    
+    return { verified: true };
+  }
+}
+```
+
+---
+
+## Implementation Roadmap
+
+### Phase 1: Foundation (Months 1-3)
+
+```javascript
+// Phase 1 Implementation Checklist
+const phase1Tasks = {
+  infrastructure: [
+    {
+      task: 'Set up development environment',
+      duration: '1 week',
+      dependencies: [],
+      deliverables: ['Docker configs', 'Local dev setup', 'CI/CD pipeline']
+    },
+    {
+      task: 'Database schema design',
+      duration: '2 weeks',
+      dependencies: ['requirements_analysis'],
+      deliverables: ['ERD', 'Migration scripts', 'Seed data']
+    },
+    {
+      task: 'API architecture',
+      duration: '2 weeks',
+      dependencies: ['database_schema'],
+      deliverables: ['API documentation', 'Postman collection', 'Auth system']
+    }
+  ],
+  
+  core_features: [
+    {
+      task: 'User registration/login',
+      duration: '2 weeks',
+      dependencies: ['api_architecture'],
+      deliverables: ['Registration flow', 'Social login', 'Email verification']
+    },
+    {
+      task: 'Basic task posting',
+      duration: '3 weeks',
+      dependencies: ['user_system'],
+      deliverables: ['Task creation', 'Category selection', 'Basic search']
+    },
+    {
+      task: 'Payment integration',
+      duration: '3 weeks',
+      dependencies: ['task_system'],
+      deliverables: ['Stripe integration', 'Escrow system', 'Basic payouts']
+    }
+  ],
+  
+  mvp_criteria: {
+    users_can: [
+      'Register and verify email',
+      'Post a basic task',
+      'Search and browse tasks',
+      'Make and accept offers',
+      'Process payments securely'
+    ],
+    system_has: [
+      'Basic admin panel',
+      'Error tracking',
+      'Basic analytics',
+      'Automated testing'
+    ]
+  }
+};
+```
+
+### Phase 2: Enhancement (Months 4-6)
+
+```javascript
+// Phase 2 Feature Development
+const phase2Features = {
+  advanced_features: [
+    {
+      feature: 'Advanced search with filters',
+      components: [
+        'Elasticsearch integration',
+        'Faceted search UI',
+        'Search suggestions',
+        'Recent searches'
+      ],
+      acceptance_criteria: [
+        'Sub-second search response',
+        'Location-based filtering',
+        'Price range filtering',
+        'Category filtering'
+      ]
+    },
+    {
+      feature: 'Mobile applications',
+      components: [
+        'React Native setup',
+        'Push notifications',
+        'Offline capability',
+        'Native features integration'
+      ],
+      platforms: ['iOS', 'Android'],
+      target_performance: {
+        startup_time: '<2s',
+        crash_rate: '<0.1%',
+        rating: '>4.5 stars'
+      }
+    },
+    {
+      feature: 'Real-time messaging',
+      components: [
+        'WebSocket infrastructure',
+        'Message persistence',
+        'File sharing',
+        'Read receipts',
+        'Typing indicators'
+      ]
+    }
+  ],
+  
+  quality_improvements: [
+    'Comprehensive test coverage (>80%)',
+    'Performance optimization',
+    'Security audit and fixes',
+    'Accessibility compliance (WCAG 2.1 AA)'
+  ]
+};
+```
+
+### Phase 3: Scale and Differentiate (Months 7-12)
+
+```javascript
+// Phase 3 Growth Features
+const phase3Strategy = {
+  differentiation: [
+    {
+      feature: 'AI-powered matching',
+      implementation: {
+        algorithm: 'Collaborative filtering + NLP',
+        training_data: 'Historical matches',
+        success_metric: '20% improvement in match rate'
+      }
+    },
+    {
+      feature: 'Video consultations',
+      implementation: {
+        technology: 'WebRTC',
+        recording: 'Optional with consent',
+        monetization: 'Premium feature'
+      }
+    },
+    {
+      feature: 'Blockchain payments',
+      implementation: {
+        cryptocurrencies: ['ETH', 'USDC', 'BTC'],
+        smart_contracts: 'Escrow automation',
+        gas_optimization: 'Layer 2 solutions'
+      }
+    }
+  ],
+  
+  market_expansion: [
+    {
+      market: 'New geographic regions',
+      requirements: [
+        'Localization',
+        'Local payment methods',
+        'Regulatory compliance',
+        'Local partnerships'
+      ]
+    },
+    {
+      market: 'New verticals',
+      approach: [
+        'Vertical-specific features',
+        'Specialized providers',
+        'Industry partnerships',
+        'Custom workflows'
+      ]
+    }
+  ],
+  
+  optimization: {
+    seo: {
+      target: '10,000+ organic visitors/month',
+      tactics: [
+        'Programmatic SEO',
+        'User-generated content',
+        'Local landing pages',
+        'Schema markup'
+      ]
+    },
+    performance: {
+      targets: {
+        page_load: '<1.5s',
+        api_response: '<200ms',
+        uptime: '>99.95%'
+      }
+    }
+  }
+};
+```
+
+---
+
+## Future-Proofing Your Platform
+
+### Emerging Technologies Integration
+
+```javascript
+// AI and Machine Learning Integration
+class AIIntegrationStrategy {
+  constructor() {
+    this.models = {
+      taskCategorization: new TaskCategorizationModel(),
+      priceRecommendation: new PriceRecommendationModel(),
+      fraudDetection: new FraudDetectionModel(),
+      matchmaking: new MatchmakingModel(),
+      contentModeration: new ContentModerationModel()
+    };
+  }
+  
+  // Implement gradual AI adoption
+  async implementAIFeatures() {
+    const roadmap = [
+      {
+        phase: 1,
+        features: [
+          'Automated task categorization',
+          'Smart price suggestions',
+          'Basic fraud detection'
+        ],
+        timeline: '3 months',
+        success_metrics: {
+          categorization_accuracy: 0.85,
+          price_acceptance_rate: 0.60,
+          fraud_detection_rate: 0.75
+        }
+      },
+      {
+        phase: 2,
+        features: [
+          'Personalized recommendations',
+          'Predictive search',
+          'Automated content moderation'
+        ],
+        timeline: '6 months',
+        success_metrics: {
+          recommendation_ctr: 0.15,
+          search_relevance: 0.80,
+          moderation_accuracy: 0.90
+        }
+      },
+      {
+        phase: 3,
+        features: [
+          'Natural language task creation',
+          'Visual search',
+          'Predictive pricing',
+          'Churn prediction'
+        ],
+        timeline: '12 months'
+      }
+    ];
+    
+    return roadmap;
+  }
+  
+  // AR/VR Integration for service preview
+  implementARFeatures() {
+    return {
+      use_cases: [
+        {
+          feature: 'Virtual home tours',
+          category: 'real_estate_services',
+          implementation: 'WebXR API'
+        },
+        {
+          feature: 'Furniture placement preview',
+          category: 'moving_services',
+          implementation: 'ARCore/ARKit'
+        },
+        {
+          feature: 'Virtual consultations',
+          category: 'professional_services',
+          implementation: 'WebRTC + 3D avatars'
+        }
+      ],
+      
+      technical_requirements: [
+        'WebXR polyfill',
+        '3D model pipeline',
+        'Cloud rendering for complex scenes',
+        'Fallback for non-AR devices'
+      ]
+    };
+  }
+}
+
+// Blockchain Integration Strategy
+class BlockchainIntegration {
+  // Smart contract for escrow
+  async deployEscrowContract() {
+    const contract = `
+      pragma solidity ^0.8.0;
+      
+      contract TaskEscrow {
+        enum State { Created, Funded, Completed, Disputed, Refunded }
+        
+        struct Task {
+          address poster;
+          address provider;
+          uint256 amount;
+          State state;
+          uint256 deadline;
+        }
+        
+        mapping(uint256 => Task) public tasks;
+        
+        function createTask(uint256 taskId, address provider, uint256 deadline) 
+          external payable {
+          require(msg.value > 0, "Payment required");
+          
+          tasks[taskId] = Task({
+            poster: msg.sender,
+            provider: provider,
+            amount: msg.value,
+            state: State.Funded,
+            deadline: deadline
+          });
+        }
+        
+        function completeTask(uint256 taskId) external {
+          Task storage task = tasks[taskId];
+          require(msg.sender == task.poster, "Only poster can complete");
+          require(task.state == State.Funded, "Invalid state");
+          
+          task.state = State.Completed;
+          payable(task.provider).transfer(task.amount);
+        }
+      }
+    `;
+    
+    return contract;
+  }
+  
+  // Decentralized identity verification
+  implementDID() {
+    return {
+      providers: ['uPort', 'Civic', 'SelfKey'],
+      benefits: [
+        'User-controlled identity',
+        'Cross-platform verification',
+        'Reduced KYC costs',
+        'Enhanced privacy'
+      ],
+      integration_points: [
+        'Registration',
+        'Provider verification',
+        'Payment authorization'
+      ]
+    };
+  }
+}
+
+// Web3 Features
+class Web3Integration {
+  features = {
+    nft_badges: {
+      description: 'Achievement NFTs for top providers',
+      implementation: 'ERC-721 tokens',
+      benefits: ['Portable reputation', 'Tradeable assets']
+    },
+    
+    dao_governance: {
+      description: 'Community governance for platform decisions',
+      implementation: 'Governance token + voting contracts',
+      decisions: ['Fee structure', 'Feature priorities', 'Dispute resolution']
+    },
+    
+    defi_integration: {
+      description: 'DeFi lending against future earnings',
+      implementation: 'Integration with Aave/Compound',
+      use_case: 'Providers can borrow against reputation'
+    }
+  };
+}
+```
+
+### Scalability and Performance Future
+
+```javascript
+// Edge Computing Strategy
+class EdgeComputingImplementation {
+  deployEdgeNodes() {
+    return {
+      locations: [
+        { region: 'us-east', provider: 'Cloudflare Workers' },
+        { region: 'eu-west', provider: 'Fastly Compute@Edge' },
+        { region: 'asia-pacific', provider: 'AWS Lambda@Edge' }
+      ],
+      
+      edge_functions: [
+        'User authentication',
+        'Request routing',
+        'Content personalization',
+        'A/B testing',
+        'Rate limiting'
+      ],
+      
+      benefits: {
+        latency_reduction: '60%',
+        server_load_reduction: '40%',
+        improved_reliability: '99.99%'
+      }
+    };
+  }
+}
+
+// Future Architecture Patterns
+const futureArchitecture = {
+  event_driven: {
+    pattern: 'Event Sourcing + CQRS',
+    benefits: [
+      'Complete audit trail',
+      'Time travel debugging',
+      'Scalable read/write separation'
+    ]
+  },
+  
+  serverless_first: {
+    services: [
+      'AWS Lambda for compute',
+      'DynamoDB for state',
+      'Step Functions for workflows',
+      'EventBridge for events'
+    ],
+    cost_model: 'Pay per execution'
+  },
+  
+  ml_ops: {
+    pipeline: [
+      'Continuous model training',
+      'A/B testing for models',
+      'Feature store',
+      'Model versioning'
+    ]
+  }
+};
+```
+
+## Conclusion
+
+Building a modern service marketplace requires careful orchestration of technology, design, and business strategy. This comprehensive guide provides the blueprint for creating a platform that can compete with established players while maintaining the flexibility to innovate and adapt to changing market conditions.
+
+The key to success lies in:
+
+1. **Starting with a solid foundation** - Core functionality must be rock-solid before adding complexity
+2. **Prioritizing user experience** - Both sides of the marketplace must find value
+3. **Building trust systematically** - Every feature should enhance platform credibility
+4. **Planning for scale from day one** - Architecture decisions have long-term impacts
+5. **Staying agile** - Markets evolve, and platforms must evolve with them
+
+By following this guide and adapting it to your specific market needs, you'll be well-positioned to build a marketplace that not only meets today's standards but is prepared for tomorrow's opportunities.

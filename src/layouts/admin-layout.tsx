@@ -19,12 +19,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   
   // Redirect if not admin
   React.useEffect(() => {
-    if (user && user.role !== UserRole.ADMIN) {
+    if (user && (user as any).role !== UserRole.ADMIN) {
       navigate('/');
     }
   }, [user, navigate]);
 
-  if (!user || user.role !== UserRole.ADMIN) {
+  if (!user || (user as any).role !== UserRole.ADMIN) {
     return (
       <div className="container py-10 text-center font-primary">
         <h1 className="text-2xl font-bold text-[hsl(354,70%,54%)] mb-4">Access Denied</h1>

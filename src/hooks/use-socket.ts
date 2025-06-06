@@ -143,7 +143,7 @@ export function useChat(conversationId: string) {
     `conversation:${conversationId}:typing:start`,
     ({ user }) => {
       setTypingUsers((prevUsers) => {
-        if (!prevUsers.some((u) => u.id === user.id)) {
+        if (!prevUsers.some((u) => (u as any).id === (user as any).id)) {
           return [...prevUsers, user];
         }
         return prevUsers;
@@ -156,7 +156,7 @@ export function useChat(conversationId: string) {
     `conversation:${conversationId}:typing:stop`,
     ({ user }) => {
       setTypingUsers((prevUsers) => 
-        prevUsers.filter((u) => u.id !== user.id)
+        prevUsers.filter((u) => (u as any).id !== (user as any).id)
       );
     },
     [conversationId]

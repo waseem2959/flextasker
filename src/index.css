@@ -3,23 +3,49 @@
 
 @layer base {
   :root {
-    /* Trust-building primary colors */
-    --color-primary-dark: 192 84% 26%; /* #0C6478 - Navigation, headers, security elements */
-    --color-primary: 185 76% 35%; /* #15919B - Main brand color, buttons */
-    --color-primary-accent: 177 92% 43%; /* #09D1C7 - CTAs, highlights */
-    --color-primary-light: 188 60% 92%; /* #E8F6F8 */
-    --color-success: 159 61% 46%; /* #2EBD8E - Success states */
-    
+    /* Enhanced Primary Brand Colors - Teal to Mint Gradient (Project-Map Aligned) */
+    --color-primary-950: 192 84% 18%; /* #084A5A - Darkest, high contrast text */
+    --color-primary-900: 192 84% 26%; /* #0C6478 - Deep Teal, headers, primary CTAs */
+    --color-primary-800: 190 82% 30%; /* #0F7A88 - Dark Teal, hover states */
+    --color-primary-700: 185 76% 35%; /* #15919B - Medium Teal, active states, links */
+    --color-primary-600: 180 85% 35%; /* #0BB3AA - Light Teal, secondary actions */
+    --color-primary-500: 177 92% 43%; /* #09D1C7 - Bright Cyan, primary brand color */
+    --color-primary-400: 165 77% 50%; /* #2AD5A5 - Cyan-Mint, highlights */
+    --color-primary-300: 158 73% 58%; /* #46DFB1 - Mint Green, success states */
+    --color-primary-200: 152 69% 65%; /* #63E5A7 - Light Mint, positive feedback */
+    --color-primary-100: 146 65% 72%; /* #80EE98 - Bright Mint, light backgrounds */
+    --color-primary-50: 140 60% 92%;  /* #E6FBF0 - Mint Tint, subtle backgrounds */
+
+    /* Legacy aliases for backward compatibility */
+    --color-primary-dark: 192 84% 26%; /* primary-900 */
+    --color-primary: 177 92% 43%;      /* primary-500 */
+    --color-primary-accent: 165 77% 50%; /* primary-400 */
+    --color-primary-light: 140 60% 92%; /* primary-50 */
+    --color-success: 158 73% 58%;      /* primary-300 for success */
+
+    /* Neutral Palette with Teal Undertones */
+    --color-neutral-900: 210 25% 8%;   /* #1A2B2F - Almost black, primary text */
+    --color-neutral-800: 210 23% 12%;  /* #2D3F44 - Dark gray, secondary text */
+    --color-neutral-700: 210 20% 16%;  /* #405459 - Medium dark, muted text */
+    --color-neutral-600: 210 18% 20%;  /* #546A70 - Medium gray, disabled text */
+    --color-neutral-500: 210 15% 25%;  /* #6B8189 - Mid gray, borders */
+    --color-neutral-400: 210 12% 30%;  /* #8499A1 - Light gray, subtle borders */
+    --color-neutral-300: 210 10% 35%;  /* #9FB2BA - Lighter gray, hover backgrounds */
+    --color-neutral-200: 210 8% 85%;   /* #C4D1D6 - Very light, section backgrounds */
+    --color-neutral-100: 210 6% 90%;   /* #E3EAEC - Near white, subtle backgrounds */
+    --color-neutral-50: 210 4% 95%;    /* #F5F8F9 - Off white, page backgrounds */
+    --color-neutral-0: 0 0% 100%;      /* #FFFFFF - Pure white, cards, modals */
+
     /* Supporting colors */
-    --color-text-primary: 206 33% 16%; /* #1A2B34 - High contrast text */
-    --color-text-secondary: 220 14% 46%; /* #6B7280 - Secondary information */
-    --color-error: 354 70% 54%; /* #DC3545 - Error states */
-    --color-warning: 37 90% 51%; /* #F39C12 - Warnings */
-    
+    --color-text-primary: 210 25% 8%;   /* neutral-900 */
+    --color-text-secondary: 210 20% 16%; /* neutral-700 */
+    --color-error: 354 70% 54%;         /* #DC3545 - Error states */
+    --color-warning: 37 90% 51%;        /* #F39C12 - Warnings */
+
     /* Background system */
-    --color-background: 0 0% 100%; /* #FFFFFF */
-    --color-surface: 210 40% 98%; /* #F8FAFC */
-    --color-border: 220 13% 91%; /* #E5E7EB */
+    --color-background: 0 0% 100%;      /* neutral-0 */
+    --color-surface: 210 4% 95%;        /* neutral-50 */
+    --color-border: 210 8% 85%;         /* neutral-200 */
     
     /* Spacing */
     --space-xs: 4px;
@@ -30,42 +56,54 @@
     --space-2xl: 48px;
     --space-3xl: 64px;
     
-    /* Typography */
-    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-display: 'Manrope', var(--font-primary);
-    --text-xs: 0.75rem;
-    --text-sm: 0.875rem;
-    --text-base: 1rem;
-    --text-lg: 1.25rem;
-    --text-xl: 1.563rem;
-    --text-2xl: 1.953rem;
-    --text-3xl: 2.441rem;
+    /* Enhanced Typography - Project-map dual-typeface system */
+    --font-heading: 'Formula', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'Manrope', 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-primary: 'Manrope', 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: 'Formula', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    /* Enhanced font sizes with Perfect Fourth scale (1.333 ratio) */
+    --text-xs: 0.75rem;     /* 12px */
+    --text-sm: 0.875rem;    /* 14px */
+    --text-base: 1rem;      /* 16px */
+    --text-lg: 1.125rem;    /* 18px */
+    --text-xl: 1.5rem;      /* 24px - Updated to follow Perfect Fourth */
+    --text-2xl: 2rem;       /* 32px - Updated to follow Perfect Fourth */
+    --text-3xl: 2.5rem;     /* 40px - Updated to follow Perfect Fourth */
+    --text-4xl: 3rem;       /* 48px - Updated to follow Perfect Fourth */
+    --text-5xl: 4rem;       /* 64px - Added for hero text */
+
+    /* Enhanced line heights for optimal readability */
+    --line-height-tight: 1.2;    /* For headlines */
+    --line-height-normal: 1.5;   /* For body text (base) */
+    --line-height-base: 1.5;     /* Alias for normal */
+    --line-height-relaxed: 1.75; /* For large text blocks */
+
+    /* Letter spacing for different text types */
+    --letter-spacing-tight: -0.02em;  /* For large headlines */
+    --letter-spacing-normal: 0;       /* Default */
+    --letter-spacing-wide: 0.05em;    /* For small caps or buttons */
     
-    /* Line heights */
-    --line-height-tight: 1.2;
-    --line-height-normal: 1.5;
-    --line-height-relaxed: 1.75;
-    
-    /* Legacy variables (for compatibility) */
-    --background: 0 0% 100%;
-    --foreground: 206 33% 16%;
-    --card: 0 0% 100%;
-    --card-foreground: 206 33% 16%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 206 33% 16%;
-    --primary: 185 76% 35%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 206 33% 16%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 220 14% 46%;
-    --accent: 188 60% 92%;
-    --accent-foreground: 192 84% 26%;
-    --destructive: 354 70% 54%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 185 76% 35%;
+    /* Legacy variables (for compatibility) - Updated to use new color system */
+    --background: var(--color-neutral-0);
+    --foreground: var(--color-neutral-900);
+    --card: var(--color-neutral-0);
+    --card-foreground: var(--color-neutral-900);
+    --popover: var(--color-neutral-0);
+    --popover-foreground: var(--color-neutral-900);
+    --primary: var(--color-primary-500);
+    --primary-foreground: var(--color-neutral-0);
+    --secondary: var(--color-neutral-50);
+    --secondary-foreground: var(--color-neutral-900);
+    --muted: var(--color-neutral-100);
+    --muted-foreground: var(--color-neutral-600);
+    --accent: var(--color-primary-50);
+    --accent-foreground: var(--color-primary-800);
+    --destructive: var(--color-error);
+    --destructive-foreground: var(--color-neutral-0);
+    --border: var(--color-neutral-200);
+    --input: var(--color-neutral-200);
+    --ring: var(--color-primary-500);
     --radius: 0.5rem;
     
     --sidebar-background: 210 40% 98%;
@@ -123,36 +161,54 @@
   body {
     background-color: hsl(var(--color-background, var(--background)));
     color: hsl(var(--color-text-primary, var(--foreground)));
-    font-family: var(--font-primary);
+    font-family: var(--font-body);
     font-size: var(--text-base);
     line-height: var(--line-height-normal);
   }
-  
+
+  /* Enhanced heading styles with project-map typography */
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
-    font-weight: 600;
+    font-family: var(--font-heading);
+    font-weight: 700;
     line-height: var(--line-height-tight);
     color: hsl(var(--color-text-primary, var(--foreground)));
+    letter-spacing: var(--letter-spacing-tight);
   }
-  
+
   h1 {
+    font-size: var(--text-4xl);
+    margin-bottom: var(--space-lg);
+    font-weight: 800;
+  }
+
+  h2 {
     font-size: var(--text-3xl);
     margin-bottom: var(--space-lg);
+    font-weight: 700;
   }
-  
-  h2 {
+
+  h3 {
     font-size: var(--text-2xl);
     margin-bottom: var(--space-md);
+    font-weight: 600;
   }
-  
-  h3 {
+
+  h4 {
     font-size: var(--text-xl);
     margin-bottom: var(--space-sm);
+    font-weight: 600;
   }
-  
-  h4 {
+
+  h5 {
     font-size: var(--text-lg);
     margin-bottom: var(--space-sm);
+    font-weight: 600;
+  }
+
+  h6 {
+    font-size: var(--text-base);
+    margin-bottom: var(--space-sm);
+    font-weight: 600;
   }
   
   p {

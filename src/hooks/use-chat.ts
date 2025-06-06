@@ -64,7 +64,7 @@ export function useChat(conversationId: string) {
   // Handler for typing start events
   const handleTypingStart = useCallback(({ user }: { user: User }) => {
     setTypingUsers((prevUsers) => {
-      if (!prevUsers.some((u) => u.id === user.id)) {
+      if (!prevUsers.some((u) => (u as any).id === (user as any).id)) {
         return [...prevUsers, user];
       }
       return prevUsers;
@@ -74,7 +74,7 @@ export function useChat(conversationId: string) {
   // Handler for typing stop events
   const handleTypingStop = useCallback(({ user }: { user: User }) => {
     setTypingUsers((prevUsers) => 
-      prevUsers.filter((u) => u.id !== user.id)
+      prevUsers.filter((u) => (u as any).id !== (user as any).id)
     );
   }, []);
   

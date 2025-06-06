@@ -49,23 +49,35 @@ export interface AppConfig extends EnvironmentConfig {
 }
 
 /**
+ * Safe environment variable access for both Vite and Jest environments
+ */
+const getEnvVar = (key: string, defaultValue?: string) => {
+  // Check for Vite environment variables
+  if (typeof import.meta !== 'undefined' && import.meta.env?.[key]) {
+    return import.meta.env[key] ?? defaultValue;
+  }
+  // Fallback to process.env for Jest/Node environments
+  return process.env[key] ?? defaultValue;
+};
+
+/**
  * Environment-specific configuration
  */
 export const environmentConfig: EnvironmentConfig = {
-  apiUrl: import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1',
-  socketUrl: import.meta.env.VITE_SOCKET_URL ?? 'http://localhost:3000',
-  uploadUrl: import.meta.env.VITE_UPLOAD_URL ?? 'http://localhost:3000/uploads',
-  authEndpoint: import.meta.env.VITE_AUTH_ENDPOINT ?? '/api/v1/auth',
-  isDevelopment: import.meta.env.DEV === true,
-  isProduction: import.meta.env.PROD === true,
-  isTest: import.meta.env.MODE === 'test',
-  version: import.meta.env.VITE_APP_VERSION ?? '1.0.0',
-  buildTime: import.meta.env.VITE_BUILD_TIME ?? new Date().toISOString(),
+  apiUrl: getEnvVar('VITE_API_URL', 'http://localhost:3000/api/v1'),
+  socketUrl: getEnvVar('VITE_SOCKET_URL', 'http://localhost:3000'),
+  uploadUrl: getEnvVar('VITE_UPLOAD_URL', 'http://localhost:3000/uploads'),
+  authEndpoint: getEnvVar('VITE_AUTH_ENDPOINT', '/api/v1/auth'),
+  isDevelopment: getEnvVar('DEV') === 'true' || process.env.NODE_ENV === 'development',
+  isProduction: getEnvVar('PROD') === 'true' || process.env.NODE_ENV === 'production',
+  isTest: getEnvVar('MODE') === 'test' || process.env.NODE_ENV === 'test',
+  version: getEnvVar('VITE_APP_VERSION', '1.0.0'),
+  buildTime: getEnvVar('VITE_BUILD_TIME', new Date().toISOString()),
   features: {
-    analytics: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
-    offline: import.meta.env.VITE_ENABLE_OFFLINE === 'true' || true,
-    notifications: import.meta.env.VITE_ENABLE_NOTIFICATIONS === 'true' || true,
-    pwa: import.meta.env.VITE_ENABLE_PWA === 'true' || true,
+    analytics: getEnvVar('VITE_ENABLE_ANALYTICS') === 'true',
+    offline: getEnvVar('VITE_ENABLE_OFFLINE') === 'true' || true,
+    notifications: getEnvVar('VITE_ENABLE_NOTIFICATIONS') === 'true' || true,
+    pwa: getEnvVar('VITE_ENABLE_PWA') === 'true' || true,
   }
 };
 

@@ -9,7 +9,7 @@ const AdminDashboardPage = () => {
   
   // Redirect if not admin (handled by AdminLayout as well, but adding here for extra safety)
   useEffect(() => {
-    if (!user || user.role !== UserRole.ADMIN) {
+    if (!user || (user as any).role !== UserRole.ADMIN) {
       // Redirect would be handled by the AdminLayout component
       console.warn('Non-admin user attempted to access admin dashboard');
     }

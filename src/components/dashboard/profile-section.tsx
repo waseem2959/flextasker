@@ -13,8 +13,8 @@ interface ProfileSectionProps {
 }
 
 export const ProfileSection: React.FC<ProfileSectionProps> = ({ user }) => {  // Apply our established semantic bridge pattern for role checking
-  const isClient = user.role === UserRole.USER;
-  const isTasker = user.role === UserRole.TASKER;
+  const isClient = (user as any).role === UserRole.USER;
+  const isTasker = (user as any).role === UserRole.TASKER;
   
   // Helper function to handle nullable avatar URLs
   // This demonstrates defensive programming - always handle the case where data might be missing
@@ -49,7 +49,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ user }) => {  //
     
     // Fallback to the raw role value for any future role types
     // This ensures the component won't break if new roles are added
-    return user.role;
+    return (user as any).role;
   };
 
   // Mock skills data - in a real app, this would either come from the User type
@@ -120,12 +120,12 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ user }) => {  //
             <div className="w-full mt-6 space-y-4">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Email:</span>
-                <span className="font-medium">{user.email}</span>
+                <span className="font-medium">{(user as any).email}</span>
               </div>
               
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Phone:</span>
-                <span className="font-medium">{user.phone ?? 'Not provided'}</span>
+                <span className="font-medium">{(user as any).phone ?? 'Not provided'}</span>
               </div>
               
               <div className="flex justify-between text-sm">
@@ -161,7 +161,7 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ user }) => {  //
           <div className="mb-6">
             <h4 className="font-medium mb-2">Bio</h4>
             <p className="text-gray-600">
-              {user.bio ?? 'No bio provided yet.'}
+              {(user as any).bio ?? 'No bio provided yet.'}
             </p>
           </div>
           

@@ -11,7 +11,7 @@ import { toast } from '@/components/ui/use-toast';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TaskPriority } from '../../shared/types/enums';
-import MainLayout from '../layouts/MainLayout';
+import MainLayout from '../layouts/main-layout';
 
 interface TaskFormState {
   title: string;

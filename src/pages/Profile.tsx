@@ -31,11 +31,11 @@ const Profile = () => {
             <CardContent>
               <div className="flex flex-col items-center">
                 <Avatar className="h-24 w-24 mb-4">
-                  <AvatarImage src={user.avatar ?? undefined} alt={`${user.firstName} ${user.lastName}`} />
-                  <AvatarFallback>{getInitials(`${user.firstName} ${user.lastName}`)}</AvatarFallback>
+                  <AvatarImage src={(user as any).avatar ?? undefined} alt={`${(user as any).firstName} ${(user as any).lastName}`} />
+                  <AvatarFallback>{getInitials(`${(user as any).firstName} ${(user as any).lastName}`)}</AvatarFallback>
                 </Avatar>
-                <h2 className="text-2xl font-bold text-[hsl(206,33%,16%)]">{`${user.firstName} ${user.lastName}`}</h2>
-                <Badge className="mt-2 capitalize">{user.role}</Badge>
+                <h2 className="text-2xl font-bold text-[hsl(206,33%,16%)]">{`${(user as any).firstName} ${(user as any).lastName}`}</h2>
+                <Badge className="mt-2 capitalize">{(user as any).role}</Badge>
 
                 <StarRating rating={user.averageRating ?? 0} size="md" className="mt-2" />
                 <span className="ml-2 text-sm font-medium text-[hsl(220,14%,46%)]">
@@ -45,7 +45,7 @@ const Profile = () => {
                 <div className="w-full mt-6 space-y-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-[hsl(220,14%,46%)]">Email:</span>
-                    <span className="font-medium text-[hsl(206,33%,16%)]">{user.email}</span>
+                    <span className="font-medium text-[hsl(206,33%,16%)]">{(user as any).email}</span>
                   </div>
 
                   <div className="flex justify-between text-sm">
@@ -62,10 +62,10 @@ const Profile = () => {
                     </span>
                   </div>
 
-                  {user.bio && (
+                  {(user as any).bio && (
                     <div className="mt-4">
                       <h4 className="font-medium mb-2 text-[hsl(206,33%,16%)]">Bio</h4>
-                      <p className="text-gray-600">{user.bio}</p>
+                      <p className="text-gray-600">{(user as any).bio}</p>
                     </div>
                   )}
                 </div>

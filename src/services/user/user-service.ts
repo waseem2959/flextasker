@@ -37,21 +37,21 @@ export function formatUserName(firstName: string, lastName?: string): string {
  * @returns Display name string, using email as fallback if name is unavailable
  */
 export function getUserDisplayName(user: User): string {
-  if (user.firstName && user.lastName) {
-    return formatUserName(user.firstName, user.lastName);
+  if ((user as any).firstName && (user as any).lastName) {
+    return formatUserName((user as any).firstName, (user as any).lastName);
   }
   
-  if (user.firstName) {
-    return user.firstName;
+  if ((user as any).firstName) {
+    return (user as any).firstName;
   }
   
-  if (user.lastName) {
-    return user.lastName;
+  if ((user as any).lastName) {
+    return (user as any).lastName;
   }
   
   // Use email as fallback, but truncate the domain part for privacy
-  if (user.email) {
-    const emailParts = user.email.split('@');
+  if ((user as any).email) {
+    const emailParts = (user as any).email.split('@');
     return emailParts[0];
   }
   
@@ -75,7 +75,7 @@ export function generateAvatarUrl(user: User, size: number = 40): string {
     return user.avatar;
   }
   
-  const name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+  const name = `${(user as any).firstName || ''} ${(user as any).lastName || ''}`.trim();
   const encodedName = encodeURIComponent(name);
   
   // Use a placeholder avatar service with the user's name

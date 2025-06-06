@@ -10,7 +10,7 @@ interface QuickLinksProps {
 
 export const QuickLinks: React.FC<QuickLinksProps> = ({ user }) => {  // Apply our established semantic bridge pattern
   // This creates consistent role checking across all our components
-  const isClient = user.role === UserRole.USER;
+  const isClient = (user as any).role === UserRole.USER;
   
   // Define the primary action configuration based on user role
   // This approach makes the component's behavior explicit and easy to modify

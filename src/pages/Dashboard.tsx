@@ -55,10 +55,10 @@ const Dashboard = () => {
         // Prepare query parameters based on user role
         const params = new URLSearchParams();
         
-        if (user.role === UserRole.USER) {
-          params.append('ownerId', user.id);
-        } else if (user.role === UserRole.TASKER) {
-          params.append('assigneeId', user.id);
+        if ((user as any).role === UserRole.USER) {
+          params.append('ownerId', (user as any).id);
+        } else if ((user as any).role === UserRole.TASKER) {
+          params.append('assigneeId', (user as any).id);
         }
         
         // Make API call to fetch tasks
@@ -105,9 +105,9 @@ const Dashboard = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(196,80%,43%)]"></div>
             </div>
           ) : null}
-          <h1 className="text-2xl font-bold mb-4 text-[hsl(206,33%,16%)] font-primary">Welcome, {user.firstName}!</h1>
+          <h1 className="text-2xl font-bold mb-4 text-[hsl(206,33%,16%)] font-primary">Welcome, {(user as any).firstName}!</h1>
             <p className="mt-1 text-[hsl(220,14%,46%)] font-primary">
-              Welcome back, {user.firstName ?? user.email?.split('@')[0]}
+              Welcome back, {(user as any).firstName ?? (user as any).email?.split('@')[0]}
             </p>
           </div>
           
@@ -116,7 +116,7 @@ const Dashboard = () => {
             <TabsList className="mb-8">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="tasks">
-                {user.role === UserRole.USER ? 'My Tasks' : 'My Bids'}
+                {(user as any).role === UserRole.USER ? 'My Tasks' : 'My Bids'}
               </TabsTrigger>
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="messages">Messages</TabsTrigger>

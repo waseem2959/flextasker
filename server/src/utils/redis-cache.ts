@@ -6,9 +6,9 @@
  * distributed caching capabilities.
  */
 
-import { Redis, Cluster } from 'ioredis';
-import { getRedisClient, redisManager } from './redis-client';
+import { Cluster, Redis } from 'ioredis';
 import { logger } from './logger';
+import { getRedisClient, redisManager } from './redis-client';
 
 /**
  * Cache entry interface for Redis storage
@@ -341,7 +341,9 @@ export class RedisCache {
     // Remove oldest entries if cache is full
     if (this.fallbackCache.size >= this.maxFallbackSize) {
       const oldestKey = this.fallbackCache.keys().next().value;
-      this.fallbackCache.delete(oldestKey);
+      if (oldestKey) {
+        this.fallbackCache.delete(oldestKey);
+      }
     }
 
     this.fallbackCache.set(key, entry);

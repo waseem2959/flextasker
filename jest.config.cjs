@@ -1,7 +1,7 @@
 module.exports = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/test-utils/setup.ts'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': '<rootDir>/src/test-utils/file-mock.js',
@@ -10,6 +10,7 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: 'tsconfig.json',
+      useESM: true,
     }],
   },
   testMatch: [
@@ -25,4 +26,16 @@ module.exports = {
   coverageDirectory: 'coverage',
   verbose: true,
   clearMocks: true,
+  globals: {
+    'import.meta': {
+      env: {
+        VITE_API_URL: 'http://localhost:3000/api/v1',
+        VITE_APP_NAME: 'Flextasker',
+        MODE: 'test',
+      },
+    },
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(.*\\.mjs$))',
+  ],
 };

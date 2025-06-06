@@ -10,7 +10,7 @@ interface MessagesSectionProps {
 
 export const MessagesSection: React.FC<MessagesSectionProps> = ({ user }) => {  // Apply the same semantic bridge pattern we learned from DashboardStats
   // This creates a clear, reusable way to determine user type throughout the component
-  const isClient = user.role === UserRole.USER;
+  const isClient = (user as any).role === UserRole.USER;
   
   // Mock conversation data - in a real app, this would come from props or a data store
   // Notice how we structure this data to make the conditional rendering logic cleaner

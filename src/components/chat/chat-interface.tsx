@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/use-auth';
 import { useChat } from '@/hooks/use-chat';
 import { formatDate } from '@/lib/utils';
-import { User } from '@/types';
+import { User, UserRole } from '@/types';
 import { Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -42,7 +42,13 @@ export default function ChatInterface({ otherUserId: propOtherUserId }: ChatInte
         id: otherUserId,
         firstName: 'Chat',
         lastName: 'User',
-        email: 'user@example.com'
+        email: 'user@example.com',
+        username: 'otheruser',
+        role: UserRole.USER,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isActive: true,
+        isSuspended: false
       } as User);
     }
   }, [otherUserId]);
@@ -166,7 +172,7 @@ export default function ChatInterface({ otherUserId: propOtherUserId }: ChatInte
             
             {/* Messages for this date */}
             {dateMessages.map((message: any) => {
-              const isSentByMe = message.senderId === user?.id || message.authorId === user?.id;
+              const isSentByMe = message.senderId === (user as any)?.id || message.authorId === (user as any)?.id;
               const messageTime = new Date(message.timestamp ?? message.createdAt ?? Date.now());
 
               return (
@@ -177,7 +183,7 @@ export default function ChatInterface({ otherUserId: propOtherUserId }: ChatInte
                   {!isSentByMe && (
                     <Avatar className="mr-2 h-8 w-8">
                       <AvatarFallback>
-                        {otherUser?.firstName?.charAt(0) ?? '?'}
+                        {(otherUser as any)?.firstName?.charAt(0) ?? '?'}
                       </AvatarFallback>
                     </Avatar>
                   )}
@@ -205,7 +211,7 @@ export default function ChatInterface({ otherUserId: propOtherUserId }: ChatInte
                   {isSentByMe && (
                     <Avatar className="ml-2 h-8 w-8">
                       <AvatarFallback>
-                        {user?.firstName?.charAt(0) ?? '?'}
+                        {(user as any)?.firstName?.charAt(0) ?? '?'}
                       </AvatarFallback>
                     </Avatar>
                   )}
@@ -220,7 +226,7 @@ export default function ChatInterface({ otherUserId: propOtherUserId }: ChatInte
           <div className="flex items-center ml-2 mb-4">
             <Avatar className="mr-2 h-8 w-8">
               <AvatarFallback>
-                {otherUser?.firstName?.charAt(0) ?? '?'}
+                {(otherUser as any)?.firstName?.charAt(0) ?? '?'}
               </AvatarFallback>
             </Avatar>
 

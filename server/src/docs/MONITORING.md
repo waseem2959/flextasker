@@ -23,10 +23,14 @@ The FlexTasker monitoring system provides real-time insights into application pe
 - **Cluster Support**: Redis cluster configuration for high availability
 
 ### Database Optimization
+- **Read Replicas**: Automatic read/write splitting with load balancing
+- **Connection Pooling**: Optimized connection management with PgBouncer support
 - **Query Performance**: Monitor slow queries and execution patterns
 - **Index Recommendations**: Automated suggestions for database optimization
 - **Connection Monitoring**: Track database connection pool usage
 - **Parallel Query Execution**: Optimized query patterns for better performance
+- **Query Result Caching**: Redis-backed intelligent query caching
+- **Automatic Failover**: Seamless fallback when read replicas unavailable
 
 ### Security Monitoring
 - **Rate Limiting**: Comprehensive rate limiting with different tiers
@@ -73,10 +77,31 @@ GET /api/monitoring/metrics?period=24h
 - `GET /api/monitoring/database` - Database performance metrics
 - `GET /api/monitoring/security` - Security metrics and risk assessment
 
+### Database Optimization
+- `GET /api/monitoring/connection-pool` - Connection pool metrics and health
+- `GET /api/monitoring/database` - Enhanced database performance metrics
+
 ### Management
 - `POST /api/monitoring/reset` - Reset all metrics (admin only)
 
 ## 🔧 Configuration
+
+### Database Configuration
+```bash
+# Primary Database (Write Operations)
+DATABASE_URL="postgresql://user:pass@localhost:5432/flextasker"
+
+# Read Replicas (Read Operations)
+DATABASE_READ_URLS="postgresql://user:pass@read1:5432/flextasker,postgresql://user:pass@read2:5432/flextasker"
+
+# Connection Pool Settings
+DB_POOL_MIN=2
+DB_POOL_MAX=10
+DB_CONNECTION_TIMEOUT=10000
+DB_QUERY_TIMEOUT=30000
+DB_RETRY_ATTEMPTS=3
+DB_RETRY_DELAY=1000
+```
 
 ### Redis Configuration
 ```bash

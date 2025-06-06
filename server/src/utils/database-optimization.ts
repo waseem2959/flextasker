@@ -242,7 +242,7 @@ export class OptimizedQueries {
             firstName: true,
             lastName: true,
             email: true,
-            profilePictureUrl: true,
+            profilePicture: true,
             createdAt: true,
             isActive: true
           }
@@ -264,7 +264,7 @@ export class OptimizedQueries {
         
         // Review statistics
         this.prisma.review.aggregate({
-          where: { subjectId: userId },
+          where: { revieweeId: userId },
           _avg: { rating: true },
           _count: { rating: true }
         })
@@ -291,8 +291,8 @@ export class OptimizedQueries {
           tasks: taskCounts,
           bids: bidCounts,
           reviews: {
-            averageRating: reviewStats._avg.rating || 0,
-            totalReviews: reviewStats._count.rating || 0
+            averageRating: reviewStats._avg?.rating ?? 0,
+            totalReviews: reviewStats._count?.rating ?? 0
           }
         }
       };

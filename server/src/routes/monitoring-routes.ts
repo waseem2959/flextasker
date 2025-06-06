@@ -14,6 +14,7 @@ import { validate } from '../middleware/validation-middleware';
 import PerformanceMonitor from '../monitoring/performance-monitor';
 import { QueryPerformanceMonitor } from '../utils/database-optimization';
 import { logger } from '../utils/logger';
+import { checkRedisHealth } from '../utils/redis-client';
 
 const router = Router();
 
@@ -96,7 +97,7 @@ router.get('/metrics',
   validate([
     query('period').optional().isIn(['1h', '24h', '7d', '30d']).withMessage('Invalid period')
   ]),
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     const monitor = PerformanceMonitor.getInstance();
     const period = req.query.period as string || '1h';
 
@@ -225,12 +226,22 @@ router.get('/cache',
 router.get('/database',
   authenticateToken,
   requireRoles([UserRole.ADMIN]),
-  (_req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     const monitor = PerformanceMonitor.getInstance();
     const queryMonitor = QueryPerformanceMonitor.getInstance();
 
     const dbMetrics = monitor.getMetrics().database;
     const queryStats = queryMonitor.getStats();
+
+    // Get enhanced database health stats (if available)
+    let enhancedStats = null;
+    try {
+      // Import dynamically to avoid circular dependencies
+      const { enhancedDb } = await import('../utils/enhanced-database-service');
+      enhancedStats = await enhancedDb.getHealthStats();
+    } catch (error) {
+      logger.debug('Enhanced database service not available', { error });
+    }
 
     // Identify slow queries
     const slowQueries = Object.entries(queryStats)
@@ -247,6 +258,7 @@ router.get('/database',
       metrics: dbMetrics,
       queryStatistics: queryStats,
       slowQueries,
+      enhanced: enhancedStats,
       recommendations: []
     };
 
@@ -268,10 +280,71 @@ router.get('/database',
       });
     }
 
+    // Add read replica recommendations
+    if (enhancedStats?.connections?.stats) {
+      const readQueries = enhancedStats.connections.stats.queries.read;
+      const writeQueries = enhancedStats.connections.stats.queries.write;
+      const readWriteRatio = readQueries / (writeQueries || 1);
+
+      if (readWriteRatio < 2) {
+        response.recommendations.push({
+          type: 'read_replicas',
+          message: 'Consider implementing read replicas to improve performance',
+          priority: 'medium'
+        });
+      }
+    }
+
     res.status(200).json({
       success: true,
       data: response
     });
+  }
+);
+
+/**
+ * Connection Pool Monitoring
+ * GET /api/v1/monitoring/connection-pool
+ * Admin-only endpoint for database connection pool metrics
+ */
+router.get('/connection-pool',
+  authenticateToken,
+  requireRoles([UserRole.ADMIN]),
+  async (_req: Request, res: Response) => {
+    try {
+      // Import dynamically to avoid circular dependencies
+      const { connectionPoolMonitor } = await import('../utils/connection-pool-monitor');
+
+      const currentMetrics = connectionPoolMonitor.getCurrentMetrics();
+      const performanceStats = connectionPoolMonitor.getPerformanceStats();
+      const poolHealth = connectionPoolMonitor.checkPoolHealth();
+      const pgBouncerConfig = connectionPoolMonitor.getPgBouncerConfig();
+
+      const response = {
+        current: currentMetrics,
+        performance: performanceStats,
+        health: poolHealth,
+        configuration: {
+          recommended: pgBouncerConfig,
+          pgBouncerConfig: connectionPoolMonitor.generatePgBouncerConfig()
+        },
+        recommendations: performanceStats.recommendations
+      };
+
+      res.status(200).json({
+        success: true,
+        data: response
+      });
+    } catch (error) {
+      logger.error('Failed to get connection pool metrics', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve connection pool metrics'
+      });
+    }
   }
 );
 

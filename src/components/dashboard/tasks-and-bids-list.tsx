@@ -68,8 +68,8 @@ interface TaskStatusConfig {
 
 export const TasksAndBidsList: React.FC<TasksAndBidsListProps> = ({ user, myTasks }) => {
   // Apply our established semantic bridge pattern for consistent role checking
-  const isClient = user.role === UserRole.USER;
-  const isTasker = user.role === UserRole.TASKER;
+  const isClient = (user as any).role === UserRole.USER;
+  const isTasker = (user as any).role === UserRole.TASKER;
   
   // Enhanced data transformation function that bridges current types with component needs
   // This pattern allows you to evolve your component independently of your core data types
@@ -133,10 +133,10 @@ export const TasksAndBidsList: React.FC<TasksAndBidsListProps> = ({ user, myTask
     if (isTasker) {
       bids.push({
         id: `bid-${task.id}-user`,
-        workerId: currentUser.id,
+        workerId: (currentUser as any).id,
         amount: task.budget - 200, // User's competitive bid
         status: 'pending',
-        workerName: `${currentUser.firstName} ${currentUser.lastName}`,
+        workerName: `${(currentUser as any).firstName} ${(currentUser as any).lastName}`,
         submittedAt: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 hours ago
       });
     }
@@ -250,7 +250,7 @@ export const TasksAndBidsList: React.FC<TasksAndBidsListProps> = ({ user, myTask
               // By using nullish coalescing, we explicitly convert undefined to null
               // This matches the expected type for renderUserBidBadge function
               const userBid = isTasker 
-                ? (task.bids.find(bid => bid.workerId === user.id) ?? null)
+                ? (task.bids.find(bid => bid.workerId === (user as any).id) ?? null)
                 : null;
 
               const taskStatusConfig = getTaskStatusConfig(task.status);

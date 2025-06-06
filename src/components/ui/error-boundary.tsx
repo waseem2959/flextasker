@@ -6,8 +6,7 @@
  */
 
 import { useTheme } from '@/contexts/theme-context';
-import { ErrorType } from '@/types/app-enums';
-import { AppError, ErrorFactory } from '@/types/errors';
+import { AppError, ErrorFactory, ErrorType } from '@/types/errors';
 import { announce } from '@/utils/accessibility';
 // Error logging removed for simplicity
 import React, { Component, ErrorInfo, ReactNode, useCallback, useState } from 'react';
@@ -358,7 +357,7 @@ export function useErrorBoundary(): (error: Error) => void {
 export function ApiErrorBoundary({ children, ...props }: Omit<ErrorBoundaryProps, 'errorType'>): React.ReactElement {
   return (
     <ErrorBoundary 
-      errorType={ErrorType.SERVER_ERROR} 
+      errorType={ErrorType.SERVER}
       errorContext={{ source: 'api' }}
       {...props}
     >

@@ -27,6 +27,7 @@ class HybridCache {
 
   async set(key: string, data: any, ttlSeconds: number = 300): Promise<void> {
     try {
+      const { redisCache } = await import('../utils/redis-cache');
       await redisCache.set(key, data, ttlSeconds);
     } catch (error) {
       logger.warn('Redis cache set failed, using fallback', { key, error });
@@ -36,6 +37,7 @@ class HybridCache {
 
   async get(key: string): Promise<any | null> {
     try {
+      const { redisCache } = await import('../utils/redis-cache');
       const result = await redisCache.get(key);
       if (result !== null) {
         return result;
@@ -49,6 +51,7 @@ class HybridCache {
 
   async delete(key: string): Promise<void> {
     try {
+      const { redisCache } = await import('../utils/redis-cache');
       await redisCache.delete(key);
     } catch (error) {
       logger.warn('Redis cache delete failed', { key, error });
@@ -59,6 +62,7 @@ class HybridCache {
 
   async clear(): Promise<void> {
     try {
+      const { redisCache } = await import('../utils/redis-cache');
       await redisCache.clear();
     } catch (error) {
       logger.warn('Redis cache clear failed', { error });
@@ -68,7 +72,8 @@ class HybridCache {
   }
 
   cleanup(): void {
-    redisCache.cleanup();
+    // Redis cleanup is handled internally
+    // Only clean up fallback cache
 
     // Clean up fallback cache
     const now = Date.now();
@@ -81,6 +86,7 @@ class HybridCache {
 
   async getStats(): Promise<{ size: number; maxSize: number; redis?: any }> {
     try {
+      const { redisCache } = await import('../utils/redis-cache');
       const redisStats = await redisCache.getStats();
       return {
         size: redisStats.size + this.fallbackCache.size,
@@ -98,7 +104,9 @@ class HybridCache {
   private setFallback(key: string, data: any, ttlSeconds: number): void {
     if (this.fallbackCache.size >= this.maxFallbackSize) {
       const oldestKey = this.fallbackCache.keys().next().value;
-      this.fallbackCache.delete(oldestKey);
+      if (oldestKey) {
+        this.fallbackCache.delete(oldestKey);
+      }
     }
 
     this.fallbackCache.set(key, {
@@ -263,7 +271,7 @@ export function postResponseCacheInvalidation(req: Request, res: Response, next:
     }
 
     // Call original end method
-    return originalEnd.apply(this, args);
+    return originalEnd.apply(this, args as any);
   };
 
   next();
@@ -341,6 +349,7 @@ export const cacheUtils = {
   // Check if Redis is available
   isRedisAvailable: async () => {
     try {
+      const { redisCache } = await import('../utils/redis-cache');
       await redisCache.get('health-check');
       return true;
     } catch (error) {

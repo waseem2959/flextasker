@@ -14,11 +14,11 @@ import { isValidEmail, validatePassword } from '@/utils/validation';
 import axios from 'axios';
 import { apiClient } from '../api/api-client';
 import {
-    AuthResult,
-    LoginCredentials,
-    RegisterData,
-    TokenRefreshConfig,
-    TokenRefreshController
+  AuthResult,
+  LoginCredentials,
+  RegisterData,
+  TokenRefreshConfig,
+  TokenRefreshController
 } from './auth-types';
 
 /**
@@ -251,7 +251,7 @@ export const roleUtils = {
    */
   hasRole(user: User | null, role: UserRole): boolean {
     if (!user) return false;
-    return user.role === role;
+    return (user as any).role === role;
   },
   
   /**
@@ -263,7 +263,7 @@ export const roleUtils = {
    */
   hasAnyRole(user: User | null, roles: UserRole[]): boolean {
     if (!user) return false;
-    return roles.includes(user.role);
+    return roles.includes((user as any).role);
   },
   
   /**

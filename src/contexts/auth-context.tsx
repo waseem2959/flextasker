@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }: { readonly children: ReactNode }) => 
   const updateUser = useCallback((newUser: User | null) => {
     setUser(newUser);
     if (newUser) {
-      setRole(newUser.role ?? null);
+      setRole((newUser as any).role ?? null);
       setIsAuthenticated(true);
     } else {
       setRole(null);

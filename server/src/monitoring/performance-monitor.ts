@@ -5,7 +5,7 @@
  * including cache metrics, database performance, API response times, and security events.
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { logger } from '../utils/logger';
 
 /**
@@ -377,14 +377,14 @@ export function performanceMonitoringMiddleware(req: Request, res: Response, nex
   const monitor = PerformanceMonitor.getInstance();
   
   // Override res.end to capture response time
-  const originalEnd = res.end;
-  res.end = function(...args: any[]) {
+  const originalEnd = res.end.bind(res);
+  res.end = function(this: Response, ...args: any[]) {
     const responseTime = Date.now() - startTime;
     const userId = req.user?.id;
-    
+
     // Record API request metrics
     monitor.recordApiRequest(responseTime, res.statusCode, userId);
-    
+
     // Check for cache headers to record cache metrics
     const cacheHeader = res.getHeader('X-Cache');
     if (cacheHeader === 'HIT') {
@@ -392,9 +392,9 @@ export function performanceMonitoringMiddleware(req: Request, res: Response, nex
     } else if (cacheHeader === 'MISS') {
       monitor.recordCacheMiss(responseTime);
     }
-    
+
     // Call original end method
-    return originalEnd.apply(this, args);
+    return originalEnd(...args);
   };
   
   next();

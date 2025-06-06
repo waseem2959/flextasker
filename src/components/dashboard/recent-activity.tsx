@@ -22,7 +22,7 @@ interface ActivityItem {
 }
 
 export const RecentActivity: React.FC<RecentActivityProps> = ({ user }) => {  // Apply our established semantic bridge pattern for consistent role checking
-  const isClient = user.role === UserRole.USER;
+  const isClient = (user as any).role === UserRole.USER;
   
   // Generate activity data based on user role using the configuration pattern
   // This approach separates business logic from presentation logic

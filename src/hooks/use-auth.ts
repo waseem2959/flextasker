@@ -93,7 +93,7 @@ export function useRequireAuth(): User {
  */
 export function useIsAdmin(): boolean {
   const auth = useAuth();
-  return isAuthenticated(auth) && auth.user.role === UserRole.ADMIN;
+  return isAuthenticated(auth) && (auth.user as any).role === UserRole.ADMIN;
 }
 
 /**
@@ -101,7 +101,7 @@ export function useIsAdmin(): boolean {
  */
 export function useIsTasker(): boolean {
   const auth = useAuth();
-  return isAuthenticated(auth) && auth.user.role === UserRole.TASKER;
+  return isAuthenticated(auth) && (auth.user as any).role === UserRole.TASKER;
 }
 
 /**
@@ -112,7 +112,7 @@ export function useIsRegularUser(): boolean {
   const auth = useAuth();
   // Changed from UserRole.USER to UserRole.REGULAR_USER if that's what exists,
   // or ensure UserRole.USER is defined in your enum
-  return isAuthenticated(auth) && auth.user.role === UserRole.USER;
+  return isAuthenticated(auth) && (auth.user as any).role === UserRole.USER;
 }
 
 /**
@@ -120,7 +120,7 @@ export function useIsRegularUser(): boolean {
  */
 export function useHasRole(requiredRole: UserRole): boolean {
   const auth = useAuth();
-  return isAuthenticated(auth) && auth.user.role === requiredRole;
+  return isAuthenticated(auth) && (auth.user as any).role === requiredRole;
 }
 
 /**
@@ -129,10 +129,10 @@ export function useHasRole(requiredRole: UserRole): boolean {
 export function useRequireRole(requiredRole: UserRole): User {
   const user = useRequireAuth();
   
-  if (user.role !== requiredRole) {
+  if ((user as any).role !== requiredRole) {
     throw new Error(
       `This component requires a user with role ${requiredRole}, ` +
-      `but the current user has role ${user.role}. ` +
+      `but the current user has role ${(user as any).role}. ` +
       `Use a conditional or route guard to check roles before rendering this component.`
     );
   }
@@ -145,7 +145,7 @@ export function useRequireRole(requiredRole: UserRole): User {
  */
 export function useHasAnyRole(roles: UserRole[]): boolean {
   const auth = useAuth();
-  return isAuthenticated(auth) && roles.includes(auth.user.role);
+  return isAuthenticated(auth) && roles.includes((auth.user as any).role);
 }
 
 /**
@@ -154,10 +154,10 @@ export function useHasAnyRole(roles: UserRole[]): boolean {
 export function useRequireAnyRole(roles: UserRole[]): User {
   const user = useRequireAuth();
   
-  if (!roles.includes(user.role)) {
+  if (!roles.includes((user as any).role)) {
     throw new Error(
       `This component requires a user with one of the following roles: ${roles.join(', ')}, ` +
-      `but the current user has role ${user.role}. ` +
+      `but the current user has role ${(user as any).role}. ` +
       `Use a conditional or route guard to check roles before rendering this component.`
     );
   }
@@ -181,6 +181,7 @@ function createUserFromApiResponse(apiUser: any): User {
   return {
     name: `${apiUser.firstName} ${apiUser.lastName}`, // Add missing name field
     id: apiUser.id,
+    username: apiUser.username ?? apiUser.email,
     firstName: apiUser.firstName,
     lastName: apiUser.lastName,
     email: apiUser.email,
@@ -189,7 +190,10 @@ function createUserFromApiResponse(apiUser: any): User {
     trustScore: apiUser.trustScore ?? 0,
     emailVerified: apiUser.emailVerified ?? false,
     phoneVerified: apiUser.phoneVerified ?? false,
+    isActive: apiUser.isActive ?? true,
+    isSuspended: apiUser.isSuspended ?? false,
     createdAt: apiUser.createdAt ? new Date(apiUser.createdAt) : new Date(),
+    updatedAt: apiUser.updatedAt ? new Date(apiUser.updatedAt) : new Date(),
     bio: apiUser.bio ?? null,
     phone: apiUser.phone ?? null,
     city: apiUser.city ?? null,

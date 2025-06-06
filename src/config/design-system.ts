@@ -6,14 +6,27 @@
  * for all visual elements, ensuring consistency across the application.
  */
 
-// Color palette with proper semantic naming
+// Enhanced Color palette aligned with project-map teal-mint gradient system
 export const colors = {
-  // Brand colors
+  // Primary Brand Colors - Teal to Mint Gradient (Project-Map Aligned)
   primary: {
-    DEFAULT: 'hsl(185, 76%, 35%)', // #15919B - Main brand color
-    dark: 'hsl(192, 84%, 26%)',     // #0C6478 - Darker brand shade
-    light: 'hsl(188, 60%, 92%)',    // #E8F6F8 - Lighter brand shade
-    accent: 'hsl(177, 92%, 43%)',   // #09D1C7 - Accent/highlight color
+    950: 'hsl(192, 84%, 18%)',      // #084A5A - Darkest, high contrast text
+    900: 'hsl(192, 84%, 26%)',      // #0C6478 - Deep Teal, headers, primary CTAs
+    800: 'hsl(190, 82%, 30%)',      // #0F7A88 - Dark Teal, hover states
+    700: 'hsl(185, 76%, 35%)',      // #15919B - Medium Teal, active states, links
+    600: 'hsl(180, 85%, 35%)',      // #0BB3AA - Light Teal, secondary actions
+    500: 'hsl(177, 92%, 43%)',      // #09D1C7 - Bright Cyan, primary brand color
+    400: 'hsl(165, 77%, 50%)',      // #2AD5A5 - Cyan-Mint, highlights
+    300: 'hsl(158, 73%, 58%)',      // #46DFB1 - Mint Green, success states
+    200: 'hsl(152, 69%, 65%)',      // #63E5A7 - Light Mint, positive feedback
+    100: 'hsl(146, 65%, 72%)',      // #80EE98 - Bright Mint, light backgrounds
+    50: 'hsl(140, 60%, 92%)',       // #E6FBF0 - Mint Tint, subtle backgrounds
+
+    // Semantic aliases for backward compatibility
+    DEFAULT: 'hsl(177, 92%, 43%)',  // primary-500
+    dark: 'hsl(192, 84%, 26%)',     // primary-900
+    light: 'hsl(140, 60%, 92%)',    // primary-50
+    accent: 'hsl(165, 77%, 50%)',   // primary-400
   },
   
   // Status colors
@@ -103,54 +116,62 @@ export const colors = {
   },
 };
 
-// Typography system
+// Enhanced Typography system aligned with project-map dual-typeface system
 export const typography = {
-  // Font families
+  // Font families - Project-map aligned dual-typeface system
   fonts: {
-    primary: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-    display: "'Manrope', var(--font-primary)",
+    // Headlines and display text - Formula/Inter for trust and professionalism
+    heading: "'Formula', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    // Body text - Manrope/Open Sans for readability and warmth
+    body: "'Manrope', 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+    // Legacy aliases for backward compatibility
+    primary: "'Manrope', 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+    display: "'Formula', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     mono: "'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace",
   },
-  
-  // Font weights
+
+  // Enhanced font weights with project-map specifications
   weights: {
     light: 300,
-    regular: 400,
+    normal: 400,      // Renamed from 'regular' for consistency
+    regular: 400,     // Kept for backward compatibility
     medium: 500,
     semibold: 600,
     bold: 700,
+    extrabold: 800,   // Added for strong emphasis
   },
-  
-  // Font sizes (in rem to support user font size preferences)
+
+  // Enhanced font sizes with Perfect Fourth scale (1.333 ratio) from project-map
   sizes: {
     xs: '0.75rem',     // 12px
     sm: '0.875rem',    // 14px
     base: '1rem',      // 16px
     lg: '1.125rem',    // 18px
-    xl: '1.25rem',     // 20px
-    '2xl': '1.5rem',   // 24px
-    '3xl': '1.875rem', // 30px
-    '4xl': '2.25rem',  // 36px
-    '5xl': '3rem',     // 48px
+    xl: '1.5rem',      // 24px - Updated to follow Perfect Fourth
+    '2xl': '2rem',     // 32px - Updated to follow Perfect Fourth
+    '3xl': '2.5rem',   // 40px - Updated to follow Perfect Fourth
+    '4xl': '3rem',     // 48px - Updated to follow Perfect Fourth
+    '5xl': '4rem',     // 64px - Added for hero text
   },
-  
-  // Line heights
+
+  // Line heights for optimal readability (project-map aligned)
   lineHeights: {
     none: 1,
-    tight: 1.2,
+    tight: 1.2,        // For headlines
     snug: 1.375,
-    normal: 1.5,
-    relaxed: 1.625,
+    normal: 1.5,       // For body text (base)
+    base: 1.5,         // Alias for normal
+    relaxed: 1.75,     // For large text blocks
     loose: 2,
   },
-  
-  // Letter spacing
+
+  // Letter spacing for different text types (project-map aligned)
   letterSpacing: {
     tighter: '-0.05em',
-    tight: '-0.025em',
-    normal: '0',
+    tight: '-0.02em',  // For large headlines
+    normal: '0',       // Default
     wide: '0.025em',
-    wider: '0.05em',
+    wider: '0.05em',   // For small caps or buttons
     widest: '0.1em',
   },
 };
@@ -335,6 +356,119 @@ export const buttonSizes = {
   },
 };
 
+// Enhanced component patterns aligned with project-map specifications
+export const componentPatterns = {
+  // Card hover effects with teal-mint gradient system
+  card: {
+    base: {
+      background: 'var(--color-neutral-0)',
+      borderRadius: '8px',
+      padding: '24px',
+      boxShadow: '0 2px 8px rgba(12, 100, 120, 0.08)',
+      transition: 'all 0.2s ease',
+      border: '1px solid var(--color-neutral-200)',
+    },
+    hover: {
+      boxShadow: '0 4px 16px rgba(9, 209, 199, 0.12)',
+      borderColor: 'var(--color-primary-300)',
+      transform: 'translateY(-2px)',
+    },
+    interactive: {
+      cursor: 'pointer',
+      '&:hover': {
+        boxShadow: '0 8px 24px rgba(9, 209, 199, 0.15)',
+        borderColor: 'var(--color-primary-400)',
+        transform: 'translateY(-4px)',
+      },
+    },
+  },
+
+  // Progress indicators for multi-step flows
+  progressIndicator: {
+    container: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '32px',
+      position: 'relative',
+    },
+    line: {
+      position: 'absolute',
+      top: '20px',
+      left: '0',
+      right: '0',
+      height: '2px',
+      background: 'var(--color-neutral-300)',
+      zIndex: '0',
+    },
+    step: {
+      base: {
+        width: '40px',
+        height: '40px',
+        borderRadius: '50%',
+        background: 'var(--color-neutral-200)',
+        border: '2px solid var(--color-neutral-300)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: '600',
+        position: 'relative',
+        zIndex: '1',
+        transition: 'all 0.3s ease',
+      },
+      active: {
+        background: 'var(--color-primary-500)',
+        borderColor: 'var(--color-primary-500)',
+        color: 'var(--color-neutral-0)',
+        transform: 'scale(1.1)',
+      },
+      completed: {
+        background: 'var(--color-primary-300)',
+        borderColor: 'var(--color-primary-300)',
+        color: 'var(--color-neutral-900)',
+      },
+    },
+  },
+
+  // Category selection grids
+  categoryGrid: {
+    container: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+      gap: '16px',
+      marginTop: '24px',
+    },
+    card: {
+      base: {
+        background: 'var(--color-neutral-0)',
+        border: '2px solid var(--color-neutral-200)',
+        borderRadius: '12px',
+        padding: '24px 16px',
+        textAlign: 'center',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+      },
+      hover: {
+        borderColor: 'var(--color-primary-300)',
+        background: 'var(--color-primary-50)',
+        transform: 'translateY(-2px)',
+      },
+      selected: {
+        borderColor: 'var(--color-primary-500)',
+        background: 'var(--color-primary-50)',
+      },
+    },
+    icon: {
+      fontSize: '32px',
+      color: 'var(--color-neutral-600)',
+      marginBottom: '8px',
+      transition: 'color 0.2s ease',
+    },
+    iconSelected: {
+      color: 'var(--color-primary-700)',
+    },
+  },
+};
+
 // Assemble and export the complete design system
 export const designSystem = {
   colors,
@@ -349,6 +483,7 @@ export const designSystem = {
   containers,
   formSizes,
   buttonSizes,
+  componentPatterns,
 };
 
 export default designSystem;

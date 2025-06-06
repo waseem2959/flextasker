@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import MainLayout from '../layouts/MainLayout';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { useState } from 'react';
+import MainLayout from '../layouts/main-layout';
 
 interface FAQItem {
   id: string;

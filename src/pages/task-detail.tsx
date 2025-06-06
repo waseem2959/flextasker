@@ -285,9 +285,9 @@ const TaskDetail = () => {
   const formattedDeadline = deadline ? format(new Date(deadline), 'MMM d, yyyy') : 'No deadline';
   
   // Check task and user related statuses
-  const isTaskOwner = user?.id === owner.id;
-  const userBid = taskBids.find((bid) => bid.worker?.id === user?.id);
-  const isOpenForBidding = status === TaskStatus.OPEN && user?.id !== owner.id;
+  const isTaskOwner = (user as any)?.id === (owner as any).id;
+  const userBid = taskBids.find((bid) => (bid.worker as any)?.id === (user as any)?.id);
+  const isOpenForBidding = status === TaskStatus.OPEN && (user as any)?.id !== (owner as any).id;
 
   // Show error toast with consistent formatting
   const showErrorToast = (title: string, description: string) => {
@@ -476,14 +476,14 @@ const TaskDetail = () => {
                     <Avatar className="h-16 w-16">
                       <AvatarImage 
                         src={owner.avatar ?? undefined} 
-                        alt={`${owner.firstName} ${owner.lastName}`} 
+                        alt={`${(owner as any).firstName} ${(owner as any).lastName}`}
                       />
                       <AvatarFallback>
-                        {owner.firstName?.[0]}{owner.lastName?.[0]}
+                        {(owner as any).firstName?.[0]}{(owner as any).lastName?.[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h4 className="font-medium">{owner.firstName} {owner.lastName}</h4>
+                      <h4 className="font-medium">{(owner as any).firstName} {(owner as any).lastName}</h4>
                       <div className="flex items-center mt-1">
                         <StarRating rating={4.8} />
                         <span className="ml-2 text-sm text-gray-500">4.8 (24 reviews)</span>

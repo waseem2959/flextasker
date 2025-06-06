@@ -1,4 +1,4 @@
-import { User, Task, Category, Bid, TaskStatus, UserRole, BudgetType, TaskPriority, BidStatus, UserImpl } from '../types';
+import { Bid, BidStatus, BudgetType, Category, Task, TaskPriority, TaskStatus, User, UserImpl, UserRole } from '../types';
 
 // Helper function to find a category by ID
 const getCategoryById = (id: string): Category => {
@@ -134,7 +134,7 @@ export const USERS: User[] = [
     emailVerified: true,
     phoneVerified: true
   })
-];
+] as any;
 
 export const TASKS: Task[] = [
   {
@@ -314,7 +314,7 @@ export function getFilteredTasks(filters: {
 // Generate a new bid for a task
 export function createBid(taskId: string, workerId: string, amount: number, message?: string): Bid {
   const task = TASKS.find(t => t.id === taskId);
-  const bidder = USERS.find(u => u.id === workerId);
+  const bidder = USERS.find(u => (u as any).id === workerId);
   
   if (!task || !bidder) {
     throw new Error('Invalid task or bidder ID');

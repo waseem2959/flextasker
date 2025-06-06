@@ -5,8 +5,7 @@
  * Follows accessibility best practices and integrates with our error handling system.
  */
 
-import { ErrorType } from '../../types/app-enums';
-import { AppError } from '../../types/errors';
+import { AppError, ErrorType } from '../../types/errors';
 // Error utils removed for simplicity
 import React, { createContext, useCallback, useContext, useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -95,10 +94,10 @@ export function useToast() {
       case ErrorType.VALIDATION:
         title = 'Validation Error';
         break;
-      case ErrorType.NETWORK_ERROR:
+      case ErrorType.NETWORK:
         title = 'Network Error';
         break;
-      case ErrorType.SERVER_ERROR:
+      case ErrorType.SERVER:
         title = 'Server Error';
         break;
       default:

@@ -1,18 +1,18 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/services/user';
 import { UserRole } from '@/types';
-import { Bell, LogOut, Menu, Settings, User, X } from 'lucide-react';
+import { Bell, LogOut, Menu, Settings, User as UserIcon, X } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 
@@ -32,7 +32,7 @@ export const Navbar: React.FC = () => {
   const isUserClient = (): boolean => {
     // Use the unified UserRole enum for type safety
     // CLIENT role in your system represents clients who post tasks
-    return user?.role === UserRole.USER;
+    return (user as any)?.role === UserRole.USER;
   };
 
   // Helper function to safely handle avatar URLs that might be null
@@ -128,10 +128,10 @@ export const Navbar: React.FC = () => {
                       <Avatar className="h-8 w-8">
                         {/* FIXED: Use helper function to safely convert null to undefined */}
                         {/* This ensures type compatibility with the AvatarImage component */}
-                        <AvatarImage src={getAvatarSrc(user?.avatar)} alt={`${user?.firstName} ${user?.lastName}`} />
+                        <AvatarImage src={getAvatarSrc((user as any)?.avatar)} alt={`${(user as any)?.firstName} ${(user as any)?.lastName}`} />
                         <AvatarFallback>
-                          {user?.firstName && user?.lastName 
-                            ? getInitials(`${user.firstName} ${user.lastName}`) 
+                          {(user as any)?.firstName && (user as any)?.lastName
+                            ? getInitials(`${(user as any).firstName} ${(user as any).lastName}`)
                             : 'U'}
                         </AvatarFallback>
                       </Avatar>
@@ -140,13 +140,13 @@ export const Navbar: React.FC = () => {
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel>
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium text-text-primary">{user?.firstName} {user?.lastName}</p>
-                        <p className="text-xs text-text-secondary">{user?.email}</p>
+                        <p className="text-sm font-medium text-text-primary">{(user as any)?.firstName} {(user as any)?.lastName}</p>
+                        <p className="text-xs text-text-secondary">{(user as any)?.email}</p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/profile')}>
-                      <User className="mr-2 h-4 w-4" />
+                      <UserIcon className="mr-2 h-4 w-4" />
                       <span>Profile</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/settings')}>
@@ -275,17 +275,17 @@ export const Navbar: React.FC = () => {
                   <Avatar className="h-8 w-8">
                     {/* FIXED: Apply the same avatar src fix in the mobile menu */}
                     {/* This ensures consistent behavior across all avatar instances */}
-                    <AvatarImage src={getAvatarSrc(user?.avatar)} alt={`${user?.firstName} ${user?.lastName}`} />
+                    <AvatarImage src={getAvatarSrc((user as any)?.avatar)} alt={`${(user as any)?.firstName} ${(user as any)?.lastName}`} />
                     <AvatarFallback>
-                      {user?.firstName && user?.lastName 
-                        ? getInitials(`${user.firstName} ${user.lastName}`) 
+                      {(user as any)?.firstName && (user as any)?.lastName
+                        ? getInitials(`${(user as any).firstName} ${(user as any).lastName}`)
                         : 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </div>
                 <div className="ml-3">
-                  <div className="text-base font-medium text-text-primary">{user?.firstName} {user?.lastName}</div>
-                  <div className="text-sm font-medium text-text-secondary">{user?.email}</div>
+                  <div className="text-base font-medium text-text-primary">{(user as any)?.firstName} {(user as any)?.lastName}</div>
+                  <div className="text-sm font-medium text-text-secondary">{(user as any)?.email}</div>
                 </div>
               </div>
               <div className="mt-3 space-y-1">

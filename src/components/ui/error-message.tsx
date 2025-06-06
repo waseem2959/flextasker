@@ -6,8 +6,7 @@
  */
 
 import { useTheme } from '@/contexts/theme-context';
-import { ErrorType } from '@/types/app-enums';
-import { AppError } from '@/types/errors';
+import { AppError, ErrorType } from '@/types/errors';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -436,10 +435,10 @@ export function createErrorMessage(
 }
 
 // Pre-configured error messages for common error types
-export const NetworkErrorMessage = createErrorMessage(ErrorType.NETWORK_ERROR);
+export const NetworkErrorMessage = createErrorMessage(ErrorType.NETWORK);
 export const AuthErrorMessage = createErrorMessage(ErrorType.AUTHENTICATION);
 export const ValidationErrorMessage = createErrorMessage(ErrorType.VALIDATION);
 export const NotFoundErrorMessage = createErrorMessage(ErrorType.NOT_FOUND);
-export const ServerErrorMessage = createErrorMessage(ErrorType.SERVER_ERROR);
+export const ServerErrorMessage = createErrorMessage(ErrorType.SERVER);
 
 export default ErrorMessage;

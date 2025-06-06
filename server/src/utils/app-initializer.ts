@@ -19,6 +19,7 @@ import morgan from 'morgan';
 // @ts-ignore
 import errorHandler from '../middleware/error-handler-middleware';
 import { getEndpointMetricsMiddleware, metricsMiddleware } from '../middleware/metrics-middleware';
+import { performanceMonitoringMiddleware } from '../monitoring/performance-monitor';
 import { cacheMiddleware } from './cache/cache-middleware';
 import { redisClient } from './cache/redis-client';
 import { logger } from './logger';

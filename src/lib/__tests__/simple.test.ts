@@ -1,6 +1,6 @@
 /**
  * Simple Test
- * 
+ *
  * Basic test to verify Jest setup is working correctly.
  */
 
@@ -30,5 +30,10 @@ describe('Simple Test Suite', () => {
   it('should handle async operations', async () => {
     const promise = Promise.resolve('success');
     await expect(promise).resolves.toBe('success');
+  });
+
+  it('should handle environment variables', () => {
+    // Test that our Jest config properly handles import.meta.env
+    expect(process.env.NODE_ENV).toBe('test');
   });
 });

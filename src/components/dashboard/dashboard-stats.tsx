@@ -1,10 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Task, TaskStatus, UserRole, User as UserType } from '@/types';
-import { Bell, FileText, Star, User } from 'lucide-react';
+import { Task, TaskStatus, User, UserRole } from '@/types';
+import { Bell, FileText, Star, User as UserIcon } from 'lucide-react';
 import React from 'react';
 
 interface DashboardStatsProps {
-  user: UserType;
+  user: User;
   myTasks: Task[];
 }
 
@@ -12,7 +12,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ user, myTasks })
   // Helper function to determine if user is a client (task owner) vs tasker
   // We'll use 'USER' role to represent users who post tasks
   // and 'TASKER' to represent service providers
-  const isClient = user.role === UserRole.USER;
+  const isClient = (user as any).role === UserRole.USER;
   
   // Calculate statistics based on current tasks
   const openTasks = myTasks.filter(task => task.status === TaskStatus.OPEN);
@@ -26,7 +26,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ user, myTasks })
     } else {
       // For taskers, count tasks they're assigned to that are in progress or open
       return myTasks.filter(task => 
-        task.assignee?.id === user.id && 
+        (task.assignee as any)?.id === (user as any).id &&
         (task.status === TaskStatus.OPEN || task.status === TaskStatus.IN_PROGRESS)
       ).length;
     }
@@ -75,7 +75,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ user, myTasks })
               </p>
             </div>
             <div className="p-2 bg-success/10 rounded-lg">
-              <User className="h-6 w-6 text-success" />
+              <UserIcon className="h-6 w-6 text-success" />
             </div>
           </div>
         </CardContent>

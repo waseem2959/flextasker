@@ -2,22 +2,25 @@ import { AxiosError } from 'axios';
 import type { ApiResponse } from './api-types';
 // Import shared error types as the canonical source
 import {
-    ErrorResponse,
-    ErrorType,
-    HttpStatusCode,
-    ValidationErrorDetail,
-    ValidationErrorResponse,
-    errorTypeToStatusCode,
-    statusCodeToErrorType
-} from '../../../shared/types/errors';
+  ErrorResponse,
+  ErrorType,
+  HttpStatusCode,
+  ValidationErrorDetail,
+  ValidationErrorResponse,
+  errorTypeToStatusCode,
+  statusCodeToErrorType
+} from '../../shared/types/errors';
 
 // Re-export shared types for convenience
 export {
-    ErrorResponse, ErrorType,
-    HttpStatusCode,
-    ValidationErrorDetail, ValidationErrorResponse,
-    errorTypeToStatusCode,
-    statusCodeToErrorType
+  ErrorType,
+  errorTypeToStatusCode,
+  statusCodeToErrorType
+};
+export type {
+  ErrorResponse,
+  HttpStatusCode,
+  ValidationErrorDetail, ValidationErrorResponse
 };
 
 /**

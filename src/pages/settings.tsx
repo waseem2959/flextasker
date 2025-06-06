@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/use-toast';
 import { useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import MainLayout from '../layouts/MainLayout';
+import MainLayout from '../layouts/main-layout';
 
 // Form states
 interface ProfileFormState {
@@ -38,11 +38,11 @@ const Settings = () => {
   
   // Initialize form state with user data or defaults
   const [profileForm, setProfileForm] = useState<ProfileFormState>({
-    firstName: user?.firstName ?? '',
-    lastName: user?.lastName ?? '',
-    email: user?.email ?? '',
-    phone: user?.phone ?? '',
-    bio: user?.bio ?? '',
+    firstName: (user as any)?.firstName ?? '',
+    lastName: (user as any)?.lastName ?? '',
+    email: (user as any)?.email ?? '',
+    phone: (user as any)?.phone ?? '',
+    bio: (user as any)?.bio ?? '',
   });
   
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({

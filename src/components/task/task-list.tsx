@@ -164,12 +164,12 @@ export const TaskList: React.FC<TaskListProps> = ({
 
   const matchesOwner = (task: Task, ownerId?: string): boolean => {
     if (!ownerId) return true;
-    return task.owner.id === ownerId;
+    return (task.owner as any).id === ownerId;
   };
 
   const matchesAssignee = (task: Task, assigneeId?: string): boolean => {
     if (!assigneeId) return true;
-    return task.assignee?.id === assigneeId;
+    return (task.assignee as any)?.id === assigneeId;
   };
 
   const matchesBudgetRange = (task: Task, budgetRange?: TaskFilterParams['budgetRange']): boolean => {
