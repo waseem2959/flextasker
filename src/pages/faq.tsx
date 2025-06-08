@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useState } from 'react';
-import MainLayout from '../layouts/main-layout';
+// Removed unused main layout
 
 interface FAQItem {
   id: string;
@@ -123,7 +123,7 @@ const FAQ = () => {
   });
   
   return (
-    <MainLayout>
+    <div className="min-h-screen bg-neutral-50">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-[hsl(206,33%,16%)] mb-4">Frequently Asked Questions</h1>
         <p className="text-[hsl(220,14%,46%)] mb-8 max-w-2xl">
@@ -206,7 +206,7 @@ const FAQ = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

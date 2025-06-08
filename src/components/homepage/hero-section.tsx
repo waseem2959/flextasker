@@ -1,21 +1,9 @@
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle, Search, Star, Users } from 'lucide-react';
-import React, { useState } from 'react';
+import { ArrowRight, CheckCircle, Star, Users } from 'lucide-react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-
-const categories = [
-  'All Categories',
-  'Cleaning & Maintenance',
-  'Handyman Services',
-  'Moving & Delivery',
-  'Personal Assistant',
-  'Tech Support',
-  'Design & Creative',
-  'Writing & Translation'
-];
+import { EnhancedSearch } from './enhanced-search';
 
 const stats = [
   { icon: Users, value: '50K+', label: 'Active Users' },
@@ -24,13 +12,6 @@ const stats = [
 ];
 
 export const HeroSection: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-
-  const handleSearch = () => {
-    // Handle search functionality
-    console.log('Search:', { query: searchQuery, category: selectedCategory });
-  };
 
   return (
     <section className="relative bg-gradient-to-br from-primary-50 via-white to-primary-50 overflow-hidden">
@@ -52,12 +33,12 @@ export const HeroSection: React.FC = () => {
             className="space-y-8"
           >
             <div className="space-y-6">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-display text-text-primary leading-tight">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-heading text-neutral-900 leading-tight">
                 Get things done with{' '}
-                <span className="text-primary-600 relative">
+                <span className="text-primary-700 relative">
                   trusted local experts
                   <svg
-                    className="absolute -bottom-2 left-0 w-full h-3 text-primary-700"
+                    className="absolute -bottom-2 left-0 w-full h-3 text-primary-600"
                     viewBox="0 0 300 12"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
@@ -71,74 +52,19 @@ export const HeroSection: React.FC = () => {
                   </svg>
                 </span>
               </h1>
-              
-              <p className="text-xl text-text-secondary leading-relaxed max-w-lg">
-                From home repairs to personal assistance, find skilled professionals 
+
+              <p className="text-xl text-neutral-700 leading-relaxed max-w-lg font-body">
+                From home repairs to personal assistance, find skilled professionals
                 ready to help with any task. Post your task and get competitive bids.
               </p>
             </div>
 
-            {/* Enhanced Search Widget with project-map styling */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-white p-6 rounded-2xl shadow-xl shadow-primary-900/5 border border-neutral-200 backdrop-blur-sm"
-            >
-              <div className="flex flex-col md:flex-row gap-4">
-                {/* Enhanced search input with better visual hierarchy */}
-                <div className="flex-1 relative group">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-500 w-5 h-5 transition-colors group-focus-within:text-primary-600" />
-                  <Input
-                    type="text"
-                    placeholder="What do you need help with?"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 h-14 border-2 border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-xl text-base font-body placeholder:text-neutral-500 transition-all duration-200"
-                  />
-                </div>
-
-                {/* Enhanced category selector */}
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="md:w-52 h-14 border-2 border-neutral-200 focus:border-primary-500 rounded-xl font-body text-base">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-2 border-neutral-200 shadow-xl">
-                    <SelectItem value="all" className="font-body">All Categories</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category} className="font-body">
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Enhanced search button with project-map styling */}
-                <Button
-                  onClick={handleSearch}
-                  className="h-14 px-8 bg-primary-900 hover:bg-primary-800 text-white font-heading font-semibold rounded-xl shadow-lg shadow-primary-900/25 transition-all duration-200 hover:shadow-xl hover:shadow-primary-900/30 hover:-translate-y-0.5"
-                >
-                  Search Tasks
-                </Button>
-              </div>
-
-              {/* Popular categories quick access */}
-              <div className="mt-6 pt-4 border-t border-neutral-100">
-                <p className="text-sm font-medium text-neutral-600 mb-3 font-body">Popular categories:</p>
-                <div className="flex flex-wrap gap-2">
-                  {categories.slice(0, 4).map((category) => (
-                    <button
-                      key={category}
-                      type="button"
-                      onClick={() => setSelectedCategory(category)}
-                      className="px-3 py-1.5 text-sm font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-full transition-colors duration-200 font-body"
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
+            {/* Enhanced Search Interface - Project-map aligned */}
+            <EnhancedSearch
+              variant="hero"
+              showAdvancedFilters={false}
+              className="mt-8"
+            />
 
             {/* Quick Actions */}
             <motion.div
@@ -165,14 +91,14 @@ export const HeroSection: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.6 }}
               className="flex flex-wrap gap-8 pt-4"
             >
-              {stats.map((stat, index) => (
-                <div key={index} className="flex items-center space-x-3">
+              {stats.map((stat) => (
+                <div key={stat.label} className="flex items-center space-x-3">
                   <div className="p-2 bg-primary-100 rounded-lg">
                     <stat.icon className="w-5 h-5 text-primary-600" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-text-primary">{stat.value}</div>
-                    <div className="text-sm text-text-secondary">{stat.label}</div>
+                    <div className="text-2xl font-bold text-neutral-900 font-heading">{stat.value}</div>
+                    <div className="text-sm text-neutral-600 font-body">{stat.label}</div>
                   </div>
                 </div>
               ))}

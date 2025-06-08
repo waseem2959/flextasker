@@ -14,8 +14,15 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Grid, List, MapPin, Search } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
-import { AdvancedSearchFilters, SearchFilters } from './advanced-search-filters';
 import { LocationSearch, LocationSearchValue } from './location-search';
+// Simplified search filters interface
+export interface SearchFilters {
+  category?: string;
+  priceRange?: { min?: number; max?: number };
+  rating?: number;
+  availability?: string;
+  [key: string]: any;
+}
 
 export interface TaskSearchState {
   query: string;
@@ -64,11 +71,6 @@ export const TaskSearchInterface: React.FC<TaskSearchInterfaceProps> = ({
     updateSearchState({ location });
   }, [updateSearchState]);
 
-  // Handle filters change
-  const handleFiltersChange = useCallback((filters: SearchFilters) => {
-    updateSearchState({ filters });
-  }, [updateSearchState]);
-
   // Handle sort change
   const handleSortChange = useCallback((sortBy: string) => {
     updateSearchState({ sortBy });
@@ -98,12 +100,6 @@ export const TaskSearchInterface: React.FC<TaskSearchInterfaceProps> = ({
       sortBy: 'relevance',
     });
   }, [updateSearchState]);
-
-  // Apply filters and search
-  const handleApplyFilters = useCallback(() => {
-    setShowAdvancedFilters(false);
-    onSearch();
-  }, [onSearch]);
 
   // Count active filters
   const activeFilterCount = Object.entries(searchState.filters).filter(([key, value]) => {
@@ -165,17 +161,18 @@ export const TaskSearchInterface: React.FC<TaskSearchInterfaceProps> = ({
                 Search Tasks
               </Button>
               
-              <div className="relative">
-                <AdvancedSearchFilters
-                  filters={searchState.filters}
-                  onFiltersChange={handleFiltersChange}
-                  onApply={handleApplyFilters}
-                  onReset={handleResetFilters}
-                  isOpen={showAdvancedFilters}
-                  onToggle={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                  categories={categories}
-                />
-              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className="h-12 px-4 border-2 border-neutral-200 hover:border-primary-300"
+              >
+                Filters
+                {activeFilterCount > 0 && (
+                  <Badge className="ml-2 bg-primary-600 text-white">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
             </div>
           </div>
         </CardContent>

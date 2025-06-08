@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDate } from '@/lib/utils';
 import { AlertCircle, Bell, Briefcase, Clock, MessageCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import MainLayout from '../layouts/main-layout';
+// Removed unused main layout
 // Import the formatShortRelativeTime function from the date service
 
 type NotificationType = 'message' | 'task' | 'bid' | 'alert' | 'system';
@@ -203,7 +203,7 @@ const Notifications = () => {
   };
   
   return (
-    <MainLayout>
+    <div className="min-h-screen bg-neutral-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-[hsl(206,33%,16%)]">Notifications</h1>
@@ -249,7 +249,7 @@ const Notifications = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

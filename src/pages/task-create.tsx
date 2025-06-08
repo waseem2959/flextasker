@@ -11,7 +11,7 @@ import { toast } from '@/components/ui/use-toast';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TaskPriority } from '../../shared/types/enums';
-import MainLayout from '../layouts/main-layout';
+// Removed unused main layout
 
 interface TaskFormState {
   title: string;
@@ -149,7 +149,7 @@ const TaskCreate = () => {
   ];
   
   return (
-    <MainLayout>
+    <div className="min-h-screen bg-neutral-50">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-text-primary mb-4">Create a New Task</h1>
         <p className="text-text-secondary mb-8">
@@ -299,7 +299,7 @@ const TaskCreate = () => {
           </form>
         </Card>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

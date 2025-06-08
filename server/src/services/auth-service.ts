@@ -38,7 +38,7 @@ export interface RegisterUserData {
   firstName: string;
   lastName: string;
   phone?: string;
-  role?: 'USER' | 'TASKER';
+  role?: 'USER' | 'TASKER' | 'ADMIN';
 }
 
 export interface LoginCredentials {

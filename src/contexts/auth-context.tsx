@@ -23,6 +23,8 @@ export const AuthProvider = ({ children }: { readonly children: ReactNode }) => 
   // State for authentication
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
+  const [activeRole, setActiveRole] = useState<UserRole | null>(null);
+  const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('accessToken'));
   const [refreshToken, setRefreshToken] = useState<string | null>(() => localStorage.getItem('refreshToken'));
@@ -61,9 +63,13 @@ export const AuthProvider = ({ children }: { readonly children: ReactNode }) => 
     setUser(newUser);
     if (newUser) {
       setRole((newUser as any).role ?? null);
+      setActiveRole((newUser as any).activeRole ?? (newUser as any).role ?? null);
+      setAvailableRoles((newUser as any).availableRoles ?? [(newUser as any).role ?? UserRole.USER]);
       setIsAuthenticated(true);
     } else {
       setRole(null);
+      setActiveRole(null);
+      setAvailableRoles([]);
       setIsAuthenticated(false);
     }
   }, []);
@@ -75,11 +81,14 @@ export const AuthProvider = ({ children }: { readonly children: ReactNode }) => 
   const clearAuth = useCallback(() => {
     setUser(null);
     setRole(null);
+    setActiveRole(null);
+    setAvailableRoles([]);
     setIsAuthenticated(false);
     setToken(null);
     setRefreshToken(null);
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
   }, []);
 
   // Login mutation
@@ -118,6 +127,24 @@ export const AuthProvider = ({ children }: { readonly children: ReactNode }) => 
     },
     onError: () => {
       errorService.showErrorNotification('Registration failed');
+    }
+  });
+
+  // Role switching mutation
+  const roleSwitchMutation = useMutation({
+    mutationFn: async (targetRole: UserRole) => {
+      const service = await import('@/services/auth/role-switching-service');
+      return service.roleSwitchingService.switchUserRole(targetRole);
+    },
+    onSuccess: (response) => {
+      if (response.success && response.data) {
+        setActiveRole(response.data.newRole);
+        setAvailableRoles(response.data.availableRoles);
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      }
+    },
+    onError: () => {
+      errorService.showErrorNotification('Failed to switch role');
     }
   });
   
@@ -159,6 +186,33 @@ export const AuthProvider = ({ children }: { readonly children: ReactNode }) => 
       return false;
     }
   };
+
+  // Role switching handler - returns true if successful
+  const switchRole = async (targetRole: UserRole): Promise<boolean> => {
+    try {
+      await roleSwitchMutation.mutateAsync(targetRole);
+      return true;
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Role switch error:', error.message);
+      }
+      return false;
+    }
+  };
+
+  // Check role availability handler
+  const checkRoleAvailability = async (role: UserRole): Promise<boolean> => {
+    try {
+      const service = await import('@/services/auth/role-switching-service');
+      const response = await service.roleSwitchingService.checkRoleAvailability(role);
+      return response.success && response.data?.isAvailable === true;
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Role availability check error:', error.message);
+      }
+      return false;
+    }
+  };
   
   // Automatically update auth state when user data changes
   useEffect(() => {
@@ -184,29 +238,37 @@ export const AuthProvider = ({ children }: { readonly children: ReactNode }) => 
       user,
       isAuthenticated,
       role,
+      activeRole,
+      availableRoles,
       loading,
       token,
       refreshToken,
-      
+
       // State management methods
       setUser: updateUser,
       setIsLoading: updateLoadingState,
       setTokens,
       clearAuth,
-      
+
       // Authentication methods
       login,
       logout,
       register,
-      
+
+      // Role switching methods
+      switchRole,
+      checkRoleAvailability,
+
       // Token management
       getToken,
       getRefreshToken
     };
   }, [
-    user, 
-    isAuthenticated, 
+    user,
+    isAuthenticated,
     role,
+    activeRole,
+    availableRoles,
     loading,
     token,
     refreshToken,
@@ -214,9 +276,11 @@ export const AuthProvider = ({ children }: { readonly children: ReactNode }) => 
     updateLoadingState,
     setTokens,
     clearAuth,
-    login, 
-    logout, 
+    login,
+    logout,
     register,
+    switchRole,
+    checkRoleAvailability,
     getToken,
     getRefreshToken
   ]);

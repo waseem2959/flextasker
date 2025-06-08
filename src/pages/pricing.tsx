@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check } from 'lucide-react';
-import MainLayout from '../layouts/main-layout';
+// Removed unused main layout
 
 interface PlanFeature {
   name: string;
@@ -87,7 +87,7 @@ const plans: PricingPlan[] = [
 
 const Pricing = () => {
   return (
-    <MainLayout>
+    <div className="min-h-screen bg-neutral-50">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-[hsl(206,33%,16%)] mb-4">Flexible Plans for Everyone</h1>
@@ -195,7 +195,7 @@ const Pricing = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

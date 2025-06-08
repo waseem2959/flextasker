@@ -1,12 +1,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,8 @@ export const Navbar: React.FC = () => {
     logout();
     navigate('/');
   };
+
+
 
   // Helper function to determine if user is a client
   // This bridges the gap between your data model (CLIENT/TASKER) and UI logic (client/tasker)
@@ -45,14 +47,18 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="bg-background shadow-sm border-b border-border">
-      <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="bg-white shadow-sm border-b border-neutral-200 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link to="/" className="flex items-center">
-                <span className="text-xl font-bold font-display text-primary-600">Flex</span>
-                <span className="text-xl font-bold font-display text-text-primary">tasker</span>
+              <Link to="/" className="flex items-center hover:opacity-80 transition-opacity py-2">
+                <img
+                  src="/flextasker.svg"
+                  alt="FlexTasker - Get things done with trusted local experts"
+                  className="h-10 w-auto"
+                  loading="eager"
+                />
               </Link>
             </div>
             
@@ -62,8 +68,8 @@ export const Navbar: React.FC = () => {
                 className={({isActive}) => cn(
                   'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors',
                   isActive
-                    ? 'border-primary-600 text-text-primary'
-                    : 'border-transparent text-text-secondary hover:border-border hover:text-text-primary'
+                    ? 'border-primary-600 text-neutral-900'
+                    : 'border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-900'
                 )}
               >
                 Find Tasks
@@ -79,8 +85,8 @@ export const Navbar: React.FC = () => {
                       className={({isActive}) => cn(
                         'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors',
                         isActive
-                          ? 'border-primary-600 text-text-primary'
-                          : 'border-transparent text-text-secondary hover:border-border hover:text-text-primary'
+                          ? 'border-primary-600 text-neutral-900'
+                          : 'border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-900'
                       )}
                     >
                       Post a Task
@@ -91,8 +97,8 @@ export const Navbar: React.FC = () => {
                     className={({isActive}) => cn(
                       'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors',
                       isActive
-                        ? 'border-primary-600 text-text-primary'
-                        : 'border-transparent text-text-secondary hover:border-border hover:text-text-primary'
+                        ? 'border-primary-600 text-neutral-900'
+                        : 'border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-900'
                     )}
                   >
                     Dashboard
@@ -105,8 +111,8 @@ export const Navbar: React.FC = () => {
                 className={({isActive}) => cn(
                   'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors',
                   isActive
-                    ? 'border-primary-600 text-text-primary'
-                    : 'border-transparent text-text-secondary hover:border-border hover:text-text-primary'
+                    ? 'border-primary-600 text-neutral-900'
+                    : 'border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-900'
                 )}
               >
                 How It Works
@@ -114,12 +120,12 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
           
-          <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
+          <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-3">
             {isAuthenticated ? (
               <>
                 <Button variant="ghost" size="icon" className="relative" onClick={() => navigate('/notifications')}>
                   <Bell className="h-5 w-5" />
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-error"></span>
+                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
                 </Button>
                 
                 <DropdownMenu>
@@ -140,8 +146,8 @@ export const Navbar: React.FC = () => {
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel>
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium text-text-primary">{(user as any)?.firstName} {(user as any)?.lastName}</p>
-                        <p className="text-xs text-text-secondary">{(user as any)?.email}</p>
+                        <p className="text-sm font-medium text-neutral-900">{(user as any)?.firstName} {(user as any)?.lastName}</p>
+                        <p className="text-xs text-neutral-600">{(user as any)?.email}</p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
@@ -166,12 +172,13 @@ export const Navbar: React.FC = () => {
                 <Button
                   variant="ghost"
                   onClick={() => navigate('/login')}
+                  className="text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 h-10"
                 >
                   Log in
                 </Button>
                 <Button
-                  variant="default"
                   onClick={() => navigate('/register')}
+                  className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 h-10 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   Sign up
                 </Button>
@@ -180,23 +187,36 @@ export const Navbar: React.FC = () => {
           </div>
           
           <div className="flex items-center sm:hidden">
-            <button
-              type="button"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-600"
-            >
-              <span className="sr-only">{isMenuOpen ? 'Close menu' : 'Open menu'}</span>
-              {isMenuOpen ? (
+            {isMenuOpen ? (
+              <button
+                type="button"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-600 transition-colors"
+                aria-expanded="true"
+                aria-controls="mobile-menu"
+                aria-label="Close main menu"
+              >
+                <span className="sr-only">Close menu</span>
                 <X className="block h-6 w-6" />
-              ) : (
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-600 transition-colors"
+                aria-expanded="false"
+                aria-controls="mobile-menu"
+                aria-label="Open main menu"
+              >
+                <span className="sr-only">Open menu</span>
                 <Menu className="block h-6 w-6" />
-              )}
-            </button>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      <div className={isMenuOpen ? "sm:hidden" : "hidden"}>
+      <div className={isMenuOpen ? "sm:hidden" : "hidden"} id="mobile-menu">
         <div className="pt-2 pb-3 space-y-1">
           <NavLink
             to="/tasks"
@@ -204,8 +224,8 @@ export const Navbar: React.FC = () => {
               cn(
                 'block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors',
                 isActive
-                  ? 'bg-primary-50 border-primary-600 text-primary-500'
-                  : 'border-transparent text-text-secondary hover:bg-primary-50 hover:border-border hover:text-text-primary'
+                  ? 'bg-primary-50 border-primary-600 text-primary-700'
+                  : 'border-transparent text-neutral-600 hover:bg-primary-50 hover:border-neutral-300 hover:text-neutral-900'
               )
             }
             onClick={() => setIsMenuOpen(false)}
@@ -224,8 +244,8 @@ export const Navbar: React.FC = () => {
                     cn(
                       'block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors',
                       isActive
-                        ? 'bg-primary-50 border-primary-600 text-primary-500'
-                        : 'border-transparent text-text-secondary hover:bg-primary-50 hover:border-border hover:text-text-primary'
+                        ? 'bg-primary-50 border-primary-600 text-primary-700'
+                        : 'border-transparent text-neutral-600 hover:bg-primary-50 hover:border-neutral-300 hover:text-neutral-900'
                     )
                   }
                   onClick={() => setIsMenuOpen(false)}
@@ -240,8 +260,8 @@ export const Navbar: React.FC = () => {
                   cn(
                     'block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors',
                     isActive
-                      ? 'bg-primary-50 border-primary-600 text-primary-500'
-                      : 'border-transparent text-text-secondary hover:bg-primary-50 hover:border-border hover:text-text-primary'
+                      ? 'bg-primary-50 border-primary-600 text-primary-700'
+                      : 'border-transparent text-neutral-600 hover:bg-primary-50 hover:border-neutral-300 hover:text-neutral-900'
                   )
                 }
                 onClick={() => setIsMenuOpen(false)}
@@ -257,8 +277,8 @@ export const Navbar: React.FC = () => {
               cn(
                 'block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition-colors',
                 isActive
-                  ? 'bg-primary-50 border-primary-600 text-primary-500'
-                  : 'border-transparent text-text-secondary hover:bg-primary-50 hover:border-border hover:text-text-primary'
+                  ? 'bg-primary-50 border-primary-600 text-primary-700'
+                  : 'border-transparent text-neutral-600 hover:bg-primary-50 hover:border-neutral-300 hover:text-neutral-900'
               )
             }
             onClick={() => setIsMenuOpen(false)}
@@ -267,7 +287,7 @@ export const Navbar: React.FC = () => {
           </NavLink>
         </div>
         
-        <div className="pt-4 pb-3 border-t border-border">
+        <div className="pt-4 pb-3 border-t border-neutral-200">
           {isAuthenticated ? (
             <>
               <div className="flex items-center px-4">
@@ -284,8 +304,8 @@ export const Navbar: React.FC = () => {
                   </Avatar>
                 </div>
                 <div className="ml-3">
-                  <div className="text-base font-medium text-text-primary">{(user as any)?.firstName} {(user as any)?.lastName}</div>
-                  <div className="text-sm font-medium text-text-secondary">{(user as any)?.email}</div>
+                  <div className="text-base font-medium text-neutral-900">{(user as any)?.firstName} {(user as any)?.lastName}</div>
+                  <div className="text-sm font-medium text-neutral-600">{(user as any)?.email}</div>
                 </div>
               </div>
               <div className="mt-3 space-y-1">
@@ -295,7 +315,7 @@ export const Navbar: React.FC = () => {
                     setIsMenuOpen(false);
                     navigate('/profile');
                   }}
-                  className="block px-4 py-2 text-base font-medium text-text-secondary hover:text-text-primary hover:bg-primary-50 w-full text-left transition-colors"
+                  className="block px-4 py-2 text-base font-medium text-neutral-600 hover:text-neutral-900 hover:bg-primary-50 w-full text-left transition-colors"
                 >
                   Your Profile
                 </button>
@@ -305,7 +325,7 @@ export const Navbar: React.FC = () => {
                     setIsMenuOpen(false);
                     navigate('/settings');
                   }}
-                  className="block px-4 py-2 text-base font-medium text-text-secondary hover:text-text-primary hover:bg-primary-50 w-full text-left transition-colors"
+                  className="block px-4 py-2 text-base font-medium text-neutral-600 hover:text-neutral-900 hover:bg-primary-50 w-full text-left transition-colors"
                 >
                   Settings
                 </button>
@@ -315,7 +335,7 @@ export const Navbar: React.FC = () => {
                     setIsMenuOpen(false);
                     handleLogout();
                   }}
-                  className="block px-4 py-2 text-base font-medium text-text-secondary hover:text-text-primary hover:bg-primary-50 w-full text-left transition-colors"
+                  className="block px-4 py-2 text-base font-medium text-neutral-600 hover:text-neutral-900 hover:bg-primary-50 w-full text-left transition-colors"
                 >
                   Sign out
                 </button>

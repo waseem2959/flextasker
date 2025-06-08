@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import MainLayout from '../layouts/main-layout';
+// Removed unused main layout
 
 import { Progress } from '@/components/ui/progress';
 import { UserRole } from '../../shared/types/enums';
@@ -194,7 +194,7 @@ const ProfilePublic = () => {
   const totalRatings = ratingDistribution.reduce((acc, item) => acc + item.count, 0);
 
   return (
-    <MainLayout>
+    <div className="min-h-screen bg-neutral-50">
       <div className="container mx-auto px-4 py-8">
         {isLoading ? (
           <div className="flex flex-col space-y-4">
@@ -495,7 +495,7 @@ const ProfilePublic = () => {
           </>
         )}
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

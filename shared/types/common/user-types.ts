@@ -9,6 +9,7 @@ import { UserRole, VerificationStatus } from './enums';
 
 /**
  * Base User interface - common properties for all users
+ * Enhanced to support role-switching functionality
  */
 export interface BaseUser {
   id: string;
@@ -17,6 +18,16 @@ export interface BaseUser {
   firstName: string;
   lastName: string;
   role: UserRole;
+  // Role-switching support
+  availableRoles: UserRole[];
+  activeRole: UserRole;
+  rolePreferences?: {
+    [key in UserRole]?: {
+      isEnabled: boolean;
+      profileCompleted: boolean;
+      lastUsed?: string;
+    };
+  };
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
@@ -70,11 +81,12 @@ export interface UserProfile extends BaseUser {
 }
 
 /**
- * Client user interface
+ * User interface for task posters (formerly Client)
+ * Standardized to use USER role only
  */
 export interface ClientUser extends UserProfile {
-  role: UserRole.CLIENT | UserRole.USER;
-  // Client-specific properties
+  role: UserRole.USER;
+  // User-specific properties for task posting
   totalTasksPosted: number;
   activeTasks: number;
   completedTasks: number;
@@ -118,9 +130,10 @@ export interface TaskerUser extends UserProfile {
 
 /**
  * Admin user interface
+ * Standardized to use ADMIN role only
  */
 export interface AdminUser extends UserProfile {
-  role: UserRole.ADMIN | UserRole.MODERATOR;
+  role: UserRole.ADMIN;
   // Admin-specific properties
   permissions: string[];
   lastLoginAt?: string;
@@ -195,6 +208,40 @@ export interface UserUpdateRequest {
 }
 
 /**
+ * Role switching request interface
+ */
+export interface RoleSwitchRequest {
+  targetRole: UserRole;
+  reason?: string;
+}
+
+/**
+ * Role switching response interface
+ */
+export interface RoleSwitchResponse {
+  success: boolean;
+  newRole: UserRole;
+  availableRoles: UserRole[];
+  message?: string;
+  requiresProfileCompletion?: boolean;
+}
+
+/**
+ * Role availability check interface
+ */
+export interface RoleAvailabilityCheck {
+  role: UserRole;
+  isAvailable: boolean;
+  requirements?: {
+    profileCompletion: boolean;
+    verification: boolean;
+    minimumRating?: number;
+    minimumTasks?: number;
+  };
+  missingRequirements?: string[];
+}
+
+/**
  * Password change request interface
  */
 export interface PasswordChangeRequest {
@@ -236,7 +283,7 @@ export interface UserSearchParams {
   availabilityStatus?: 'available' | 'limited' | 'unavailable';
   
   // Sorting
-  sortBy?: string | 'rating' | 'completionRate' | 'responseRate' | 'joinedAt';
+  sortBy?: 'rating' | 'completionRate' | 'responseRate' | 'joinedAt';
   sortDirection?: 'asc' | 'desc';
   sortOrder?: 'asc' | 'desc'; // Alternative name for sortDirection
   

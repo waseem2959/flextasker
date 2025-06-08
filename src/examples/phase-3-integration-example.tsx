@@ -6,18 +6,15 @@
  */
 
 import {
-  // AI Search Components
-  AISearchEngine,
-  CommissionCalculator,
-  EscrowService,
-  FraudDetection,
-  GeospatialSearch,
-  // Trust & Safety Components
-  IdentityVerification,
-  // Payment Components
-  PaymentMethodSelector,
-  ReviewDisplay,
-  ReviewForm,
+    // Available Components
+    CommissionCalculator,
+    EscrowService,
+    // Trust & Safety Components
+    IdentityVerification,
+    // Payment Components
+    PaymentMethodSelector,
+    ReviewDisplay,
+    ReviewForm,
 } from '@/components';
 import React, { useState } from 'react';
 
@@ -27,7 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Brain, CreditCard, MapPin, Shield, Star } from 'lucide-react';
 
-// Example data types and mock data
+// Example data types and mock data - Stripe only
 const mockPaymentMethods = [
   {
     id: 'stripe-1',
@@ -42,10 +39,14 @@ const mockPaymentMethods = [
     isVerified: true,
   },
   {
-    id: 'paypal-1',
-    provider: 'paypal' as const,
-    type: 'wallet' as const,
-    displayName: 'PayPal Account',
+    id: 'stripe-2',
+    provider: 'stripe' as const,
+    type: 'card' as const,
+    displayName: 'Mastercard •••• 5555',
+    last4: '5555',
+    expiryMonth: 8,
+    expiryYear: 2026,
+    brand: 'mastercard',
     isDefault: false,
     isVerified: true,
   },
@@ -89,36 +90,7 @@ const mockEscrowTransaction = {
   taskerAmount: 450,
 };
 
-const mockRiskAssessment = {
-  userId: 'user-123',
-  overallRisk: 'medium' as const,
-  riskScore: 35,
-  indicators: [
-    {
-      id: 'indicator-1',
-      type: 'review-manipulation' as const,
-      severity: 'medium' as const,
-      confidence: 75,
-      description: 'Unusual pattern in recent reviews',
-      detectedAt: new Date('2024-01-20'),
-      evidence: [
-        'Multiple 5-star reviews from new accounts',
-        'Reviews posted within short time frame',
-        'Similar language patterns detected',
-      ],
-      autoResolved: false,
-    },
-  ],
-  lastAssessment: new Date('2024-01-20'),
-  accountAge: 180,
-  verificationLevel: 85,
-  activityPatterns: {
-    loginFrequency: 0.8,
-    taskCompletionRate: 0.92,
-    communicationScore: 0.88,
-    paymentReliability: 0.95,
-  },
-};
+// Removed unused mockRiskAssessment
 
 const mockReviews = [
   {
@@ -157,15 +129,10 @@ export const Phase3IntegrationExample: React.FC = () => {
   const [showVerification, setShowVerification] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
 
-  // Search state
-  const [searchLocation, setSearchLocation] = useState({
-    lat: -33.8688,
-    lng: 151.2093,
-    address: 'Sydney, NSW, Australia',
-  });
+  // Removed unused search state
 
   // Event handlers
-  const handlePaymentMethodAdd = (provider: 'stripe' | 'paypal' | 'square' | 'apple-pay' | 'google-pay') => {
+  const handlePaymentMethodAdd = (provider: 'stripe') => {
     console.log('Adding payment method:', provider);
   };
 
@@ -218,36 +185,7 @@ export const Phase3IntegrationExample: React.FC = () => {
     setShowReviewForm(false);
   };
 
-  const handleFraudAction = (indicatorId: string, action: 'investigate' | 'resolve' | 'escalate') => {
-    console.log('Fraud action:', indicatorId, action);
-  };
-
-  const handleAISearch = async (query: string, filters: {
-    categories: string[];
-    priceRange: { min: number; max: number };
-    location: {
-      center: { lat: number; lng: number };
-      radius: number;
-    };
-    rating: number;
-    availability: 'any' | 'today' | 'this-week';
-    sortBy: 'relevance' | 'price' | 'rating' | 'distance' | 'date';
-  }) => {
-    console.log('AI Search:', query, filters);
-    return []; // Mock results
-  };
-
-  const handleGeoSearch = async (params: {
-    center: { lat: number; lng: number };
-    radius: number;
-    clustering: boolean;
-    heatmap: boolean;
-    sortBy: 'distance' | 'relevance' | 'price' | 'rating';
-    maxResults: number;
-  }) => {
-    console.log('Geo Search:', params);
-    return []; // Mock results
-  };
+  // Removed unused handlers for deleted components
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
@@ -373,13 +311,10 @@ export const Phase3IntegrationExample: React.FC = () => {
                 <CardTitle className="font-heading">Fraud Detection</CardTitle>
               </CardHeader>
               <CardContent>
-                <FraudDetection
-                  riskAssessment={mockRiskAssessment}
-                  onInvestigate={(id) => handleFraudAction(id, 'investigate')}
-                  onResolve={(id) => handleFraudAction(id, 'resolve')}
-                  onEscalate={(id) => handleFraudAction(id, 'escalate')}
-                  showDetails={true}
-                />
+                {/* FraudDetection component removed during cleanup */}
+                <div className="p-4 text-center text-neutral-600">
+                  Fraud Detection component has been removed during codebase cleanup.
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -443,13 +378,10 @@ export const Phase3IntegrationExample: React.FC = () => {
               <CardTitle className="font-heading">AI-Powered Search Engine</CardTitle>
             </CardHeader>
             <CardContent>
-              <AISearchEngine
-                onSearch={handleAISearch}
-                onSuggestionSelect={(suggestion) => console.log('Suggestion:', suggestion)}
-                enableMLRanking={true}
-                {...({} as any)}
-                enableVisualSearch={true}
-              />
+              {/* AISearchEngine component removed during cleanup */}
+              <div className="p-4 text-center text-neutral-600">
+                AI Search Engine component has been removed during codebase cleanup.
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -461,14 +393,10 @@ export const Phase3IntegrationExample: React.FC = () => {
               <CardTitle className="font-heading">Geospatial Search</CardTitle>
             </CardHeader>
             <CardContent>
-              <GeospatialSearch
-                onSearch={handleGeoSearch}
-                onLocationSelect={setSearchLocation as any}
-                initialLocation={searchLocation}
-                showMap={true}
-                enableClustering={true}
-                {...({} as any)}
-              />
+              {/* GeospatialSearch component removed during cleanup */}
+              <div className="p-4 text-center text-neutral-600">
+                Geospatial Search component has been removed during codebase cleanup.
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

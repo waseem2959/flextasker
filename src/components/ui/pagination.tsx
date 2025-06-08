@@ -3,7 +3,7 @@ import * as React from "react"
 
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { type ButtonVariantProps } from "@/types"
+import { type VariantProps } from "class-variance-authority"
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
@@ -37,7 +37,7 @@ PaginationItem.displayName = "PaginationItem"
 
 type PaginationLinkProps = {
   isActive?: boolean
-} & ButtonVariantProps &
+} & VariantProps<typeof buttonVariants> &
   React.ComponentProps<"a">
 
 const PaginationLink = ({

@@ -11,11 +11,11 @@
 // Import core shared enums as the canonical source
 // These are shared between frontend and backend and should be the source of truth
 import {
-  BidStatus,
-  BudgetType,
-  NotificationType,
-  TaskPriority,
-  TaskStatus
+    BidStatus,
+    BudgetType,
+    NotificationType,
+    TaskPriority,
+    TaskStatus
 } from '../../shared/types/enums';
 
 // Import UserRole from common/enums to match user-types.ts
@@ -23,47 +23,6 @@ import { UserRole } from '../../shared/types/common/enums';
 
 // Import additional app-specific enums that don't conflict with shared enums
 import {
-  AuthStatus,
-  BrowserType,
-  ConnectionState,
-  CurrencyCode,
-  DateFormat,
-  DeviceType,
-  DistanceUnit,
-  Environment,
-  FeatureFlag,
-  FormFieldType,
-  HttpStatusCode,
-  Language,
-  MetricType,
-  PaymentMethod,
-  PaymentStatus,
-  ProfileVisibility,
-  RequestMethod,
-  ReviewRating,
-  SortDirection,
-  TaskCategory,
-  TaskComplexity,
-  TaskUrgency,
-  Theme,
-  TimeFormat,
-  ToastType,
-  TrackingCategory,
-  VerificationStatus
-} from './app-enums';
-
-// Re-export shared enums as the canonical source
-export {
-  BidStatus,
-  BudgetType,
-  NotificationType,
-  TaskPriority,
-  TaskStatus,
-  UserRole
-};
-
-// Re-export additional app-specific enums
-    export {
     AuthStatus,
     BrowserType,
     ConnectionState,
@@ -72,7 +31,6 @@ export {
     DeviceType,
     DistanceUnit,
     Environment,
-
     FeatureFlag,
     FormFieldType,
     HttpStatusCode,
@@ -92,30 +50,72 @@ export {
     ToastType,
     TrackingCategory,
     VerificationStatus
-  };
+} from './app-enums';
+
+// Re-export shared enums as the canonical source
+export {
+    BidStatus,
+    BudgetType,
+    NotificationType,
+    TaskPriority,
+    TaskStatus,
+    UserRole
+};
+
+// Re-export additional app-specific enums
+    export {
+        AuthStatus,
+        BrowserType,
+        ConnectionState,
+        CurrencyCode,
+        DateFormat,
+        DeviceType,
+        DistanceUnit,
+        Environment,
+
+        FeatureFlag,
+        FormFieldType,
+        HttpStatusCode,
+        Language,
+        MetricType,
+        PaymentMethod,
+        PaymentStatus,
+        ProfileVisibility,
+        RequestMethod,
+        ReviewRating,
+        SortDirection,
+        TaskCategory,
+        TaskComplexity,
+        TaskUrgency,
+        Theme,
+        TimeFormat,
+        ToastType,
+        TrackingCategory,
+        VerificationStatus
+    };
 
 // Export button-specific types with selective exports for ButtonSize and ButtonVariant
 // to avoid conflicts with app-enums
-  export * from './button-types';
+
 
 // Import errors without direct export
-import * as ErrorsModule from './errors';
+    import * as ErrorsModule from './errors';
 
 // Export specific items from errors except the ErrorType enum to avoid conflict
 export {
-  AppError,
-  AuthError,
-  classifyError,
-  createError,
-  createErrorResponse,
-  handleApiError,
-  isAppError,
-  NetworkError,
-  NotFoundError,
-  PermissionError,
-  ServerError,
-  TimeoutError,
-  ValidationError
+    AppError,
+    AuthError,
+    classifyError,
+    createError,
+    createErrorResponse,
+    handleApiError,
+    isAppError,
+    NetworkError,
+    NotFoundError,
+    PermissionError,
+    ServerError,
+    TimeoutError,
+    ValidationError
 } from './errors';
 
 // Export API client types
@@ -137,21 +137,20 @@ export * from './messaging-types';
 import * as ApiClientTypes from './api-client-types';
 import * as ApiTypes from './api-types';
 import * as AppEnums from './app-enums';
-import * as ButtonTypes from './button-types';
+
 import * as MessagingTypes from './messaging-types';
 import * as ModelTypes from './models-types';
 import * as TaskTypes from './task-types';
 
 // Re-export with namespaces to prevent naming conflicts
 export {
-  ApiClientTypes,
-  ApiTypes,
-  AppEnums,
-  ButtonTypes,
-  ErrorsModule,
-  MessagingTypes,
-  ModelTypes,
-  TaskTypes
+    ApiClientTypes,
+    ApiTypes,
+    AppEnums,
+    ErrorsModule,
+    MessagingTypes,
+    ModelTypes,
+    TaskTypes
 };
 
 // Export UserImpl class directly for instantiation
@@ -159,29 +158,29 @@ export {
 
 // Export shared user types for consistency
 export type {
-  AdminUser, BaseUser, ClientUser, PasswordChangeRequest, TaskerUser, UserProfile, UserRegistrationRequest, UserSearchParams,
-  UsersResponse, UserUpdateRequest, UserWithRole
+    AdminUser, BaseUser, ClientUser, PasswordChangeRequest, TaskerUser, UserProfile, UserRegistrationRequest, UserSearchParams,
+    UsersResponse, UserUpdateRequest, UserWithRole
 } from '../../shared/types/common/user-types';
 
 // Export primary types directly (these are the canonical definitions)
 // Using 'export type' syntax for proper isolation with isolatedModules
 export type {
-  ApiUserResponse, AuthContextType,
-  AuthTokens,
-  Bid,
-  LoginCredentials,
-  RegisterData,
-  Review,
-  Task,
-  User
+    ApiUserResponse, AuthContextType,
+    AuthTokens,
+    Bid,
+    LoginCredentials,
+    RegisterData,
+    Review,
+    Task,
+    User
 } from './models-types';
 
 // Export messaging types directly for convenience
 export type {
-  Conversation,
-  Message,
-  SendMessageRequest,
-  TypingIndicator
+    Conversation,
+    Message,
+    SendMessageRequest,
+    TypingIndicator
 } from './messaging-types';
 
 // Type aliases for backward compatibility

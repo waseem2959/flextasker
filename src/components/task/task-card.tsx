@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { TaskImage } from '@/components/ui/progressive-image';
 import { cn, truncateText } from '@/lib/utils';
 import { BudgetType, Task } from '@/types';
 import { getLocationDisplayText } from '@/utils/task-utils';
@@ -97,16 +98,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     false;
 
   return (
-    <Card className="task-card h-full flex flex-col group cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/10 hover:-translate-y-1 hover:border-primary-300 bg-white border border-neutral-200">
-      <div className="relative h-40 overflow-hidden rounded-t-lg">
-        <img
+    <Card className="task-card h-full flex flex-col group cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:border-primary-300 bg-neutral-0 border border-neutral-200">
+      <div className="relative h-40 overflow-hidden rounded-t-xl">
+        <TaskImage
           src={taskImages[0]}
           alt={task.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = getCategoryDefaultImage(task.category);
-          }}
+          category={typeof task.category === 'object' ? task.category.name : task.category}
+          className="w-full h-full transition-transform duration-500 group-hover:scale-110"
         />
         {/* Enhanced gradient overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
@@ -196,10 +194,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
         </div>
       </CardContent>
       
-      <CardFooter className="p-6 pt-4 border-t border-neutral-200 flex items-center justify-between bg-neutral-50/50">
+      <CardFooter className="p-6 pt-4 border-t border-neutral-200 flex items-center justify-between bg-neutral-50">
         {/* Enhanced budget display with better visual hierarchy */}
         <div className="flex flex-col">
-          <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1">Budget</p>
+          <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1 font-body">Budget</p>
           <p className="text-xl font-bold text-primary-700 font-heading">
             {formatBudget()}
           </p>

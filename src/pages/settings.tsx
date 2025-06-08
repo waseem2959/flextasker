@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/use-toast';
 import { useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
-import MainLayout from '../layouts/main-layout';
+// Removed unused main layout
 
 // Form states
 interface ProfileFormState {
@@ -121,7 +121,7 @@ const Settings = () => {
   };
   
   return (
-    <MainLayout>
+    <div className="min-h-screen bg-neutral-50">
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-[hsl(206,33%,16%)] mb-6">Account Settings</h1>
         
@@ -401,7 +401,7 @@ const Settings = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

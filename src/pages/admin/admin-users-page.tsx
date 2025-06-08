@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { UserRole } from '../../../shared/types/enums';
-import AdminLayout from '../../layouts/admin-layout';
+// Removed unused admin layout
 
 // Import our components
 import { Badge } from '@/components/ui/badge';
@@ -242,7 +242,8 @@ const AdminUsersPage = () => {
   };
   
   return (
-    <AdminLayout>
+    <div className="min-h-screen bg-neutral-50">
+      <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-[hsl(206,33%,16%)]">User Management</h1>
 
@@ -260,8 +261,9 @@ const AdminUsersPage = () => {
         </div>
         
         {renderContent()}
+        </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 };
 

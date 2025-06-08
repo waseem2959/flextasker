@@ -76,83 +76,88 @@ const Register = () => {
 
   return (
     <Layout>
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-white font-primary">
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-primary-50 font-body">
         <div className="w-full max-w-md">
-          <Card className="border border-[hsl(215,16%,80%)] shadow-lg animate-fade-in">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center text-[hsl(206,33%,16%)]">
+          <Card className="border-2 border-neutral-200 shadow-xl hover:shadow-2xl transition-shadow duration-300 rounded-xl overflow-hidden">
+            <CardHeader className="space-y-1 bg-white">
+              <CardTitle className="text-2xl font-bold text-center text-neutral-900 font-heading">
                 Create an account
               </CardTitle>
-              <CardDescription className="text-center text-[hsl(220,14%,46%)]">
+              <CardDescription className="text-center text-neutral-600 font-body">
                 Enter your details to create your FlexTasker account
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 bg-white">
               {error && (
-                <div className="bg-[hsl(354,70%,95%)] border border-[hsl(354,70%,54%)]/50 text-[hsl(354,70%,54%)] p-3 rounded-md text-sm">
+                <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg text-sm font-body">
                   {error}
                 </div>
               )}
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-[hsl(206,33%,16%)]">First Name</Label>
+                  <Label htmlFor="name" className="text-neutral-900 font-medium font-body">First Name</Label>
                   <Input
                     id="name"
                     type="text"
-                    placeholder="John"
+                    placeholder="First Name*"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
+                    className="border-2 border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-lg font-body transition-all duration-200"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-[hsl(206,33%,16%)]">Last Name</Label>
+                  <Label htmlFor="lastName" className="text-neutral-900 font-medium font-body">Last Name</Label>
                   <Input
                     id="lastName"
                     type="text"
-                    placeholder="Doe"
+                    placeholder="Last Name*"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
+                    className="border-2 border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-lg font-body transition-all duration-200"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-[hsl(206,33%,16%)]">Email</Label>
+                  <Label htmlFor="email" className="text-neutral-900 font-medium font-body">Email</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="name@example.com"
+                    placeholder="Email*"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    className="border-2 border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-lg font-body transition-all duration-200"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-[hsl(206,33%,16%)]">Password</Label>
+                  <Label htmlFor="password" className="text-neutral-900 font-medium font-body">Password</Label>
                   <Input
                     id="password"
                     type="password"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    className="border-2 border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-lg font-body transition-all duration-200"
                     required
                     minLength={6}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password" className="text-[hsl(206,33%,16%)]">Confirm Password</Label>
+                  <Label htmlFor="confirm-password" className="text-neutral-900 font-medium font-body">Confirm Password</Label>
                   <Input
                     id="confirm-password"
                     type="password"
                     placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="border-2 border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-lg font-body transition-all duration-200"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[hsl(206,33%,16%)]">I want to join as</Label>
+                  <Label className="text-neutral-900 font-medium font-body">I want to join as</Label>
                   <RadioGroup
                     defaultValue="worker"
                     value={role}
@@ -160,26 +165,26 @@ const Register = () => {
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="client" id="client" />
-                      <Label htmlFor="client" className="text-[hsl(220,14%,46%)]">Client (post tasks)</Label>
+                      <Label htmlFor="client" className="text-neutral-600 font-body">Client (post tasks)</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="worker" id="worker" />
-                      <Label htmlFor="worker" className="text-[hsl(220,14%,46%)]">Worker (find work)</Label>
+                      <Label htmlFor="worker" className="text-neutral-600 font-body">Worker (find work)</Label>
                     </div>
                   </RadioGroup>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:shadow-lg" disabled={loading}>
                   {loading ? "Creating Account..." : "Create Account"}
                 </Button>
               </form>
             </CardContent>
-            <CardFooter className="flex flex-col">
-              <div className="text-sm text-[hsl(220,14%,46%)] text-center mt-2">
+            <CardFooter className="flex flex-col bg-neutral-50">
+              <div className="text-sm text-neutral-600 text-center mt-2 font-body">
                 Already have an account?{" "}
                 <Link
                   to="/login"
-                  className="text-[hsl(196,80%,43%)] hover:text-[hsl(192,84%,26%)] font-medium"
+                  className="text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200"
                 >
                   Sign in
                 </Link>

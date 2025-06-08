@@ -178,6 +178,7 @@ export function useAuthLoading(): boolean {
  * Using nullish coalescing operator (??) for safer defaults
  */
 function createUserFromApiResponse(apiUser: any): User {
+  const role = apiUser.role ?? UserRole.USER;
   return {
     name: `${apiUser.firstName} ${apiUser.lastName}`, // Add missing name field
     id: apiUser.id,
@@ -185,7 +186,11 @@ function createUserFromApiResponse(apiUser: any): User {
     firstName: apiUser.firstName,
     lastName: apiUser.lastName,
     email: apiUser.email,
-    role: apiUser.role,
+    role,
+    // Role-switching support
+    availableRoles: apiUser.availableRoles ?? [role],
+    activeRole: apiUser.activeRole ?? role,
+    rolePreferences: apiUser.rolePreferences ?? {},
     avatar: apiUser.avatar ?? null, // Using ?? instead of ||
     trustScore: apiUser.trustScore ?? 0,
     emailVerified: apiUser.emailVerified ?? false,

@@ -8,7 +8,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { Separator } from '@/components/ui/separator';
 import { Calendar, MapPin, Search, Star } from 'lucide-react';
 import { useState } from 'react';
-import MainLayout from '../layouts/main-layout';
+// Removed unused main layout
 
 interface SearchResultItem {
   id: string;
@@ -264,7 +264,7 @@ const SearchResults = () => {
   };
 
   return (
-    <MainLayout>
+    <div className="min-h-screen bg-neutral-50">
       <div className="container mx-auto py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[hsl(206,33%,16%)] mb-2">Search Results</h1>
@@ -399,7 +399,7 @@ const SearchResults = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

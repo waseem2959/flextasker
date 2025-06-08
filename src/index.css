@@ -1,9 +1,10 @@
 @import "tailwindcss";
+@import "./styles/design-tokens.css";
 
 
 @layer base {
   :root {
-    /* Enhanced Primary Brand Colors - Teal to Mint Gradient (Project-Map Aligned) */
+    /* Primary Brand Colors - Teal to Mint Gradient (Project-Map Exact Specifications) */
     --color-primary-950: 192 84% 18%; /* #084A5A - Darkest, high contrast text */
     --color-primary-900: 192 84% 26%; /* #0C6478 - Deep Teal, headers, primary CTAs */
     --color-primary-800: 190 82% 30%; /* #0F7A88 - Dark Teal, hover states */
@@ -16,12 +17,12 @@
     --color-primary-100: 146 65% 72%; /* #80EE98 - Bright Mint, light backgrounds */
     --color-primary-50: 140 60% 92%;  /* #E6FBF0 - Mint Tint, subtle backgrounds */
 
-    /* Legacy aliases for backward compatibility */
-    --color-primary-dark: 192 84% 26%; /* primary-900 */
-    --color-primary: 177 92% 43%;      /* primary-500 */
-    --color-primary-accent: 165 77% 50%; /* primary-400 */
-    --color-primary-light: 140 60% 92%; /* primary-50 */
-    --color-success: 158 73% 58%;      /* primary-300 for success */
+    /* Legacy aliases for backward compatibility - Simplified */
+    --color-primary-dark: var(--color-primary-900);
+    --color-primary: var(--color-primary-500);
+    --color-primary-accent: var(--color-primary-400);
+    --color-primary-light: var(--color-primary-50);
+    --color-success: var(--color-success-500);
 
     /* Neutral Palette with Teal Undertones */
     --color-neutral-900: 210 25% 8%;   /* #1A2B2F - Almost black, primary text */
@@ -47,14 +48,30 @@
     --color-surface: 210 4% 95%;        /* neutral-50 */
     --color-border: 210 8% 85%;         /* neutral-200 */
     
-    /* Spacing */
-    --space-xs: 4px;
-    --space-sm: 8px;
-    --space-md: 16px;
-    --space-lg: 24px;
-    --space-xl: 32px;
-    --space-2xl: 48px;
-    --space-3xl: 64px;
+    /* Spacing system - 8px base unit */
+    --space-0: 0;
+    --space-1: 0.25rem;   /* 4px */
+    --space-2: 0.5rem;    /* 8px */
+    --space-3: 0.75rem;   /* 12px */
+    --space-4: 1rem;      /* 16px */
+    --space-5: 1.25rem;   /* 20px */
+    --space-6: 1.5rem;    /* 24px */
+    --space-8: 2rem;      /* 32px */
+    --space-10: 2.5rem;   /* 40px */
+    --space-12: 3rem;     /* 48px */
+    --space-16: 4rem;     /* 64px */
+    --space-20: 5rem;     /* 80px */
+    --space-24: 6rem;     /* 96px */
+    --space-32: 8rem;     /* 128px */
+
+    /* Legacy spacing aliases */
+    --space-xs: var(--space-1);
+    --space-sm: var(--space-2);
+    --space-md: var(--space-4);
+    --space-lg: var(--space-6);
+    --space-xl: var(--space-8);
+    --space-2xl: var(--space-12);
+    --space-3xl: var(--space-16);
     
     /* Enhanced Typography - Project-map dual-typeface system */
     --font-heading: 'Formula', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -63,15 +80,24 @@
     --font-display: 'Formula', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
     /* Enhanced font sizes with Perfect Fourth scale (1.333 ratio) */
-    --text-xs: 0.75rem;     /* 12px */
-    --text-sm: 0.875rem;    /* 14px */
-    --text-base: 1rem;      /* 16px */
-    --text-lg: 1.125rem;    /* 18px */
-    --text-xl: 1.5rem;      /* 24px - Updated to follow Perfect Fourth */
-    --text-2xl: 2rem;       /* 32px - Updated to follow Perfect Fourth */
-    --text-3xl: 2.5rem;     /* 40px - Updated to follow Perfect Fourth */
-    --text-4xl: 3rem;       /* 48px - Updated to follow Perfect Fourth */
-    --text-5xl: 4rem;       /* 64px - Added for hero text */
+    --font-size-xs: 0.75rem;     /* 12px */
+    --font-size-sm: 0.875rem;    /* 14px */
+    --font-size-base: 1rem;      /* 16px */
+    --font-size-lg: 1.125rem;    /* 18px */
+    --font-size-xl: 1.5rem;      /* 24px */
+    --font-size-2xl: 2rem;       /* 32px */
+    --font-size-3xl: 2.5rem;     /* 40px */
+    --font-size-4xl: 3rem;       /* 48px */
+
+    /* Legacy aliases */
+    --text-xs: var(--font-size-xs);
+    --text-sm: var(--font-size-sm);
+    --text-base: var(--font-size-base);
+    --text-lg: var(--font-size-lg);
+    --text-xl: var(--font-size-xl);
+    --text-2xl: var(--font-size-2xl);
+    --text-3xl: var(--font-size-3xl);
+    --text-4xl: var(--font-size-4xl);
 
     /* Enhanced line heights for optimal readability */
     --line-height-tight: 1.2;    /* For headlines */
@@ -79,10 +105,31 @@
     --line-height-base: 1.5;     /* Alias for normal */
     --line-height-relaxed: 1.75; /* For large text blocks */
 
+    /* Font weights */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
     /* Letter spacing for different text types */
     --letter-spacing-tight: -0.02em;  /* For large headlines */
     --letter-spacing-normal: 0;       /* Default */
     --letter-spacing-wide: 0.05em;    /* For small caps or buttons */
+
+    /* Border radius system */
+    --radius-sm: 0.125rem;     /* 2px */
+    --radius-base: 0.5rem;     /* 8px */
+    --radius-md: 0.375rem;     /* 6px */
+    --radius-lg: 0.75rem;      /* 12px */
+    --radius-xl: 1rem;         /* 16px */
+    --radius-full: 9999px;     /* Circle/pill */
+
+    /* Shadow system */
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-focus: 0 0 0 3px rgba(21, 145, 155, 0.4);
     
     /* Legacy variables (for compatibility) - Updated to use new color system */
     --background: var(--color-neutral-0);
@@ -372,5 +419,33 @@
   
   .btn-danger:hover {
     background-color: hsl(var(--color-error, var(--destructive)) / 0.9);
+  }
+
+  /* Animations */
+  .animate-scroll-left {
+    animation: scrollLeft 30s linear infinite;
+  }
+
+  .animate-scroll-right {
+    animation: scrollRight 30s linear infinite;
+  }
+}
+
+/* Keyframes */
+@keyframes scrollLeft {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes scrollRight {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
   }
 }

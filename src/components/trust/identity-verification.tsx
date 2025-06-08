@@ -1,8 +1,8 @@
 /**
- * Identity Verification Component
- * 
- * Multi-step identity verification workflow with document upload and validation.
- * Implements project-map specifications for trust and safety compliance.
+ * Enhanced Identity Verification Component
+ *
+ * Comprehensive identity verification with OCR processing, biometric verification,
+ * address validation, and professional credential verification for Phase 3B.
  */
 
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,15 @@ import { ProgressIndicator } from '@/components/ui/progress-indicator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Camera, CheckCircle, Eye, FileText, Shield, Upload, X } from 'lucide-react';
+import {
+    Camera,
+    CheckCircle,
+    Eye,
+    FileText,
+    Shield,
+    Upload,
+    X
+} from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 
 export type VerificationStatus = 'pending' | 'in-review' | 'approved' | 'rejected' | 'expired';

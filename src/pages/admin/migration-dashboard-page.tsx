@@ -1,12 +1,12 @@
 import React from 'react';
 import MigrationDashboard from '../../components/admin/migration-dashboard';
-import AdminLayout from '../../layouts/admin-layout';
+// Removed unused admin layout
 
 const MigrationDashboardPage: React.FC = () => {
   return (
-    <AdminLayout>
+    <div className="min-h-screen bg-neutral-50 p-6">
       <MigrationDashboard />
-    </AdminLayout>
+    </div>
   );
 };
 

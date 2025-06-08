@@ -378,6 +378,7 @@ export const TaskCreationWizard: React.FC<TaskCreationWizardProps> = ({
     ...initialData
   });
 
+  // Updated 4-step process
   const steps = [
     { id: 'details', title: 'Task Details', description: 'Describe what you need done', component: TaskDetailsStep },
     { id: 'location', title: 'Location & Schedule', description: 'Set location and timing', component: LocationStep },

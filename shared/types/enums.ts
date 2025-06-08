@@ -8,11 +8,12 @@
 
 /**
  * User role enumeration - defines what type of user someone is
+ * Standardized to exactly three roles for FlexTasker marketplace
  */
 export enum UserRole {
-  USER = 'USER',      // Can post tasks and receive services
-  TASKER = 'TASKER',  // Can complete tasks for others
-  ADMIN = 'ADMIN'     // Can manage the platform
+  USER = 'USER',      // Can post tasks and receive services (task posters)
+  TASKER = 'TASKER',  // Can complete tasks for others (service providers)
+  ADMIN = 'ADMIN'     // Can manage the platform (platform management)
 }
 
 /**

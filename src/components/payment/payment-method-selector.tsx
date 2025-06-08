@@ -10,15 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, Building, Check, CreditCard, Plus, Shield, Wallet } from 'lucide-react';
+import { AlertCircle, Check, CreditCard, Plus, Shield } from 'lucide-react';
 import React, { useState } from 'react';
 
-export type PaymentProvider = 'stripe' | 'paypal' | 'square' | 'apple-pay' | 'google-pay';
+export type PaymentProvider = 'stripe';
 
 export interface PaymentMethod {
   id: string;
   provider: PaymentProvider;
-  type: 'card' | 'bank' | 'wallet' | 'crypto';
+  type: 'card';
   displayName: string;
   last4?: string;
   expiryMonth?: number;
@@ -39,7 +39,7 @@ export interface PaymentMethodSelectorProps {
   disabled?: boolean;
 }
 
-// Payment provider configuration
+// Payment provider configuration - Stripe only
 const PAYMENT_PROVIDERS: Record<PaymentProvider, {
   name: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -51,40 +51,8 @@ const PAYMENT_PROVIDERS: Record<PaymentProvider, {
   stripe: {
     name: 'Stripe',
     icon: CreditCard,
-    color: 'bg-blue-600',
+    color: 'bg-primary-600',
     description: 'Credit/Debit Cards',
-    fees: '2.9% + 30¢',
-    processingTime: 'Instant',
-  },
-  paypal: {
-    name: 'PayPal',
-    icon: Wallet,
-    color: 'bg-blue-500',
-    description: 'PayPal Balance & Cards',
-    fees: '2.9% + 30¢',
-    processingTime: 'Instant',
-  },
-  square: {
-    name: 'Square',
-    icon: Building,
-    color: 'bg-gray-800',
-    description: 'Square Payment',
-    fees: '2.6% + 10¢',
-    processingTime: '1-2 business days',
-  },
-  'apple-pay': {
-    name: 'Apple Pay',
-    icon: CreditCard,
-    color: 'bg-gray-900',
-    description: 'Apple Pay',
-    fees: '2.9% + 30¢',
-    processingTime: 'Instant',
-  },
-  'google-pay': {
-    name: 'Google Pay',
-    icon: Wallet,
-    color: 'bg-green-600',
-    description: 'Google Pay',
     fees: '2.9% + 30¢',
     processingTime: 'Instant',
   },

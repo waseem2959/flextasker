@@ -1,10 +1,10 @@
 
 import { TaskCreationWizard } from '@/components/task/task-creation-wizard';
-import MainLayout from '../layouts/main-layout';
+// Removed unused main layout
 
 const TaskCreateWizard = () => {
   return (
-    <MainLayout>
+    <div className="min-h-screen bg-neutral-50">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
@@ -17,7 +17,7 @@ const TaskCreateWizard = () => {
           <TaskCreationWizard />
         </div>
       </div>
-    </MainLayout>
+    </div>
   );
 };
 

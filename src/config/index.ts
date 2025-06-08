@@ -56,8 +56,11 @@ const getEnvVar = (key: string, defaultValue?: string) => {
   if (typeof import.meta !== 'undefined' && import.meta.env?.[key]) {
     return import.meta.env[key] ?? defaultValue;
   }
-  // Fallback to process.env for Jest/Node environments
-  return process.env[key] ?? defaultValue;
+  // Fallback to process.env for Jest/Node environments (only if process is available)
+  if (typeof process !== 'undefined' && process.env?.[key]) {
+    return process.env[key] ?? defaultValue;
+  }
+  return defaultValue;
 };
 
 /**
@@ -68,9 +71,9 @@ export const environmentConfig: EnvironmentConfig = {
   socketUrl: getEnvVar('VITE_SOCKET_URL', 'http://localhost:3000'),
   uploadUrl: getEnvVar('VITE_UPLOAD_URL', 'http://localhost:3000/uploads'),
   authEndpoint: getEnvVar('VITE_AUTH_ENDPOINT', '/api/v1/auth'),
-  isDevelopment: getEnvVar('DEV') === 'true' || process.env.NODE_ENV === 'development',
-  isProduction: getEnvVar('PROD') === 'true' || process.env.NODE_ENV === 'production',
-  isTest: getEnvVar('MODE') === 'test' || process.env.NODE_ENV === 'test',
+  isDevelopment: getEnvVar('DEV') === 'true' || getEnvVar('NODE_ENV') === 'development',
+  isProduction: getEnvVar('PROD') === 'true' || getEnvVar('NODE_ENV') === 'production',
+  isTest: getEnvVar('MODE') === 'test' || getEnvVar('NODE_ENV') === 'test',
   version: getEnvVar('VITE_APP_VERSION', '1.0.0'),
   buildTime: getEnvVar('VITE_BUILD_TIME', new Date().toISOString()),
   features: {

@@ -1,272 +1,227 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { CategoryIcon } from '@/components/ui/category-icons';
-import { Star } from '@/components/ui/star-rating';
-import { ArrowRight, CheckCircle, MapPin, Search } from 'lucide-react';
+import { CheckCircle, Star, Users } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { HeroSection } from '../components/homepage/hero-section';
+import { FeaturedTaskers } from '../components/homepage/featured-taskers';
+import { CategoryTabs, LiveTaskExamples } from '../components/homepage/live-task-examples';
+import { TrustSafetyFeatures } from '../components/homepage/trust-safety-features';
+import { VisualCategoryGrid } from '../components/homepage/visual-category-grid';
 import { Layout } from '../components/layout/Layout';
-import { TaskCard } from '../components/task/task-card';
-import { CATEGORIES, TASKS } from '../data/mock-data';
-
-// Category icons are now handled by the CategoryIcon component
 
 const Index = () => {
-  // Get 3 featured tasks
-  const featuredTasks = TASKS.slice(0, 3);
-  
+  const [activeCategory, setActiveCategory] = useState('delivery');
+
   return (
     <Layout>
-      {/* Enhanced Hero Section */}
-      <HeroSection />
+      {/* Airtasker-style Hero Section */}
+      <section className="relative bg-gradient-to-br from-primary-50 via-white to-primary-50 overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-10 left-10 w-20 h-20 bg-primary-600 rounded-full"></div>
+          <div className="absolute top-40 right-20 w-16 h-16 bg-primary-700 rounded-full"></div>
+          <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-primary-500 rounded-full"></div>
+        </div>
 
-      {/* How It Works */}
-      <section className="py-16 bg-muted/50">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold font-heading text-neutral-900 leading-tight mb-8">
+              Post any task. Pick the best person. Get it done.
+            </h1>
+
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-12">
+              <Button asChild size="lg" className="bg-primary-600 hover:bg-primary-700 text-white font-heading font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200 min-w-[200px]">
+                <Link to="/post-task">Post your task for free</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="border-2 border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white font-heading font-semibold px-8 py-4 rounded-xl transition-all duration-200 min-w-[200px]">
+                <Link to="/register">Earn money as a Tasker</Link>
+              </Button>
+            </div>
+
+            {/* Social Proof */}
+            <div className="flex flex-wrap justify-center items-center gap-8 text-center">
+              <div className="flex items-center space-x-3 bg-white/80 backdrop-blur-sm px-4 py-3 rounded-full shadow-sm">
+                <Users className="w-6 h-6 text-primary-600" />
+                <span className="text-lg font-semibold text-neutral-900">50K+ customers</span>
+              </div>
+              <div className="flex items-center space-x-3 bg-white/80 backdrop-blur-sm px-4 py-3 rounded-full shadow-sm">
+                <CheckCircle className="w-6 h-6 text-primary-600" />
+                <span className="text-lg font-semibold text-neutral-900">100K+ tasks done</span>
+              </div>
+              <div className="flex items-center space-x-3 bg-white/80 backdrop-blur-sm px-4 py-3 rounded-full shadow-sm">
+                <Star className="w-6 h-6 text-primary-600" />
+                <span className="text-lg font-semibold text-neutral-900">4.8 average rating</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3-Step Process Section */}
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground">How FlexTasker Works</h2>
-            <p className="mt-4 text-xl text-muted-foreground">
-              A simple process to get your tasks done
+            <h2 className="text-3xl font-bold text-neutral-900 font-heading mb-4">
+              Post your first task in seconds
+            </h2>
+            <p className="text-xl text-neutral-700 font-body">
+              Save yourself hours and get your to-do list completed
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6 text-center">
-                <div className="h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="h-6 w-6 text-primary-500" />
-                </div>
-                <h3 className="text-xl font-bold mb-2 text-foreground">Post a Task</h3>
-                <p className="text-muted-foreground">
-                  Describe what you need done, when, and your budget. Add photos and location details.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6 text-center">
-                <div className="h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4">
-                  <Search className="h-6 w-6 text-primary-500" />
-                </div>
-                <h3 className="text-xl font-bold mb-2 text-foreground">Review Bids</h3>
-                <p className="text-muted-foreground">
-                  Compare bids from skilled workers. Check profiles, ratings, and choose the right person.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6 text-center">
-                <div className="h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="h-6 w-6 text-primary-500" />
-                </div>
-                <h3 className="text-xl font-bold mb-2 text-foreground">Get It Done</h3>
-                <p className="text-muted-foreground">
-                  Connect with your worker, finalize details via chat, and get your task completed.
-                </p>
-              </CardContent>
-            </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div className="text-center p-6">
+              <div className="w-20 h-20 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold shadow-lg">
+                1
+              </div>
+              <h3 className="text-xl font-bold text-neutral-900 font-heading mb-4">
+                Describe what you need done
+              </h3>
+              <p className="text-neutral-600 font-body">
+                Tell us about your task and we'll match you with skilled professionals
+              </p>
+            </div>
+
+            <div className="text-center p-6">
+              <div className="w-20 h-20 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold shadow-lg">
+                2
+              </div>
+              <h3 className="text-xl font-bold text-neutral-900 font-heading mb-4">
+                Set your budget
+              </h3>
+              <p className="text-neutral-600 font-body">
+                Choose a fair price for your task and receive competitive offers
+              </p>
+            </div>
+
+            <div className="text-center p-6">
+              <div className="w-20 h-20 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold shadow-lg">
+                3
+              </div>
+              <h3 className="text-xl font-bold text-neutral-900 font-heading mb-4">
+                Receive quotes and pick the best Tasker
+              </h3>
+              <p className="text-neutral-600 font-body">
+                Review profiles, ratings, and offers to choose the perfect Tasker
+              </p>
+            </div>
           </div>
-          
-          <div className="mt-12 text-center">
-            <Link to="/how-it-works">
-              <Button variant="outline" size="lg">
-                Learn More
-                <ArrowRight className="ml-2 h-4 w-4" />
+
+          <div className="text-center">
+            <Link to="/post-task">
+              <Button size="lg" className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-8 py-3 rounded-lg">
+                Post your task
               </Button>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="py-16">
+      {/* Visual Category Grid */}
+      <VisualCategoryGrid />
+
+      {/* Live Task Examples Section */}
+      <section className="py-16 bg-neutral-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground">Browse by Category</h2>
-            <p className="mt-4 text-xl text-muted-foreground">
-              Find skilled workers across various services
-            </p>
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-neutral-900 font-heading mb-4">
+              See what others are getting done
+            </h2>
           </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {CATEGORIES.map((category) => (
-              <Link 
-                key={category.id} 
-                to={`/tasks?category=${encodeURIComponent(category.name)}`}
-                className="group"
-              >
-                <div className="border border-border rounded-lg p-6 text-center hover:border-primary-300 hover:shadow-sm transition-all">
-                  <div className="h-12 w-12 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4 group-hover:bg-primary-100 transition-colors">
-                    <CategoryIcon name={category.icon} className="group-hover:scale-110 transition-transform" />
-                  </div>
-                  <h3 className="font-medium text-foreground group-hover:text-primary-600 transition-colors">
-                    {category.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {category.subcategories.slice(0, 3).join(', ')}
-                    {category.subcategories.length > 3 && '...'}
-                  </p>
-                </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            <div className="space-y-6">
+              <CategoryTabs
+                activeCategory={activeCategory}
+                onCategoryChange={setActiveCategory}
+              />
+            </div>
+            <div className="space-y-6">
+              <LiveTaskExamples category={activeCategory as any} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust & Safety Features */}
+      <TrustSafetyFeatures />
+
+      {/* Be Your Own Boss Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-4xl font-bold text-neutral-900 font-heading mb-6">
+                Be your own boss
+              </h2>
+              <p className="text-xl text-neutral-700 font-body mb-8">
+                Whether you're a genius spreadsheet guru or a diligent carpenter, find your next job on FlexTasker.
+              </p>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center">
+                  <CheckCircle className="w-5 h-5 text-primary-600 mr-3" />
+                  <span className="text-neutral-700">Free access to thousands of job opportunities</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="w-5 h-5 text-primary-600 mr-3" />
+                  <span className="text-neutral-700">No subscription or credit fees</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="w-5 h-5 text-primary-600 mr-3" />
+                  <span className="text-neutral-700">Earn extra income on a flexible schedule</span>
+                </li>
+                <li className="flex items-center">
+                  <CheckCircle className="w-5 h-5 text-primary-600 mr-3" />
+                  <span className="text-neutral-700">Grow your business and client base</span>
+                </li>
+              </ul>
+              <Link to="/register">
+                <Button size="lg" className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-8 py-3 rounded-lg">
+                  Earn money as a Tasker
+                </Button>
               </Link>
-            ))}
-          </div>
-          
-          <div className="mt-12 text-center">
-            <Link to="/tasks">
-              <Button variant="outline" size="lg" className="border-[hsl(215,16%,80%)] text-[hsl(196,80%,43%)]">
-                View All Categories
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            </div>
+            <div className="text-center">
+              <div className="text-6xl font-bold text-primary-600 mb-2">50,000</div>
+              <p className="text-xl text-neutral-700 font-body mb-4">Taskers have earned an income on FlexTasker</p>
+              <p className="text-neutral-600">Start earning with Australia's trusted local services marketplace.</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Tasks */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Featured Tasks</h2>
-            <Link to="/tasks" className="text-primary-600 hover:text-primary-500 flex items-center font-medium">
-              View All
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* User Testimonials (hidden in smaller screens) */}
-      <section className="py-16 hidden md:block">
+      {/* Featured Taskers Section */}
+      <section className="py-16 bg-neutral-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">What Our Users Say</h2>
-            <p className="mt-4 text-xl text-gray-600">
-              Hear from workers and clients who've used FlexTasker
+            <h2 className="text-3xl font-bold text-neutral-900 font-heading">
+              50,000 Taskers have earned an income on FlexTasker
+            </h2>
+            <p className="mt-4 text-xl text-neutral-600 font-body">
+              Start earning with Australia's trusted local services marketplace.
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="relative overflow-hidden hover:shadow-lg transition-shadow duration-300">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-primary-600"></div>
-              <CardContent className="p-6 pt-8 relative">
-                <div className="absolute top-4 left-6 text-5xl text-primary-100 font-serif">"</div>
-                <div>
-                  <p className="text-muted-foreground mb-6 leading-relaxed">
-                    I found a skilled plumber within hours who fixed my leaking sink at a price I could afford. The bidding system helped me get the best deal.
-                  </p>
-                  <div className="flex items-center">
-                    <div className="h-12 w-12 rounded-full overflow-hidden mr-4 border-2 border-primary-100">
-                      <img 
-                        src="https://cdn-icons-png.flaticon.com/128/4140/4140048.png" 
-                        alt="Rohit, satisfied client" 
-                        className="h-full w-full object-cover"
-                        width={48}
-                        height={48}
-                        loading="lazy"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Rohit</p>
-                      <div className="flex items-center text-amber-500 text-sm mt-1" aria-label="5 out of 5 stars">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star key={`rohit-star-${i + 1}`} className="h-4 w-4 fill-current" />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="relative overflow-hidden hover:shadow-lg transition-shadow duration-300">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-primary-600"></div>
-              <CardContent className="p-6 pt-8 relative">
-                <div className="absolute top-4 left-6 text-5xl text-primary-100 font-serif">"</div>
-                <div>
-                  <p className="text-muted-foreground mb-6 leading-relaxed">
-                    As a painter, FlexTasker has helped me find consistent work in my area. The platform is easy to use and I can set my own rates.
-                  </p>
-                  <div className="flex items-center">
-                    <div className="h-12 w-12 rounded-full overflow-hidden mr-4 border-2 border-primary-100">
-                      <img 
-                        src="https://cdn-icons-png.flaticon.com/128/1154/1154448.png" 
-                        alt="Priya, professional painter" 
-                        className="h-full w-full object-cover"
-                        width={48}
-                        height={48}
-                        loading="lazy"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Priya</p>
-                      <div className="flex items-center text-amber-500 text-sm mt-1" aria-label="4 out of 5 stars">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                          <Star key={`priya-star-${i + 1}`} className="h-4 w-4 fill-current" />
-                        ))}
-                        <Star key="priya-star-5" className="h-4 w-4 text-gray-300" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card className="relative overflow-hidden hover:shadow-lg transition-shadow duration-300">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-primary-600"></div>
-              <CardContent className="p-6 pt-8 relative">
-                <div className="absolute top-4 left-6 text-5xl text-primary-100 font-serif">"</div>
-                <div>
-                  <p className="text-muted-foreground mb-6 leading-relaxed">
-                    The escrow payment system gives me peace of mind when hiring for home projects. I only release payment when I'm completely satisfied with the work.
-                  </p>
-                  <div className="flex items-center">
-                    <div className="h-12 w-12 rounded-full overflow-hidden mr-4 border-2 border-primary-100">
-                      <img 
-                        src="https://cdn-icons-png.flaticon.com/128/4140/4140051.png" 
-                        alt="Amit, homeowner" 
-                        className="h-full w-full object-cover"
-                        width={48}
-                        height={48}
-                        loading="lazy"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Amit</p>
-                      <div className="flex items-center text-amber-500 text-sm mt-1" aria-label="5 out of 5 stars">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star key={`amit-star-${i + 1}`} className="h-4 w-4 fill-current" />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <FeaturedTaskers />
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-12 bg-primary-600 text-white">
+      {/* Final CTA Section */}
+      <section className="py-16 bg-primary-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold">Ready to get started?</h2>
-          <p className="mt-4 text-xl max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold font-heading mb-4">Ready to get started?</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto">
             Join FlexTasker today and connect with skilled workers or find work opportunities near you.
           </p>
-          <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-            <Button asChild size="lg" variant="secondary" className="bg-white text-primary-600 hover:bg-surface">
-              <Link to="/post-task">Post a Task</Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary" className="bg-white text-primary-600 hover:bg-surface">
-              <Link to="/register">Sign Up</Link>
-            </Button>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Link to="/post-task">
+              <Button size="lg" className="bg-white text-primary-600 hover:bg-neutral-100 font-semibold px-8 py-3 rounded-lg">
+                Post a Task
+              </Button>
+            </Link>
+            <Link to="/register">
+              <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-primary-600 font-semibold px-8 py-3 rounded-lg">
+                Sign Up
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

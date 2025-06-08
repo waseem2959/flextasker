@@ -10,14 +10,11 @@ import { apiClient } from '../api/api-client';
 import { errorService } from '../error/error-service';
 
 /**
- * Payment method types
+ * Payment method types - Stripe only
  */
 export enum PaymentMethodType {
   CREDIT_CARD = 'credit_card',
-  DEBIT_CARD = 'debit_card',
-  PAYPAL = 'paypal',
-  BANK_TRANSFER = 'bank_transfer',
-  WALLET = 'wallet'
+  DEBIT_CARD = 'debit_card'
 }
 
 /**

@@ -27,6 +27,8 @@ const AuthProvider = ({ children }: { readonly children: ReactNode }) => {
   // State for authentication
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
+  const [activeRole, setActiveRole] = useState<UserRole | null>(null);
+  const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('accessToken'));
   const [refreshToken, setRefreshToken] = useState<string | null>(() => localStorage.getItem('refreshToken'));
@@ -65,9 +67,13 @@ const AuthProvider = ({ children }: { readonly children: ReactNode }) => {
     setUser(newUser);
     if (newUser) {
       setRole((newUser as any).role ?? null);
+      setActiveRole((newUser as any).activeRole ?? (newUser as any).role ?? null);
+      setAvailableRoles((newUser as any).availableRoles ?? [(newUser as any).role ?? UserRole.USER]);
       setIsAuthenticated(true);
     } else {
       setRole(null);
+      setActiveRole(null);
+      setAvailableRoles([]);
       setIsAuthenticated(false);
     }
   }, []);
@@ -79,11 +85,14 @@ const AuthProvider = ({ children }: { readonly children: ReactNode }) => {
   const clearAuth = useCallback(() => {
     setUser(null);
     setRole(null);
+    setActiveRole(null);
+    setAvailableRoles([]);
     setIsAuthenticated(false);
     setToken(null);
     setRefreshToken(null);
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
   }, []);
 
   // Auth mutations
@@ -162,6 +171,40 @@ const AuthProvider = ({ children }: { readonly children: ReactNode }) => {
     }
   };
 
+  // Role switching handler - returns true if successful
+  const switchRole = async (targetRole: UserRole): Promise<boolean> => {
+    try {
+      const service = await import('../auth/role-switching-service');
+      const response = await service.roleSwitchingService.switchUserRole(targetRole);
+      if (response.success && response.data) {
+        setActiveRole(response.data.newRole);
+        setAvailableRoles(response.data.availableRoles);
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      if (error instanceof Error) {
+        logger.error('Role switch error', { error: error.message });
+      }
+      return false;
+    }
+  };
+
+  // Check role availability handler
+  const checkRoleAvailability = async (role: UserRole): Promise<boolean> => {
+    try {
+      const service = await import('../auth/role-switching-service');
+      const response = await service.roleSwitchingService.checkRoleAvailability(role);
+      return response.success && response.data?.isAvailable === true;
+    } catch (error) {
+      if (error instanceof Error) {
+        logger.error('Role availability check error', { error: error.message });
+      }
+      return false;
+    }
+  };
+
   useEffect(() => {
     if (userData?.data) {
       updateUser(userData.data);
@@ -185,29 +228,37 @@ const AuthProvider = ({ children }: { readonly children: ReactNode }) => {
       user,
       isAuthenticated,
       role,
+      activeRole,
+      availableRoles,
       loading,
       token,
       refreshToken,
-      
+
       // State management methods
       setUser: updateUser,
       setIsLoading: updateLoadingState,
       setTokens,
       clearAuth,
-      
+
       // Auth operations
       login,
       logout,
       register,
-      
+
+      // Role switching methods
+      switchRole,
+      checkRoleAvailability,
+
       // Token management
       getToken,
       getRefreshToken
     };
   }, [
-    user, 
-    isAuthenticated, 
+    user,
+    isAuthenticated,
     role,
+    activeRole,
+    availableRoles,
     loading,
     token,
     refreshToken,
@@ -215,9 +266,11 @@ const AuthProvider = ({ children }: { readonly children: ReactNode }) => {
     updateLoadingState,
     setTokens,
     clearAuth,
-    login, 
-    logout, 
+    login,
+    logout,
     register,
+    switchRole,
+    checkRoleAvailability,
     getToken,
     getRefreshToken
   ]);

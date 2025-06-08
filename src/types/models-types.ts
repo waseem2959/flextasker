@@ -24,6 +24,7 @@ export interface Category {
 /**
  * User interface - extends shared BaseUser with frontend-specific computed properties
  * This ensures consistency with backend while adding frontend conveniences
+ * Enhanced with role-switching functionality
  */
 export interface User extends Omit<BaseUser, 'createdAt' | 'updatedAt'> {
   // Computed property for full name
@@ -65,6 +66,16 @@ export class UserImpl implements User {
   firstName!: string;
   lastName!: string;
   role!: UserRole;
+  // Role-switching support
+  availableRoles!: UserRole[];
+  activeRole!: UserRole;
+  rolePreferences?: {
+    [key in UserRole]?: {
+      isEnabled: boolean;
+      profileCompleted: boolean;
+      lastUsed?: string;
+    };
+  };
   createdAt!: Date;
   updatedAt!: Date;
   isActive!: boolean;
@@ -104,6 +115,7 @@ export class UserImpl implements User {
 
   // Static factory method to create User instances from API responses
   static fromApiResponse(apiUser: ApiUserResponse): User {
+    const role = (apiUser as any).role ?? UserRole.USER;
     return new UserImpl({
       ...apiUser,
       // Convert string dates to Date objects
@@ -111,7 +123,11 @@ export class UserImpl implements User {
       updatedAt: apiUser.updatedAt ? new Date(apiUser.updatedAt) : new Date(),
       lastActive: apiUser.lastActive ? new Date(apiUser.lastActive) : null,
       // Ensure role is a valid UserRole enum value
-      role: (apiUser as any).role ?? UserRole.USER,
+      role,
+      // Set default values for role-switching
+      availableRoles: (apiUser as any).availableRoles ?? [role],
+      activeRole: (apiUser as any).activeRole ?? role,
+      rolePreferences: (apiUser as any).rolePreferences ?? {},
       // Set default values for required BaseUser fields
       username: apiUser.username ?? apiUser.email.split('@')[0],
       isActive: apiUser.isActive ?? true,
@@ -241,11 +257,14 @@ export interface AuthTokens {
 
 /**
  * Context types for state management
+ * Enhanced with role-switching functionality
  */
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   role: UserRole | null;
+  activeRole: UserRole | null;
+  availableRoles: UserRole[];
   loading: boolean;
   setUser: (user: User | null) => void;
   setIsLoading: (loading: boolean) => void;
@@ -254,6 +273,8 @@ export interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => Promise<boolean>;
   register: (data: RegisterData) => Promise<boolean>;
+  switchRole: (targetRole: UserRole) => Promise<boolean>;
+  checkRoleAvailability: (role: UserRole) => Promise<boolean>;
   token: string | null;
   refreshToken: string | null;
   getToken: () => string | null;

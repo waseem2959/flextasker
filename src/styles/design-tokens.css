@@ -1,0 +1,177 @@
+/**
+ * Design Tokens CSS Variables
+ * 
+ * This file bridges the TypeScript design system with CSS custom properties
+ * for seamless integration with Tailwind CSS and component styling.
+ */
+
+:root {
+  /* Primary Brand Colors - Teal to Mint Gradient (Project-Map Aligned) */
+  --color-primary-950: 8, 74, 90;      /* #084A5A - Darkest, high contrast text */
+  --color-primary-900: 12, 100, 120;   /* #0C6478 - Deep Teal, headers, primary CTAs */
+  --color-primary-800: 15, 122, 136;   /* #0F7A88 - Dark Teal, hover states */
+  --color-primary-700: 21, 145, 155;   /* #15919B - Medium Teal, active states, links */
+  --color-primary-600: 11, 179, 170;   /* #0BB3AA - Light Teal, secondary actions */
+  --color-primary-500: 9, 209, 199;    /* #09D1C7 - Bright Cyan, primary brand color */
+  --color-primary-400: 42, 213, 165;   /* #2AD5A5 - Cyan-Mint, highlights */
+  --color-primary-300: 70, 223, 177;   /* #46DFB1 - Mint Green, success states */
+  --color-primary-200: 99, 229, 167;   /* #63E5A7 - Light Mint, positive feedback */
+  --color-primary-100: 128, 238, 152;  /* #80EE98 - Bright Mint, light backgrounds */
+  --color-primary-50: 230, 251, 240;   /* #E6FBF0 - Mint Tint, subtle backgrounds */
+
+  /* Neutral Palette with Teal Undertones */
+  --color-neutral-900: 26, 43, 47;     /* #1A2B2F - Almost black, primary text */
+  --color-neutral-800: 45, 63, 68;     /* #2D3F44 - Dark gray, secondary text */
+  --color-neutral-700: 64, 84, 89;     /* #405459 - Medium dark, muted text */
+  --color-neutral-600: 84, 106, 112;   /* #546A70 - Medium gray, disabled text */
+  --color-neutral-500: 107, 129, 137;  /* #6B8189 - Mid gray, borders */
+  --color-neutral-400: 132, 153, 161;  /* #8499A1 - Light gray, subtle borders */
+  --color-neutral-300: 159, 178, 186;  /* #9FB2BA - Lighter gray, hover backgrounds */
+  --color-neutral-200: 196, 209, 214;  /* #C4D1D6 - Very light, section backgrounds */
+  --color-neutral-100: 227, 234, 236;  /* #E3EAEC - Near white, subtle backgrounds */
+  --color-neutral-50: 245, 248, 249;   /* #F5F8F9 - Off white, page backgrounds */
+  --color-neutral-0: 255, 255, 255;    /* #FFFFFF - Pure white, cards, modals */
+
+  /* Semantic Colors for User Feedback */
+  --color-success-700: 42, 157, 108;   /* #2A9D6C */
+  --color-success-500: 70, 223, 177;   /* #46DFB1 - Using mint green from palette */
+  --color-success-300: 122, 234, 195;  /* #7AEAC3 */
+  --color-success-100: 230, 251, 243;  /* #E6FBF3 */
+
+  --color-error-700: 199, 62, 26;      /* #C73E1A */
+  --color-error-500: 239, 90, 48;      /* #EF5A30 */
+  --color-error-300: 245, 139, 107;    /* #F58B6B */
+  --color-error-100: 254, 240, 236;    /* #FEF0EC */
+
+  --color-warning-700: 204, 136, 0;    /* #CC8800 */
+  --color-warning-500: 255, 170, 0;    /* #FFAA00 */
+  --color-warning-300: 255, 209, 102;  /* #FFD166 */
+  --color-warning-100: 255, 248, 230;  /* #FFF8E6 */
+
+  --color-info-700: 7, 147, 163;       /* #0793A3 */
+  --color-info-500: 9, 209, 199;       /* #09D1C7 - Using bright cyan from palette */
+  --color-info-300: 93, 228, 219;      /* #5DE4DB */
+  --color-info-100: 230, 252, 250;     /* #E6FCFA */
+
+  /* Applied Color Tokens */
+  --color-brand: var(--color-primary-500);
+  --color-brand-dark: var(--color-primary-900);
+  --color-brand-light: var(--color-primary-100);
+
+  --color-text-primary: var(--color-neutral-900);
+  --color-text-secondary: var(--color-neutral-700);
+  --color-text-muted: var(--color-neutral-600);
+  --color-text-inverse: var(--color-neutral-0);
+
+  --color-bg-primary: var(--color-neutral-0);
+  --color-bg-secondary: var(--color-neutral-50);
+  --color-bg-tertiary: var(--color-neutral-100);
+
+  --color-link: var(--color-primary-700);
+  --color-link-hover: var(--color-primary-600);
+  --color-focus: var(--color-primary-500);
+  --color-selection: var(--color-primary-100);
+
+  --color-border: var(--color-neutral-300);
+  --color-border-strong: var(--color-neutral-400);
+  --color-border-interactive: var(--color-primary-500);
+
+  /* Typography System - Project-map aligned dual-typeface system */
+  --font-heading: 'Formula', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Manrope', 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Font Sizes - Perfect Fourth scale (1.333 ratio) */
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.5rem;     /* 24px */
+  --font-size-2xl: 2rem;      /* 32px */
+  --font-size-3xl: 2.5rem;    /* 40px */
+  --font-size-4xl: 3rem;      /* 48px */
+
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-base: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing System - 8px base unit */
+  --space-0: 0;
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+  --space-20: 5rem;    /* 80px */
+  --space-24: 6rem;    /* 96px */
+  --space-32: 8rem;    /* 128px */
+
+  /* Shadows with teal undertones */
+  --shadow-sm: 0 1px 2px 0 rgba(12, 100, 120, 0.05);
+  --shadow-base: 0 2px 8px rgba(12, 100, 120, 0.08);
+  --shadow-md: 0 4px 16px rgba(9, 209, 199, 0.12);
+  --shadow-lg: 0 8px 24px rgba(9, 209, 199, 0.15);
+  --shadow-focus: 0 0 0 3px rgba(9, 209, 199, 0.1);
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-base: 0.5rem;  /* 8px */
+  --radius-md: 0.75rem;   /* 12px */
+  --radius-lg: 1rem;      /* 16px */
+  --radius-xl: 1.5rem;    /* 24px */
+  --radius-full: 9999px;  /* Circle */
+
+  /* Transitions */
+  --transition-fast: all 0.1s ease;
+  --transition-base: all 0.2s ease;
+  --transition-slow: all 0.3s ease;
+}
+
+/* Global Typography Styles */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  letter-spacing: -0.02em;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  font-weight: var(--font-weight-normal);
+  color: rgb(var(--color-text-primary));
+}
+
+/* Utility Classes for RGB Color Usage */
+.text-primary-900 { color: rgb(var(--color-primary-900)); }
+.text-primary-700 { color: rgb(var(--color-primary-700)); }
+.text-primary-500 { color: rgb(var(--color-primary-500)); }
+.bg-primary-900 { background-color: rgb(var(--color-primary-900)); }
+.bg-primary-500 { background-color: rgb(var(--color-primary-500)); }
+.bg-primary-50 { background-color: rgb(var(--color-primary-50)); }
+.border-primary-500 { border-color: rgb(var(--color-primary-500)); }
+.border-primary-300 { border-color: rgb(var(--color-primary-300)); }
+
+/* Focus States */
+.focus-ring:focus {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Selection Styles */
+::selection {
+  background-color: rgb(var(--color-primary-100));
+  color: rgb(var(--color-primary-900));
+}

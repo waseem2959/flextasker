@@ -12,33 +12,33 @@ import { cn } from "@/lib/utils"
 // THIS IS THE FUNCTION THAT NEEDS TO BE EXPORTED
 // The 'export' keyword here makes buttonVariants available to other files
 export const buttonVariants = cva(
-  // Base classes that apply to all button variants
-  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  // Base classes that apply to all button variants - Project-map aligned
+  "inline-flex items-center justify-center whitespace-nowrap rounded-xl font-heading font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-95",
   {
     variants: {
-      // Different visual styles for the button
+      // Different visual styles for the button - Project-map specifications
       variant: {
-        primary: "bg-primary-600 text-white hover:bg-primary-500 focus:ring-primary-600 shadow-sm",
-        secondary: "bg-surface text-text-primary hover:bg-border focus:ring-primary-600 border border-border",
-        ghost: "text-primary-600 hover:bg-primary-50 focus:ring-primary-600",
-        danger: "bg-error text-white hover:bg-red-600 focus:ring-error shadow-sm",
-        success: "bg-success text-white hover:bg-green-600 focus:ring-success shadow-sm",
-        outline: "border border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white focus:ring-primary-600",
-        link: "text-primary-600 underline-offset-4 hover:underline focus:ring-primary-600",
+        primary: "bg-primary-900 text-neutral-0 hover:bg-primary-800 hover:shadow-lg hover:shadow-primary-900/25 hover:-translate-y-0.5 focus:ring-primary-500 shadow-md",
+        secondary: "bg-primary-500 text-neutral-900 hover:bg-primary-400 hover:shadow-lg hover:shadow-primary-500/25 hover:-translate-y-0.5 focus:ring-primary-500 shadow-md",
+        ghost: "text-primary-700 hover:bg-primary-50 hover:text-primary-800 focus:ring-primary-500 transition-colors",
+        danger: "bg-error-500 text-neutral-0 hover:bg-error-700 hover:shadow-lg hover:shadow-error-500/25 hover:-translate-y-0.5 focus:ring-error-500 shadow-md",
+        success: "bg-success-500 text-neutral-0 hover:bg-success-700 hover:shadow-lg hover:shadow-success-500/25 hover:-translate-y-0.5 focus:ring-success-500 shadow-md",
+        outline: "border-2 border-primary-700 text-primary-700 hover:bg-primary-700 hover:text-neutral-0 hover:shadow-lg hover:shadow-primary-700/25 hover:-translate-y-0.5 focus:ring-primary-500 bg-transparent",
+        link: "text-primary-700 underline-offset-4 hover:underline hover:text-primary-600 focus:ring-primary-500 bg-transparent shadow-none",
         // Keep default for backward compatibility
-        default: "bg-primary-600 text-white hover:bg-primary-500 focus:ring-primary-600 shadow-sm",
-        destructive: "bg-error text-white hover:bg-red-600 focus:ring-error shadow-sm",
-        warning: "bg-warning text-white hover:bg-yellow-600 focus:ring-warning shadow-sm",
+        default: "bg-primary-900 text-neutral-0 hover:bg-primary-800 hover:shadow-lg hover:shadow-primary-900/25 hover:-translate-y-0.5 focus:ring-primary-500 shadow-md",
+        destructive: "bg-error-500 text-neutral-0 hover:bg-error-700 hover:shadow-lg hover:shadow-error-500/25 hover:-translate-y-0.5 focus:ring-error-500 shadow-md",
+        warning: "bg-warning-500 text-neutral-900 hover:bg-warning-700 hover:text-neutral-0 hover:shadow-lg hover:shadow-warning-500/25 hover:-translate-y-0.5 focus:ring-warning-500 shadow-md",
       },
-      // Different sizes for the button
+      // Different sizes for the button - Project-map aligned
       size: {
-        sm: "px-3 py-1.5 text-sm h-8",
-        md: "px-4 py-2 text-base h-10",
-        lg: "px-6 py-3 text-lg h-12",
-        icon: "h-10 w-10 p-0",
+        sm: "px-3 py-2 text-sm h-9 min-w-[2.25rem]",
+        md: "px-4 py-2.5 text-base h-11 min-w-[2.75rem]",
+        lg: "px-6 py-3 text-lg h-12 min-w-[3rem]",
+        xl: "px-8 py-4 text-xl h-14 min-w-[3.5rem]",
+        icon: "h-11 w-11 p-0 min-w-[2.75rem]",
         // Keep default for backward compatibility
-        default: "px-4 py-2 text-base h-10",
-        xl: "px-8 py-4 text-lg h-14",
+        default: "px-4 py-2.5 text-base h-11 min-w-[2.75rem]",
       },
     },
     defaultVariants: {
