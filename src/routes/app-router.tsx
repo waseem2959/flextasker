@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/use-auth';
+import { ROUTES } from '@/lib/route-utils';
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import { UserRole } from '../../shared/types/enums';
-import ROUTES from './routes';
 
 // Page imports
 import AdminDashboardPage from '../pages/admin/admin-dashboard-page';

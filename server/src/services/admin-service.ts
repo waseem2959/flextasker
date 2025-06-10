@@ -9,13 +9,10 @@
  * - System health monitoring
  */
 
-import { PrismaClient } from '@prisma/client';
+import { DatabaseQueryBuilder, models } from '../utils/database-query-builder';
 import { NotFoundError, ValidationError } from '../utils/error-utils';
 import { logger } from '../utils/logger';
 import { createPagination, PaginationInfo } from '../utils/response-utils';
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
 
 // Define proper interfaces for type safety
 interface PaymentStatusCount {
@@ -30,10 +27,10 @@ interface TopCategoryData {
   _count: { id: number };
 }
 
-interface CategoryInfo {
-  id: string;
-  name: string;
-}
+// interface CategoryInfo {
+//   id: string;
+//   name: string;
+// }
 
 export interface AdminDashboardStats {
   users: {
@@ -137,28 +134,34 @@ export class AdminService {
       // For now, we'll return mock data
       
       // Get user statistics
-      const totalUsers = await prisma.user.count();
-      const activeUsers = await prisma.user.count({
-        where: { isActive: true }
-      });
-      const verifiedUsers = await prisma.user.count({
-        where: { emailVerified: true }
-      });
+      const totalUsers = await DatabaseQueryBuilder.count(models.user, 'User');
+      const activeUsers = await DatabaseQueryBuilder.count(
+        models.user,
+        'User',
+        { isActive: true }
+      );
+      const verifiedUsers = await DatabaseQueryBuilder.count(
+        models.user,
+        'User',
+        { emailVerified: true }
+      );
       
       // Get new users today
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const newUsersToday = await prisma.user.count({
-        where: {
-          createdAt: { gte: today }
-        }
-      });
-      
+      const newUsersToday = await DatabaseQueryBuilder.count(
+        models.user,
+        'User',
+        { createdAt: { gte: today } }
+      );
+
       // Get user counts by role
-      const usersByRole = await prisma.user.groupBy({
-        by: ['role'],
-        _count: { id: true }
-      });
+      const usersByRole = await DatabaseQueryBuilder.groupBy(
+        models.user,
+        ['role'],
+        { _count: { id: true } },
+        'User'
+      );
       
       const roleCountMap: Record<string, number> = {};
       usersByRole.forEach((role: { role: string; _count: { id: number } }) => {
@@ -166,19 +169,30 @@ export class AdminService {
       });
       
       // Get task statistics
-      const tasks = await prisma.task.count({});
-      const openTasks = await prisma.task.count({
-        where: { status: 'OPEN' }
-      });
-      const inProgressTasks = await prisma.task.count({
-        where: { status: 'IN_PROGRESS' }
-      });
-      const completedTasksWithDuration = await prisma.task.findMany({
-        where: { status: 'COMPLETED' }
-      });
-      const disputedTasks = await prisma.task.count({
-        where: { status: 'DISPUTED' }
-      });
+      const tasks = await DatabaseQueryBuilder.count(models.task, 'Task');
+      const openTasks = await DatabaseQueryBuilder.count(
+        models.task,
+        'Task',
+        { status: 'OPEN' }
+      );
+      const inProgressTasks = await DatabaseQueryBuilder.count(
+        models.task,
+        'Task',
+        { status: 'IN_PROGRESS' }
+      );
+      const { items: completedTasksWithDuration } = await DatabaseQueryBuilder.findMany(
+        models.task,
+        {
+          where: { status: 'COMPLETED' },
+          select: { id: true, status: true, createdAt: true, completedAt: true }
+        },
+        'Task'
+      );
+      const disputedTasks = await DatabaseQueryBuilder.count(
+        models.task,
+        'Task',
+        { status: 'DISPUTED' }
+      );
       
       // Calculate task completion rate
       const completionRate = tasks > 0 
@@ -186,35 +200,41 @@ export class AdminService {
         : 0;
       
       // Get payment statistics
-      const payments = await prisma.payment.findMany({
-        select: {
-          amount: true,
-          status: true,
-          createdAt: true
-        }
-      });
+      const { items: payments } = await DatabaseQueryBuilder.findMany(
+        models.payment,
+        {
+          select: {
+            amount: true,
+            status: true,
+            createdAt: true
+          }
+        },
+        'Payment'
+      );
       
-      interface Payment {
-        amount: number | null;
-        status: string;
-        createdAt: Date;
-      }
+      // interface Payment {
+      //   amount: number | null;
+      //   status: string;
+      //   createdAt: Date;
+      // }
       
-      const totalVolume = payments.reduce((sum: number, payment: Payment) => sum + (payment.amount ?? 0), 0);
+      const totalVolume = (payments as any[]).reduce((sum: number, payment: any) => sum + (payment.amount ?? 0), 0);
       
       // Get payments made today
-      const todayPayments = payments.filter((payment: Payment) => {
+      const todayPayments = (payments as any[]).filter((payment: any) => {
         const paymentDate = new Date(payment.createdAt);
         return paymentDate >= today;
       });
       
-      const todayVolume = todayPayments.reduce((sum: number, payment: Payment) => sum + (payment.amount ?? 0), 0);
+      const todayVolume = (todayPayments as any[]).reduce((sum: number, payment: any) => sum + (payment.amount ?? 0), 0);
       
       // Get payment counts by status
-      const paymentsByStatus = await prisma.payment.groupBy({
-        by: ['status'],
-        _count: { id: true }
-      });
+      const paymentsByStatus = await DatabaseQueryBuilder.groupBy(
+        models.payment,
+        ['status'],
+        { _count: { id: true } },
+        'Payment'
+      );
       
       const paymentStatusMap: Record<string, number> = {};
       paymentsByStatus.forEach((status: PaymentStatusCount) => {
@@ -222,7 +242,7 @@ export class AdminService {
       });
       
       // Calculate payment success rate
-      const successfulPayments = payments.filter((payment: Payment) => payment.status === 'COMPLETED').length;
+      const successfulPayments = (payments as any[]).filter((payment: any) => payment.status === 'COMPLETED').length;
       const paymentSuccessRate = payments.length > 0 
         ? (successfulPayments / payments.length) * 100 
         : 0;
@@ -231,51 +251,56 @@ export class AdminService {
       const last24Hours = new Date();
       last24Hours.setHours(last24Hours.getHours() - 24);
       
-      const activeUsers24h = await prisma.user.count({
-        where: {
-          lastActive: { gte: last24Hours }
-        }
-      });
-      
+      const activeUsers24h = await DatabaseQueryBuilder.count(
+        models.user,
+        'User',
+        { lastActive: { gte: last24Hours } }
+      );
+
       // Get average task rating
-      const reviews = await prisma.review.findMany({
-        select: {
-          rating: true
-        }
-      });
+      const { items: reviews } = await DatabaseQueryBuilder.findMany(
+        models.review,
+        {
+          select: {
+            rating: true
+          }
+        },
+        'Review'
+      );
       
       // Calculate average rating
       const averageRating = reviews.length > 0
-        ? reviews.reduce((sum: number, review: { rating: number }) => sum + (review.rating ?? 0), 0) / reviews.length
+        ? (reviews as any[]).reduce((sum: number, review: any) => sum + (review.rating ?? 0), 0) / (reviews as any[]).length
         : 0;
       
       // Get top categories
-      const topCategoriesData = await prisma.task.groupBy({
-        by: ['categoryId'],
-        _count: { id: true },
-        orderBy: {
-          _count: {
-            id: 'desc'
-          }
-        },
-        take: 5
-      });
+      const topCategoriesData = await DatabaseQueryBuilder.groupBy(
+        models.task,
+        ['categoryId'],
+        { _count: { id: true } },
+        'Task',
+        undefined // no where clause
+      );
       
       // Get category names
       const categoryIds = topCategoriesData.map((cat: TopCategoryData) => cat.categoryId);
-      const categories = await prisma.category.findMany({
-        where: {
-          id: { in: categoryIds }
+      const { items: categories } = await DatabaseQueryBuilder.findMany(
+        models.category,
+        {
+          where: {
+            id: { in: categoryIds }
+          },
+          select: {
+            id: true,
+            name: true
+          }
         },
-        select: {
-          id: true,
-          name: true
-        }
-      });
+        'Category'
+      );
       
       // Map category IDs to names
       const categoryMap: Record<string, string> = {};
-      categories.forEach((cat: CategoryInfo) => {
+      (categories as any[]).forEach((cat: any) => {
         categoryMap[cat.id] = cat.name;
       });
       
@@ -302,8 +327,8 @@ export class AdminService {
           averageCompletionTime: 48 // Mock data: average 48 hours to complete
         },
         payments: {
-          totalVolume: parseFloat(totalVolume.toFixed(2)),
-          todayVolume: parseFloat(todayVolume.toFixed(2)),
+          totalVolume: parseFloat((totalVolume as number).toFixed(2)),
+          todayVolume: parseFloat((todayVolume as number).toFixed(2)),
           successRate: parseFloat(paymentSuccessRate.toFixed(2)),
           byStatus: paymentStatusMap
         },
@@ -347,36 +372,50 @@ export class AdminService {
       }
       
       // Count total matching records for pagination
-      const total = await prisma.user.count({ where });
+      const total = await DatabaseQueryBuilder.count(models.user, 'User', where);
       
       // Create pagination info
       const pagination = createPagination(total, page, limit);
       
       // Get users with pagination
-      const users = await prisma.user.findMany({
-        where,
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          tasksPosted: { select: { id: true } },
-          tasksCompleted: { select: { id: true } },
-          reviewsReceived: {
-            select: {
-              rating: true
+      const { items: users } = await DatabaseQueryBuilder.findMany(
+        models.user,
+        {
+          where,
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            trustScore: true,
+            isActive: true,
+            emailVerified: true,
+            phoneVerified: true,
+            createdAt: true,
+            lastActive: true,
+            tasksPosted: { select: { id: true } },
+            tasksCompleted: { select: { id: true } },
+            reviewsReceived: {
+              select: {
+                rating: true
+              }
+            },
+            payments: {
+              select: {
+                amount: true,
+                status: true
+              }
+            },
+            disputes: {
+              select: { id: true }
             }
           },
-          payments: {
-            select: {
-              amount: true,
-              status: true
-            }
-          },
-          disputes: {
-            select: { id: true }
-          }
-        }
-      });
+          orderBy: { createdAt: 'desc' },
+          pagination: { page, skip: (page - 1) * limit, limit }
+        },
+        'User'
+      );
       
       // Transform data for the admin interface
       const moderationUsers: UserModeration[] = users.map((user: any) => {
@@ -456,9 +495,22 @@ export class AdminService {
     logger.info('Retrieving detailed user information', { userId });
     
     try {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
+      const user = await DatabaseQueryBuilder.findById(
+        models.user,
+        userId,
+        'User',
+        {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          trustScore: true,
+          isActive: true,
+          emailVerified: true,
+          phoneVerified: true,
+          createdAt: true,
+          lastActive: true,
           tasksPosted: true,
           tasksCompleted: true,
           bids: true,
@@ -468,7 +520,7 @@ export class AdminService {
           disputes: true,
           verifications: true
         }
-      });
+      );
       
       if (!user) {
         throw new NotFoundError('User not found');
@@ -488,34 +540,49 @@ export class AdminService {
     logger.info('Updating user status', { userId, status, adminId });
     
     try {
-      const user = await prisma.user.findUnique({
-        where: { id: userId }
-      });
-      
-      if (!user) {
-        throw new NotFoundError('User not found');
-      }
-      
+      // Verify user exists
+      await DatabaseQueryBuilder.findById(
+        models.user,
+        userId,
+        'User',
+        { id: true, isActive: true, email: true, firstName: true, lastName: true }
+      );
+
       const isActive = status === 'ACTIVE';
       const actionType = isActive ? 'ACTIVATE_USER' : 'SUSPEND_USER';
-      
+
       // Update user status
-      await prisma.user.update({
-        where: { id: userId },
-        data: { isActive }
-      });
+      await DatabaseQueryBuilder.update(
+        models.user,
+        userId,
+        { isActive },
+        'User',
+        { id: true, isActive: true, updatedAt: true }
+      );
       
       // Log the action in the audit trail
-      await prisma.auditLog.create({
-        data: {
+      await DatabaseQueryBuilder.create(
+        models.auditLog,
+        {
           userId: adminId,
           action: actionType,
           entityType: 'User',
           targetId: userId,
           details: reason,
           ipAddress: '0.0.0.0' // In a real implementation, this would be the admin's IP
+        },
+        'AuditLog',
+        {
+          id: true,
+          userId: true,
+          action: true,
+          entityType: true,
+          targetId: true,
+          details: true,
+          ipAddress: true,
+          createdAt: true
         }
-      });
+      );
       
       // Notify the user
       const statusText = isActive ? 'activated' : 'suspended';
@@ -549,30 +616,42 @@ export class AdminService {
       }
       
       // Count total matching records for pagination
-      const total = await prisma.verification.count({ where });
+      const total = await DatabaseQueryBuilder.count(models.verification, 'Verification', where);
       
       // Create pagination info
       const pagination = createPagination(total, page, limit);
       
       // Get verifications with pagination
-      const verifications = await prisma.verification.findMany({
-        where,
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              role: true,
-              trustScore: true
+      const { items: verifications } = await DatabaseQueryBuilder.findMany(
+        models.verification,
+        {
+          where,
+          select: {
+            id: true,
+            userId: true,
+            type: true,
+            status: true,
+            documentType: true,
+            documentUrl: true,
+            submittedAt: true,
+            reviewedAt: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                role: true,
+                trustScore: true
+              }
             }
-          }
-        }
-      });
+          },
+          orderBy: { createdAt: 'desc' },
+          pagination: { page, skip: (page - 1) * limit, limit }
+        },
+        'Verification'
+      );
       
       return {
         verifications,
@@ -591,39 +670,64 @@ export class AdminService {
     logger.info('Processing verification request', { adminId, verificationId, action });
     
     try {
-      const verification = await prisma.verification.findUnique({
-        where: { id: verificationId },
-        include: {
-          user: true
+      const verification = await DatabaseQueryBuilder.findById(
+        models.verification,
+        verificationId,
+        'Verification',
+        {
+          id: true,
+          userId: true,
+          type: true,
+          status: true,
+          processedAt: true,
+          processedBy: true,
+          adminNotes: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true
+            }
+          }
         }
-      });
+      );
       
       if (!verification) {
         throw new NotFoundError('Verification request not found');
       }
       
-      if (verification.status !== 'PENDING') {
+      if ((verification as any).status !== 'PENDING') {
         throw new ValidationError('This verification request has already been processed');
       }
       
       const status = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
       
       // Update verification status
-      await prisma.verification.update({
-        where: { id: verificationId },
-        data: {
+      await DatabaseQueryBuilder.update(
+        models.verification,
+        verificationId,
+        {
           status,
           processedAt: new Date(),
           processedBy: adminId,
           adminNotes: notes
+        },
+        'Verification',
+        {
+          id: true,
+          status: true,
+          processedAt: true,
+          processedBy: true,
+          adminNotes: true
         }
-      });
+      );
       
       // If approved, update user verification status
       if (status === 'APPROVED') {
         const updateData: any = {};
         
-        switch (verification.type) {
+        switch ((verification as any).type) {
           case 'EMAIL':
             updateData.emailVerified = true;
             break;
@@ -642,10 +746,13 @@ export class AdminService {
         }
         
         // Update user verification status
-        await prisma.user.update({
-          where: { id: verification.userId },
-          data: updateData
-        });
+        await DatabaseQueryBuilder.update(
+          models.user,
+          (verification as any).userId,
+          updateData,
+          'User',
+          { id: true, ...Object.keys(updateData).reduce((acc, key) => ({ ...acc, [key]: true }), {}) }
+        );
         
         // Recalculate trust score
         // In a real implementation, this would call a function to recalculate the user's trust score
@@ -653,16 +760,28 @@ export class AdminService {
       }
       
       // Log the action in the audit trail
-      await prisma.auditLog.create({
-        data: {
+      await DatabaseQueryBuilder.create(
+        models.auditLog,
+        {
           userId: adminId,
           action: `VERIFICATION_${status}`,
           entityType: 'Verification',
-          targetId: verification.userId,
-          details: `${verification.type} verification ${status.toLowerCase()}` + (notes ? `: ${notes}` : ''),
+          targetId: (verification as any).userId,
+          details: `${(verification as any).type} verification ${status.toLowerCase()}` + (notes ? `: ${notes}` : ''),
           ipAddress: '0.0.0.0' // In a real implementation, this would be the admin's IP
+        },
+        'AuditLog',
+        {
+          id: true,
+          userId: true,
+          action: true,
+          entityType: true,
+          targetId: true,
+          details: true,
+          ipAddress: true,
+          createdAt: true
         }
-      });
+      );
       
       // Notify the user
       // In a real implementation, this would send an email or notification
@@ -740,32 +859,41 @@ export class AdminService {
         };
       }
       
-      // Count total matching records for pagination
-      const total = await prisma.auditLog.count({ where });
-      
-      // Create pagination info
+      // Get audit logs with pagination using consolidated method
       const page = filters.page ?? 1;
       const limit = filters.limit ?? 20;
-      const pagination = createPagination(total, page, limit);
-      
-      // Get audit logs with pagination
-      const logs = await prisma.auditLog.findMany({
-        where,
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              role: true
+
+      const { items: logs, total } = await DatabaseQueryBuilder.findMany(
+        models.auditLog,
+        {
+          where,
+          select: {
+            id: true,
+            userId: true,
+            action: true,
+            entityType: true,
+            targetId: true,
+            details: true,
+            ipAddress: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                role: true
+              }
             }
-          }
-        }
-      });
+          },
+          orderBy: { createdAt: 'desc' },
+          pagination: { page, skip: (page - 1) * limit, limit }
+        },
+        'AuditLog'
+      );
+
+      // Create pagination info
+      const pagination = createPagination(total, page, limit);
       
       return {
         logs,

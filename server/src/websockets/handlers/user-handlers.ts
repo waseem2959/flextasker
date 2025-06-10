@@ -4,9 +4,9 @@
  * This module handles WebSocket events related to user presence, status, and activity.
  */
 
-import { PrismaClient } from '@prisma/client';
 import { Socket } from 'socket.io';
 import { UserRole } from '../../../../shared/types/enums';
+import { prisma } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import { monitorError } from '../../utils/monitoring';
 import { SocketManager } from '../socket-manager';
@@ -28,9 +28,6 @@ declare module 'socket.io' {
     };
   }
 }
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
 
 // Keep track of users who are typing in conversations
 const typingUsers: Record<string, Record<string, NodeJS.Timeout>> = {};

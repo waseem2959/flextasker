@@ -1,6 +1,7 @@
 /**
  * Type declarations for cookie-parser module
  * This file provides TypeScript type definitions for the cookie-parser module
+ * since @types/cookie-parser is not installed in this project
  */
 
 declare module 'cookie-parser' {

@@ -7,11 +7,11 @@
 // Re-export all security components
 export * from './csrf';
 export * from './headers';
-export * from './sanitization';
 export * from './jwt';
+export * from './sanitization';
 
 // Import dependencies
-import { Express, Request, Response, NextFunction } from 'express';
+import { Express, NextFunction, Request, Response } from 'express';
 import { logger } from '../logger';
 
 /**
@@ -19,7 +19,9 @@ import { logger } from '../logger';
  * @param app Express application instance
  */
 // Import security middleware directly to avoid circular dependencies
-import { securityHeaders, corsHeaders, csrfProtection, sanitizeBody, sanitizeQuery } from '.';
+import { csrfProtection } from './csrf';
+import { corsHeaders, securityHeaders } from './headers';
+import { sanitizeBody, sanitizeQuery } from './sanitization';
 
 export function initializeSecurity(app: Express): void {
   

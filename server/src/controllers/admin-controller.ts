@@ -6,11 +6,11 @@
  */
 
 import { Request, Response } from 'express';
-import { BaseController } from './base-controller';
 import { adminService } from '../services/admin-service';
-import { taskService } from '../services/task-service';
 import { reviewService } from '../services/review-service';
+import { taskService } from '../services/task-service';
 import { logger } from '../utils/logger';
+import { BaseController } from './base-controller';
 
 class AdminController extends BaseController {
   /**
@@ -118,7 +118,7 @@ class AdminController extends BaseController {
 
     logger.info('Admin retrieving reported reviews', { page, limit });
     const reviews = await reviewService.getReviews({ 
-      reported: true,
+      // reported: true,
       page,
       limit 
     });

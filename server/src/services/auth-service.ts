@@ -10,7 +10,7 @@
 
 import * as jwtModule from 'jsonwebtoken';
 import { comparePassword, generateToken, hashPassword } from '../utils/crypto';
-import { db } from '../utils/database';
+import { DatabaseQueryBuilder, models } from '../utils/database-query-builder';
 import { AuthenticationError, ConflictError, ValidationError } from '../utils/error-utils';
 import { logger } from '../utils/logger';
 import { EmailService } from './email-service';
@@ -89,11 +89,13 @@ export class AuthService {
 
     try {
       // Check if user already exists
-      const existingUser = await db.user.findUnique({
-        where: { email: userData.email.toLowerCase() }
-      });
+      const existingUserExists = await DatabaseQueryBuilder.exists(
+        models.user,
+        { email: userData.email.toLowerCase() },
+        'User'
+      );
 
-      if (existingUser) {
+      if (existingUserExists) {
         throw new ConflictError('User with this email already exists');
       }
 
@@ -101,8 +103,9 @@ export class AuthService {
       const hashedPassword = await hashPassword(userData.password);
 
       // Create the user
-      const newUser = await db.user.create({
-        data: {
+      const newUser = await DatabaseQueryBuilder.create(
+        models.user,
+        {
           email: userData.email.toLowerCase(),
           passwordHash: hashedPassword,
           firstName: userData.firstName,
@@ -113,38 +116,60 @@ export class AuthService {
           isActive: true,
           trustScore: 0,
           lastActive: new Date()
+        },
+        'User',
+        {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          role: true,
+          isActive: true,
+          emailVerified: true,
+          trustScore: true,
+          createdAt: true
         }
-      });
+      );
 
       // Generate access token
-      const token = this.generateAccessToken(newUser.id);
+      const token = this.generateAccessToken((newUser as any).id);
 
       // Generate refresh token
       const refreshToken = generateToken(64);
 
       // Store refresh token
-      await db.refreshToken.create({
-        data: {
+      await DatabaseQueryBuilder.create(
+        models.refreshToken,
+        {
           token: refreshToken,
-          userId: newUser.id,
+          userId: (newUser as any).id,
           expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+        },
+        'RefreshToken',
+        {
+          id: true,
+          token: true,
+          userId: true,
+          expiresAt: true,
+          createdAt: true
         }
-      });
+      );
 
       // Send verification email
-      await this.sendEmailVerification(newUser.id, newUser.email);
+      await this.sendEmailVerification((newUser as any).id, (newUser as any).email);
 
       // Return user data and token
       return {
         user: {
-          id: newUser.id,
-          email: newUser.email,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          role: newUser.role,
-          emailVerified: newUser.emailVerified,
-          phoneVerified: newUser.phoneVerified ?? false,
-          avatar: newUser.avatar ?? undefined
+          id: (newUser as any).id,
+          email: (newUser as any).email,
+          firstName: (newUser as any).firstName,
+          lastName: (newUser as any).lastName,
+          role: (newUser as any).role,
+          emailVerified: (newUser as any).emailVerified,
+          phoneVerified: (newUser as any).phoneVerified ?? false,
+          avatar: (newUser as any).avatar ?? undefined
         },
         token,
         refreshToken
@@ -170,9 +195,22 @@ export class AuthService {
 
     try {
       // Find user by email
-      const user = await db.user.findUnique({
-        where: { email: credentials.email.toLowerCase() }
-      });
+      const user = await DatabaseQueryBuilder.findUnique(
+        models.user,
+        { email: credentials.email.toLowerCase() },
+        'User',
+        {
+          id: true,
+          email: true,
+          passwordHash: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          isActive: true,
+          emailVerified: true,
+          trustScore: true
+        }
+      );
 
       // Check if user exists
       if (!user) {
@@ -180,18 +218,18 @@ export class AuthService {
       }
 
       // Check if password matches
-      const passwordMatches = await comparePassword(credentials.password, user.passwordHash);
+      const passwordMatches = await comparePassword(credentials.password, (user as any).passwordHash);
       if (!passwordMatches) {
         throw new AuthenticationError('Invalid email or password');
       }
 
       // Check if account is active
-      if (!user.isActive) {
+      if (!(user as any).isActive) {
         throw new AuthenticationError('Account is suspended. Please contact support.');
       }
 
       // Generate access token
-      const token = this.generateAccessToken(user.id);
+      const token = this.generateAccessToken((user as any).id);
 
       // Generate refresh token if remember me is enabled
       let refreshToken;
@@ -199,35 +237,47 @@ export class AuthService {
         refreshToken = generateToken(64);
 
         // Store refresh token
-        await db.refreshToken.create({
-          data: {
+        await DatabaseQueryBuilder.create(
+          models.refreshToken,
+          {
             token: refreshToken,
-            userId: user.id,
+            userId: (user as any).id,
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+          },
+          'RefreshToken',
+          {
+            id: true,
+            token: true,
+            userId: true,
+            expiresAt: true,
+            createdAt: true
           }
-        });
+        );
       }
 
       // Update last active timestamp
-      await db.user.update({
-        where: { id: user.id },
-        data: { lastActive: new Date() }
-      });
+      await DatabaseQueryBuilder.update(
+        models.user,
+        (user as any).id,
+        { lastActive: new Date() },
+        'User',
+        { id: true, lastActive: true }
+      );
 
       // Log successful login
-      logger.info('User login successful', { userId: user.id });
+      logger.info('User login successful', { userId: (user as any).id });
 
       // Return user data and token
       return {
         user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-          emailVerified: user.emailVerified,
-          phoneVerified: user.phoneVerified ?? false,
-          avatar: user.avatar ?? undefined
+          id: (user as any).id,
+          email: (user as any).email,
+          firstName: (user as any).firstName,
+          lastName: (user as any).lastName,
+          role: (user as any).role,
+          emailVerified: (user as any).emailVerified,
+          phoneVerified: (user as any).phoneVerified ?? false,
+          avatar: (user as any).avatar ?? undefined
         },
         token,
         refreshToken
@@ -246,47 +296,69 @@ export class AuthService {
 
     try {
       // Find the refresh token in the database
-      const tokenRecord = await db.refreshToken.findUnique({
-        where: { token: refreshToken },
-        include: { user: true }
-      });
+      const tokenRecord = await DatabaseQueryBuilder.findUnique(
+        models.refreshToken,
+        { token: refreshToken },
+        'RefreshToken',
+        {
+          id: true,
+          token: true,
+          userId: true,
+          expiresAt: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+              isActive: true,
+              emailVerified: true,
+              phoneVerified: true,
+              avatar: true
+            }
+          }
+        }
+      );
 
       // Check if token exists and is valid
-      if (!tokenRecord || new Date() > tokenRecord.expiresAt) {
+      if (!tokenRecord || new Date() > (tokenRecord as any).expiresAt) {
         throw new AuthenticationError('Invalid or expired refresh token');
       }
 
       // Check if user account is active
-      if (!tokenRecord.user.isActive) {
+      if (!(tokenRecord as any).user.isActive) {
         throw new AuthenticationError('Account is suspended');
       }
 
       // Generate new access token
-      const newToken = this.generateAccessToken(tokenRecord.userId);
+      const newToken = this.generateAccessToken((tokenRecord as any).userId);
 
       // Generate new refresh token
       const newRefreshToken = generateToken(64);
 
       // Update refresh token in database
-      await db.refreshToken.update({
-        where: { id: tokenRecord.id },
-        data: {
+      await DatabaseQueryBuilder.update(
+        models.refreshToken,
+        (tokenRecord as any).id,
+        {
           token: newRefreshToken,
           expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
-        }
-      });
+        },
+        'RefreshToken'
+      );
 
       // Return user data and new tokens
       return {
         user: {
-          id: tokenRecord.user.id,
-          email: tokenRecord.user.email,
-          firstName: tokenRecord.user.firstName,
-          lastName: tokenRecord.user.lastName,
-          role: tokenRecord.user.role,
-          emailVerified: tokenRecord.user.emailVerified,
-          phoneVerified: tokenRecord.user.phoneVerified ?? false,
-          avatar: tokenRecord.user.avatar ?? undefined
+          id: (tokenRecord as any).user.id,
+          email: (tokenRecord as any).user.email,
+          firstName: (tokenRecord as any).user.firstName,
+          lastName: (tokenRecord as any).user.lastName,
+          role: (tokenRecord as any).user.role,
+          emailVerified: (tokenRecord as any).user.emailVerified,
+          phoneVerified: (tokenRecord as any).user.phoneVerified ?? false,
+          avatar: (tokenRecord as any).user.avatar ?? undefined
         },
         token: newToken,
         refreshToken: newRefreshToken
@@ -306,14 +378,18 @@ export class AuthService {
     try {
       if (token) {
         // Delete the specific refresh token if provided
-        await db.refreshToken.deleteMany({
-          where: { token }
-        });
+        await DatabaseQueryBuilder.deleteMany(
+          models.refreshToken,
+          { token },
+          'RefreshToken'
+        );
       } else {
         // Delete all refresh tokens for the user
-        await db.refreshToken.deleteMany({
-          where: { userId }
-        });
+        await DatabaseQueryBuilder.deleteMany(
+          models.refreshToken,
+          { userId },
+          'RefreshToken'
+        );
       }
     } catch (error) {
       logger.error('Error during logout', { error, userId });
@@ -335,14 +411,24 @@ export class AuthService {
       const verificationToken = generateToken(32);
 
       // Store token in database
-      await db.verification.create({
-        data: {
+      await DatabaseQueryBuilder.create(
+        models.verification,
+        {
           userId,
           type: 'EMAIL',
           token: verificationToken,
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+        },
+        'Verification',
+        {
+          id: true,
+          userId: true,
+          type: true,
+          token: true,
+          expiresAt: true,
+          createdAt: true
         }
-      });
+      );
 
       // Send email with verification link
       await this.emailService.sendVerificationEmail(
@@ -365,7 +451,7 @@ export class AuthService {
 
     try {
       // Find verification record
-      const verification = await db.verification.findFirst({
+      const verification = await models.verification.findFirst({
         where: {
           token,
           type: 'EMAIL',
@@ -378,15 +464,19 @@ export class AuthService {
       }
 
       // Update user's email verification status
-      await db.user.update({
-        where: { id: verification.userId },
-        data: { emailVerified: true }
-      });
+      await DatabaseQueryBuilder.update(
+        models.user,
+        verification.userId,
+        { emailVerified: true },
+        'User'
+      );
 
       // Delete the verification token
-      await db.verification.delete({
-        where: { id: verification.id }
-      });
+      await DatabaseQueryBuilder.delete(
+        models.verification,
+        verification.id,
+        'Verification'
+      );
 
       logger.info('Email verified successfully', { userId: verification.userId });
     } catch (error) {
@@ -403,9 +493,17 @@ export class AuthService {
 
     try {
       // Find user by email
-      const user = await db.user.findUnique({
-        where: { email: email.toLowerCase() }
-      });
+      const user = await DatabaseQueryBuilder.findUnique(
+        models.user,
+        { email: email.toLowerCase() },
+        'User',
+        {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true
+        }
+      );
 
       // If user doesn't exist, still return success to prevent email enumeration
       if (!user) {
@@ -417,21 +515,30 @@ export class AuthService {
       const resetToken = generateToken(32);
 
       // Store token in database
-      await db.passwordReset.create({
-        data: {
-          userId: user.id,
+      await DatabaseQueryBuilder.create(
+        models.passwordReset,
+        {
+          userId: (user as any).id,
           token: resetToken,
           expiresAt: new Date(Date.now() + 1 * 60 * 60 * 1000) // 1 hour
+        },
+        'PasswordReset',
+        {
+          id: true,
+          userId: true,
+          token: true,
+          expiresAt: true,
+          createdAt: true
         }
-      });
+      );
 
       // Send email with reset link
       await this.emailService.sendPasswordResetEmail(
-        user.email,
+        (user as any).email,
         resetToken
       );
 
-      logger.info('Password reset email sent', { userId: user.id });
+      logger.info('Password reset email sent', { userId: (user as any).id });
     } catch (error) {
       logger.error('Error sending password reset email', { error, email });
       throw error;
@@ -446,7 +553,7 @@ export class AuthService {
 
     try {
       // Find reset record
-      const resetRecord = await db.passwordReset.findFirst({
+      const resetRecord = await models.passwordReset.findFirst({
         where: {
           token,
           expiresAt: { gt: new Date() }
@@ -461,20 +568,27 @@ export class AuthService {
       const hashedPassword = await hashPassword(newPassword);
 
       // Update user's password
-      await db.user.update({
-        where: { id: resetRecord.userId },
-        data: { passwordHash: hashedPassword }
-      });
+      await DatabaseQueryBuilder.update(
+        models.user,
+        resetRecord.userId,
+        { passwordHash: hashedPassword },
+        'User',
+        { id: true, passwordHash: true, updatedAt: true }
+      );
 
       // Delete all password reset tokens for this user
-      await db.passwordReset.deleteMany({
-        where: { userId: resetRecord.userId }
-      });
+      await DatabaseQueryBuilder.deleteMany(
+        models.passwordReset,
+        { userId: resetRecord.userId },
+        'PasswordReset'
+      );
 
       // Invalidate all refresh tokens for this user
-      await db.refreshToken.deleteMany({
-        where: { userId: resetRecord.userId }
-      });
+      await DatabaseQueryBuilder.deleteMany(
+        models.refreshToken,
+        { userId: resetRecord.userId },
+        'RefreshToken'
+      );
 
       logger.info('Password reset successful', { userId: resetRecord.userId });
     } catch (error) {
@@ -491,16 +605,23 @@ export class AuthService {
 
     try {
       // Find user
-      const user = await db.user.findUnique({
-        where: { id: userId }
-      });
+      const user = await DatabaseQueryBuilder.findById(
+        models.user,
+        userId,
+        'User',
+        {
+          id: true,
+          passwordHash: true,
+          isActive: true
+        }
+      );
 
       if (!user) {
         throw new ValidationError('User not found');
       }
 
       // Verify current password
-      const passwordMatches = await comparePassword(currentPassword, user.passwordHash);
+      const passwordMatches = await comparePassword(currentPassword, (user as any).passwordHash);
       if (!passwordMatches) {
         throw new ValidationError('Current password is incorrect');
       }
@@ -509,15 +630,19 @@ export class AuthService {
       const hashedPassword = await hashPassword(newPassword);
 
       // Update user's password
-      await db.user.update({
-        where: { id: userId },
-        data: { passwordHash: hashedPassword }
-      });
+      await DatabaseQueryBuilder.update(
+        models.user,
+        userId,
+        { passwordHash: hashedPassword },
+        'User'
+      );
 
       // Invalidate all refresh tokens for this user except the current one
-      await db.refreshToken.deleteMany({
-        where: { userId }
-      });
+      await DatabaseQueryBuilder.deleteMany(
+        models.refreshToken,
+        { userId },
+        'RefreshToken'
+      );
 
       logger.info('Password changed successfully', { userId });
     } catch (error) {
@@ -534,28 +659,39 @@ export class AuthService {
 
     try {
       // Find user
-      const user = await db.user.findUnique({
-        where: { id: userId }
-      });
+      const user = await DatabaseQueryBuilder.findById(
+        models.user,
+        userId,
+        'User',
+        {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          emailVerified: true
+        }
+      );
 
       if (!user) {
         throw new ValidationError('User not found');
       }
 
-      if (user.emailVerified) {
+      if ((user as any).emailVerified) {
         throw new ValidationError('Email is already verified');
       }
 
       // Delete any existing verification tokens
-      await db.verification.deleteMany({
-        where: {
+      await DatabaseQueryBuilder.deleteMany(
+        models.verification,
+        {
           userId,
           type: 'EMAIL'
-        }
-      });
+        },
+        'Verification'
+      );
 
       // Send new verification email
-      await this.sendEmailVerification(userId, user.email);
+      await this.sendEmailVerification(userId, (user as any).email);
 
       logger.info('Verification email resent', { userId });
     } catch (error) {
@@ -592,11 +728,17 @@ export class AuthService {
       ) as JWTPayload;
 
       // Check if user exists and is active
-      const user = await db.user.findUnique({
-        where: { id: decoded.userId }
-      });
+      const user = await DatabaseQueryBuilder.findById(
+        models.user,
+        decoded.userId,
+        'User',
+        {
+          id: true,
+          isActive: true
+        }
+      );
 
-      if (!user?.isActive) {
+      if (!(user as any)?.isActive) {
         return { valid: false };
       }
 

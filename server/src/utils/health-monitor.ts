@@ -5,12 +5,11 @@
  * various application components and dependencies.
  */
 
-import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { Request, Response } from 'express';
 import os from 'os';
-import { redisClient } from './cache/redis-client';
-import { logger } from './logger';
 import { config } from './config';
+import { logger } from './logger';
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
@@ -109,30 +108,32 @@ async function checkCacheHealth(): Promise<{
 }> {
   const startTime = Date.now();
   try {
-    // Check if Redis is connected
-    if (!redisClient.isReady) {
+    const { checkRedisHealth } = await import('./redis-client');
+    const healthResult = await checkRedisHealth();
+
+    const responseTime = Date.now() - startTime;
+
+    if (healthResult.healthy) {
+      return {
+        status: HealthStatus.UP,
+        responseTime: healthResult.latency || responseTime,
+        message: 'Redis connection successful'
+      };
+    } else {
       return {
         status: HealthStatus.DOWN,
-        responseTime: Date.now() - startTime,
-        message: 'Redis client not ready'
+        responseTime,
+        message: 'Redis connection failed',
+        details: {
+          error: healthResult.error || 'Unknown Redis error'
+        }
       };
     }
-    
-    // Execute a simple ping command
-    await redisClient.ping();
-    
-    const responseTime = Date.now() - startTime;
-    
-    return {
-      status: HealthStatus.UP,
-      responseTime,
-      message: 'Redis connection successful'
-    };
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    
+
     logger.error('Redis health check failed', { error });
-    
+
     return {
       status: HealthStatus.DOWN,
       responseTime,

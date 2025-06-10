@@ -7,26 +7,18 @@
  * Enhanced with standardized parameter parsing, error handling, and response formatting.
  */
 
-import { Request, Response, NextFunction } from 'express';
-import { sendSuccess, sendError } from '../utils/response-utils';
+import { NextFunction, Request, Response } from 'express';
 import { ErrorType } from '../../../shared/types/errors';
+import {
+    extractPaginationParams,
+    PaginationParams
+} from '../utils/pagination';
+import { sendError, sendSuccess } from '../utils/response-utils';
 
-/**
- * Interface for pagination parameters
- */
-export interface PaginationParams {
-  page: number;
-  limit: number;
-  offset: number;
-}
-
-/**
- * Interface for sorting parameters
- */
-export interface SortingParams {
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
-}
+// Re-export pagination types for backward compatibility
+import type { SortParams } from '../utils/pagination';
+export type { PaginationParams, SortParams } from '../utils/pagination';
+export type SortingParams = SortParams;
 
 export abstract class BaseController {
   /**
@@ -46,26 +38,28 @@ export abstract class BaseController {
   /**
    * Parse pagination parameters from request with validation
    * @param req Express request object
-   * @param defaultPage Default page number
-   * @param defaultLimit Default limit per page
-   * @param maxLimit Maximum allowed limit
+   * @param defaultPage Default page number (deprecated - use pagination.ts defaults)
+   * @param defaultLimit Default limit per page (deprecated - use pagination.ts defaults)
+   * @param maxLimit Maximum allowed limit (deprecated - use pagination.ts validation)
    */
   protected getPaginationParams(
     req: Request,
-    defaultPage: number = 1,
-    defaultLimit: number = 10,
+    _defaultPage: number = 1,
+    _defaultLimit: number = 10,
     maxLimit: number = 50
   ): PaginationParams {
-    const page = this.parseNumeric(req.query.page, defaultPage) ?? defaultPage;
-    const limit = Math.min(
-      this.parseNumeric(req.query.limit, defaultLimit) ?? defaultLimit,
-      maxLimit
-    );
-    
+    // Use the comprehensive pagination utilities
+    const params = extractPaginationParams(req);
+
+    // Apply max limit constraint for backward compatibility
+    if (params.limit > maxLimit) {
+      params.limit = maxLimit;
+    }
+
     return {
-      page,
-      limit,
-      offset: (page - 1) * limit
+      page: params.page,
+      limit: params.limit,
+      skip: params.skip
     };
   }
   
@@ -80,24 +74,20 @@ export abstract class BaseController {
     req: Request,
     allowedFields: string[],
     defaultSortBy: string = 'createdAt',
-    defaultSortDir: 'asc' | 'desc' = 'desc'
+    _defaultSortDir: 'asc' | 'desc' = 'desc'
   ): SortingParams {
-    const sortBy = req.query.sortBy as string;
-    const sortOrder = req.query.sortOrder as 'asc' | 'desc';
-    
-    // Validate sort field
-    const validSortBy = sortBy && allowedFields.includes(sortBy)
-      ? sortBy
+    // Use the comprehensive sort utilities
+    const { extractSortParams } = require('../utils/pagination');
+    const params = extractSortParams(req, defaultSortBy);
+
+    // Validate sort field against allowed fields
+    const validSortBy = params.sortBy && allowedFields.includes(params.sortBy)
+      ? params.sortBy
       : defaultSortBy;
-    
-    // Validate sort direction
-    const validSortOrder = sortOrder === 'asc' || sortOrder === 'desc'
-      ? sortOrder
-      : defaultSortDir;
-    
+
     return {
       sortBy: validSortBy,
-      sortOrder: validSortOrder
+      sortDir: params.sortDir.toLowerCase() as 'asc' | 'desc'
     };
   }
   
@@ -164,12 +154,8 @@ export abstract class BaseController {
    * @param limit Items per page
    */
   protected buildPaginationMeta(total: number, page: number, limit: number) {
-    return {
-      total,
-      page,
-      limit,
-      pages: Math.ceil(total / limit),
-      hasMore: page * limit < total
-    };
+    // Use the comprehensive pagination utilities
+    const { createPaginationMeta } = require('../utils/pagination');
+    return createPaginationMeta(total, page, limit);
   }
 }

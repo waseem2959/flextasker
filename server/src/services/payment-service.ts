@@ -8,7 +8,7 @@
  * - Calculating fees and distributing funds
  */
 
-import { db } from '../utils/database';
+import { DatabaseQueryBuilder, models } from '../utils/database-query-builder';
 import { AppError, ConflictError, NotFoundError, ValidationError } from '../utils/error-utils';
 import { logger } from '../utils/logger';
 import { createPagination, PaginationInfo } from '../utils/response-utils';
@@ -143,10 +143,19 @@ export class PaymentService {
     logger.info('Creating payment', { payerId, taskId: paymentData.taskId });
 
     try {
+      // DatabaseQueryBuilder is now imported at the top
+
       // Get task information
-      const task = await db.task.findUnique({
-        where: { id: paymentData.taskId },
-        include: {
+      const task = await DatabaseQueryBuilder.findById(
+        models.task,
+        paymentData.taskId,
+        'Task',
+        {
+          id: true,
+          title: true,
+          ownerId: true,
+          assigneeId: true,
+          paymentStatus: true,
           owner: {
             select: {
               id: true,
@@ -169,24 +178,20 @@ export class PaymentService {
             }
           }
         }
-      });
-
-      if (!task) {
-        throw new NotFoundError('Task not found');
-      }
+      );
 
       // Check if user is authorized to make payment
-      if (task.ownerId !== payerId) {
+      if ((task as any).ownerId !== payerId) {
         throw new ValidationError('Only the task owner can make payments');
       }
 
       // Check if task has an assignee
-      if (!task.assigneeId) {
+      if (!(task as any).assigneeId) {
         throw new ValidationError('Task does not have an assigned tasker');
       }
 
       // Check if payment already exists and is not refunded
-      const hasActivePayment = task.payments.some(
+      const hasActivePayment = (task as any).payments.some(
         (payment: { status: string }) => payment.status !== 'REFUNDED'
       );
 
@@ -202,8 +207,9 @@ export class PaymentService {
       const totalFees = platformFee + paymentProcessingFee;
 
       // Create payment record in pending state
-      const payment = await db.payment.create({
-        data: {
+      const payment = await DatabaseQueryBuilder.create(
+        models.payment,
+        {
           taskId: paymentData.taskId,
           userId: payerId,
           payerId,
@@ -213,72 +219,102 @@ export class PaymentService {
           paymentMethod: paymentData.paymentMethod ?? 'UNKNOWN',
           status: 'PENDING',
           gatewayResponse: paymentData.paymentDetails ? (paymentData.paymentDetails as any) : undefined
+        },
+        'Payment',
+        {
+          id: true,
+          taskId: true,
+          payerId: true,
+          amount: true,
+          platformFee: true,
+          processingFee: true,
+          status: true,
+          createdAt: true
         }
-      });
+      );
 
       // Process payment with payment gateway
       const gatewayResult = await this.processPaymentWithGateway(
-        payment.id,
+        (payment as any).id,
         paymentData
       );
 
       if (!gatewayResult.success) {
         // Update payment status to failed
-        await db.payment.update({
-          where: { id: payment.id },
-          data: {
+        await DatabaseQueryBuilder.update(
+          models.payment,
+          (payment as any).id,
+          {
             status: 'FAILED',
             gatewayResponse: gatewayResult.details ? (gatewayResult.details as any) : undefined
-          }
-        });
+          },
+          'Payment'
+        );
 
         throw new AppError('Payment processing failed', 400, true, 'PAYMENT_FAILED');
       }
 
       // Update payment with gateway response
-      const updatedPayment = await db.payment.update({
-        where: { id: payment.id },
-        data: {
+      const updatedPayment = await DatabaseQueryBuilder.update(
+        models.payment,
+        (payment as any).id,
+        {
           status: 'COMPLETED',
           gatewayTransactionId: gatewayResult.transactionId ?? undefined,
           gatewayResponse: gatewayResult.details ? (gatewayResult.details as any) : undefined,
           completedAt: new Date()
+        },
+        'Payment',
+        {
+          id: true,
+          taskId: true,
+          payerId: true,
+          amount: true,
+          platformFee: true,
+          processingFee: true,
+          status: true,
+          paymentMethod: true,
+          gatewayTransactionId: true,
+          createdAt: true,
+          completedAt: true
         }
-      });
+      );
 
       // Update task status to paid
-      await db.task.update({
-        where: { id: task.id },
-        data: { paymentStatus: 'PAID' }
-      });
+      await DatabaseQueryBuilder.update(
+        models.task,
+        (task as any).id,
+        { paymentStatus: 'PAID' },
+        'Task'
+      );
 
       // Update user balances
-      await this.updateUserBalances(task, paymentData.amount, totalFees);
+      await this.updateUserBalances(task as any, paymentData.amount, totalFees);
 
       // Return formatted payment transaction
       return {
-        id: updatedPayment.id,
-        taskId: updatedPayment.taskId,
-        payerId: updatedPayment.payerId,
-        amount: updatedPayment.amount,
-        platformFee: updatedPayment.platformFee,
-        processingFee: updatedPayment.processingFee,
-        status: updatedPayment.status,
-        paymentMethod: updatedPayment.paymentMethod ?? 'UNKNOWN',
-        gatewayTransactionId: updatedPayment.gatewayTransactionId ?? undefined,
-        createdAt: updatedPayment.createdAt,
-        completedAt: updatedPayment.completedAt ?? undefined,
+        id: (updatedPayment as any).id,
+        taskId: (updatedPayment as any).taskId,
+        payerId: (updatedPayment as any).payerId,
+        amount: (updatedPayment as any).amount,
+        platformFee: (updatedPayment as any).platformFee,
+        processingFee: (updatedPayment as any).processingFee,
+        status: (updatedPayment as any).status,
+        paymentMethod: (updatedPayment as any).paymentMethod ?? 'UNKNOWN',
+        gatewayTransactionId: (updatedPayment as any).gatewayTransactionId ?? undefined,
+        createdAt: (updatedPayment as any).createdAt,
+        completedAt: (updatedPayment as any).completedAt ?? undefined,
         task: {
-          id: task.id,
-          title: task.title,
-          paymentStatus: task.paymentStatus ?? undefined,
+          id: (task as any).id,
+          title: (task as any).title,
+          paymentStatus: (task as any).paymentStatus ?? undefined,
           owner: {
-            firstName: task.owner.firstName,
-            lastName: task.owner.lastName
+            firstName: (task as any).owner.firstName,
+            lastName: (task as any).owner.lastName
           },
-          assignee: task.assignee ? {
-            firstName: task.assignee.firstName,
-            lastName: task.assignee.lastName
+          assignee: (task as any).assignee ? {
+            firstName: (task as any).assignee.firstName,
+            lastName: (task as any).assignee.lastName
           } : null
         }
       };
@@ -359,30 +395,38 @@ export class PaymentService {
       // Calculate amount to be received by the tasker (assignee)
       const assigneeAmount = amount - totalFees;
 
+      // DatabaseQueryBuilder is now imported at the top
+
       // Update assignee's balance
       if (task.assigneeId) {
-        await db.user.update({
-          where: { id: task.assigneeId },
-          data: {
+        await DatabaseQueryBuilder.update(
+          models.user,
+          task.assigneeId,
+          {
             balance: {
               increment: assigneeAmount
             },
             pendingBalance: {
               increment: assigneeAmount
             }
-          }
-        });
+          },
+          'User',
+          { id: true, balance: true, pendingBalance: true }
+        );
       }
 
       // Update platform revenue records
-      await db.platformRevenue.create({
-        data: {
+      await DatabaseQueryBuilder.create(
+        models.platformRevenue,
+        {
           amount: totalFees,
           source: 'TASK_PAYMENT',
           sourceId: task.id,
           description: `Fees for task: ${task.title}`
-        }
-      });
+        },
+        'PlatformRevenue',
+        { id: true, amount: true, source: true, sourceId: true, description: true, createdAt: true }
+      );
 
       logger.info('User balances updated successfully', {
         taskId: task.id,
@@ -402,9 +446,24 @@ export class PaymentService {
     logger.info('Getting payment by ID', { paymentId, userId });
 
     try {
-      const payment = await db.payment.findUnique({
-        where: { id: paymentId },
-        include: {
+      // DatabaseQueryBuilder is now imported at the top
+
+      const payment = await DatabaseQueryBuilder.findById(
+        models.payment,
+        paymentId,
+        'Payment',
+        {
+          id: true,
+          taskId: true,
+          payerId: true,
+          amount: true,
+          platformFee: true,
+          processingFee: true,
+          status: true,
+          paymentMethod: true,
+          gatewayTransactionId: true,
+          createdAt: true,
+          completedAt: true,
           task: {
             include: {
               owner: {
@@ -422,38 +481,34 @@ export class PaymentService {
             }
           }
         }
-      });
-
-      if (!payment) {
-        throw new NotFoundError('Payment not found');
-      }
+      );
 
       // Check if user is authorized to view this payment
-      if (payment.payerId !== userId && payment.task.assigneeId !== userId) {
+      if ((payment as any).payerId !== userId && (payment as any).task.assigneeId !== userId) {
         throw new ValidationError('Not authorized to view this payment');
       }
 
       return {
-        id: payment.id,
-        taskId: payment.taskId,
-        payerId: payment.payerId,
-        amount: payment.amount,
-        platformFee: payment.platformFee,
-        processingFee: payment.processingFee,
-        status: payment.status,
-        paymentMethod: payment.paymentMethod ?? 'UNKNOWN',
-        createdAt: payment.createdAt,
-        completedAt: payment.completedAt ?? undefined,
+        id: (payment as any).id,
+        taskId: (payment as any).taskId,
+        payerId: (payment as any).payerId,
+        amount: (payment as any).amount,
+        platformFee: (payment as any).platformFee,
+        processingFee: (payment as any).processingFee,
+        status: (payment as any).status,
+        paymentMethod: (payment as any).paymentMethod ?? 'UNKNOWN',
+        createdAt: (payment as any).createdAt,
+        completedAt: (payment as any).completedAt ?? undefined,
         task: {
-          id: payment.task.id,
-          title: payment.task.title,
+          id: (payment as any).task.id,
+          title: (payment as any).task.title,
           owner: {
-            firstName: payment.task.owner.firstName,
-            lastName: payment.task.owner.lastName
+            firstName: (payment as any).task.owner.firstName,
+            lastName: (payment as any).task.owner.lastName
           },
-          assignee: payment.task.assignee ? {
-            firstName: payment.task.assignee.firstName,
-            lastName: payment.task.assignee.lastName
+          assignee: (payment as any).task.assignee ? {
+            firstName: (payment as any).task.assignee.firstName,
+            lastName: (payment as any).task.assignee.lastName
           } : null
         }
       };
@@ -499,34 +554,45 @@ export class PaymentService {
         where.status = status;
       }
 
-      // Get total count for pagination
-      const totalCount = await db.payment.count({ where });
-
-      // Get payments with pagination
-      const paymentsData = await db.payment.findMany({
-        where,
-        include: {
-          task: {
-            include: {
-              owner: {
-                select: {
-                  firstName: true,
-                  lastName: true
-                }
-              },
-              assignee: {
-                select: {
-                  firstName: true,
-                  lastName: true
+      // Get payments with pagination using consolidated method
+      const { items: paymentsData, total: totalCount } = await DatabaseQueryBuilder.findMany(
+        models.payment,
+        {
+          where,
+          select: {
+            id: true,
+            taskId: true,
+            payerId: true,
+            amount: true,
+            platformFee: true,
+            processingFee: true,
+            status: true,
+            paymentMethod: true,
+            gatewayTransactionId: true,
+            createdAt: true,
+            completedAt: true,
+            task: {
+              include: {
+                owner: {
+                  select: {
+                    firstName: true,
+                    lastName: true
+                  }
+                },
+                assignee: {
+                  select: {
+                    firstName: true,
+                    lastName: true
+                  }
                 }
               }
             }
-          }
+          },
+          orderBy: { createdAt: 'desc' },
+          pagination: { page, skip, limit }
         },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit
-      });
+        'Payment'
+      );
 
       // Format payments for response
       const payments = paymentsData.map((payment: any) => ({
@@ -573,8 +639,8 @@ export class PaymentService {
     logger.info('Getting payment summary', { userId });
 
     try {
-      // Get total earnings (received payments)
-      const earnings = await db.payment.aggregate({
+      // Get total earnings (received payments) - using aggregate method
+      const earnings = await models.payment.aggregate({
         where: {
           task: {
             assigneeId: userId
@@ -587,7 +653,7 @@ export class PaymentService {
       });
 
       // Get total spent (sent payments)
-      const spent = await db.payment.aggregate({
+      const spent = await models.payment.aggregate({
         where: {
           payerId: userId,
           status: 'COMPLETED'
@@ -598,40 +664,46 @@ export class PaymentService {
       });
 
       // Get pending payments count
-      const pendingCount = await db.payment.count({
-        where: {
+      const pendingCount = await DatabaseQueryBuilder.count(
+        models.payment,
+        'Payment',
+        {
           OR: [
             { payerId: userId },
             { task: { assigneeId: userId } }
           ],
           status: 'PENDING'
         }
-      });
+      );
 
       // Get completed payments count
-      const completedCount = await db.payment.count({
-        where: {
+      const completedCount = await DatabaseQueryBuilder.count(
+        models.payment,
+        'Payment',
+        {
           OR: [
             { payerId: userId },
             { task: { assigneeId: userId } }
           ],
           status: 'COMPLETED'
         }
-      });
+      );
 
       // Get refunded payments count
-      const refundedCount = await db.payment.count({
-        where: {
+      const refundedCount = await DatabaseQueryBuilder.count(
+        models.payment,
+        'Payment',
+        {
           OR: [
             { payerId: userId },
             { task: { assigneeId: userId } }
           ],
           status: 'REFUNDED'
         }
-      });
+      );
 
       // Calculate total platform and processing fees from completed payments
-      const fees = await db.payment.aggregate({
+      const fees = await models.payment.aggregate({
         where: {
           task: {
             assigneeId: userId
@@ -674,10 +746,26 @@ export class PaymentService {
     logger.info('Processing refund', { paymentId, refundAmount, requestedBy });
 
     try {
+      // Import DatabaseQueryBuilder
+      const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
       // Get payment with task information
-      const payment = await db.payment.findUnique({
-        where: { id: paymentId },
-        include: {
+      const payment = await DatabaseQueryBuilder.findById(
+        models.payment,
+        paymentId,
+        'Payment',
+        {
+          id: true,
+          taskId: true,
+          payerId: true,
+          amount: true,
+          platformFee: true,
+          processingFee: true,
+          status: true,
+          paymentMethod: true,
+          gatewayTransactionId: true,
+          createdAt: true,
+          completedAt: true,
           task: {
             include: {
               owner: {
@@ -699,20 +787,20 @@ export class PaymentService {
             }
           }
         }
-      });
+      );
 
       if (!payment) {
         throw new NotFoundError('Payment not found');
       }
 
       // Check if payment is in a refundable state
-      if (payment.status !== 'COMPLETED') {
+      if ((payment as any).status !== 'COMPLETED') {
         throw new ValidationError('Only completed payments can be refunded');
       }
 
       // Check if user is authorized to request refund
-      const isTaskOwner = payment.task.owner.id === requestedBy;
-      const isTaskAssignee = payment.task.assignee?.id === requestedBy;
+      const isTaskOwner = (payment as any).task.owner.id === requestedBy;
+      const isTaskAssignee = (payment as any).task.assignee?.id === requestedBy;
       const isAdmin = false; // In a real app, check if user is admin
 
       if (!isTaskOwner && !isTaskAssignee && !isAdmin) {
@@ -720,13 +808,13 @@ export class PaymentService {
       }
 
       // Validate refund amount
-      if (refundAmount <= 0 || refundAmount > payment.amount) {
+      if (refundAmount <= 0 || refundAmount > (payment as any).amount) {
         throw new ValidationError('Invalid refund amount');
       }
 
       // Process refund with payment gateway
       const refundResult = await this.processRefundWithGateway(
-        payment.gatewayTransactionId ?? '',
+        (payment as any).gatewayTransactionId ?? '',
         refundAmount
       );
 
@@ -735,39 +823,64 @@ export class PaymentService {
       }
 
       // Create refund record
-      await db.refund.create({
-        data: {
-          paymentId: payment.id,
+      await DatabaseQueryBuilder.create(
+        models.refund,
+        {
+          paymentId: (payment as any).id,
           amount: refundAmount,
           reason,
           requestedById: requestedBy,
           status: 'COMPLETED'
+        },
+        'Refund',
+        {
+          id: true,
+          paymentId: true,
+          amount: true,
+          reason: true,
+          requestedById: true,
+          status: true,
+          createdAt: true
         }
-      });
+      );
 
       // Update payment status
-      await db.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: refundAmount === payment.amount ? 'REFUNDED' : 'PARTIALLY_REFUNDED',
+      await DatabaseQueryBuilder.update(
+        models.payment,
+        (payment as any).id,
+        {
+          status: refundAmount === (payment as any).amount ? 'REFUNDED' : 'PARTIALLY_REFUNDED',
           refundedAmount: {
             increment: refundAmount
           }
+        },
+        'Payment',
+        {
+          id: true,
+          status: true,
+          refundedAmount: true
         }
-      });
+      );
 
       // Update task status if full refund
-      if (refundAmount === payment.amount) {
-        await db.task.update({
-          where: { id: payment.task.id },
-          data: { paymentStatus: 'REFUNDED' }
-        });
+      if (refundAmount === (payment as any).amount) {
+        await DatabaseQueryBuilder.update(
+          models.task,
+          (payment as any).task.id,
+          { paymentStatus: 'REFUNDED' },
+          'Task'
+        );
       }
 
       // Reverse user balance changes
-      const taskWithPayments = await db.task.findUnique({
-        where: { id: payment.task.id },
-        include: {
+      const taskWithPayments = await DatabaseQueryBuilder.findById(
+        models.task,
+        (payment as any).task.id,
+        'Task',
+        {
+          id: true,
+          assigneeId: true,
+          title: true,
           owner: {
             select: {
               id: true,
@@ -798,7 +911,7 @@ export class PaymentService {
             }
           }
         }
-      });
+      );
 
       if (!taskWithPayments) {
         throw new Error('Task not found');
@@ -856,28 +969,40 @@ export class PaymentService {
 
       // Update assignee's balance
       if (task.assigneeId) {
-        await db.user.update({
-          where: { id: task.assigneeId },
-          data: {
+        await DatabaseQueryBuilder.update(
+          models.user,
+          task.assigneeId,
+          {
             balance: {
               decrement: assigneeAmount
             },
             pendingBalance: {
               decrement: assigneeAmount
             }
-          }
-        });
+          },
+          'User'
+        );
       }
 
       // Update platform revenue records
-      await db.platformRevenue.create({
-        data: {
+      await DatabaseQueryBuilder.create(
+        models.platformRevenue,
+        {
           amount: -totalFees, // Negative amount to represent reversal
           source: 'REFUND',
           sourceId: task.id,
           description: `Refund fees for task: ${task.title}`
+        },
+        'PlatformRevenue',
+        {
+          id: true,
+          amount: true,
+          source: true,
+          sourceId: true,
+          description: true,
+          createdAt: true
         }
-      });
+      );
 
       logger.info('User balances reversed successfully', {
         taskId: task.id,
@@ -924,7 +1049,7 @@ export class PaymentService {
       }
 
       // Get total payment volume
-      const totalVolumeResult = await db.payment.aggregate({
+      const totalVolumeResult = await models.payment.aggregate({
         where,
         _sum: {
           amount: true
@@ -932,27 +1057,31 @@ export class PaymentService {
       });
 
       // Get payment counts by status
-      const statusCounts = await db.payment.groupBy({
-        by: ['status'],
-        where,
-        _count: {
-          id: true
-        }
-      });
+      const statusCounts = await DatabaseQueryBuilder.groupBy(
+        models.payment,
+        ['status'],
+        { _count: { id: true } },
+        'Payment',
+        where
+      );
 
       // Get payment volumes by status
-      const statusVolumes = await db.payment.groupBy({
-        by: ['status'],
-        where,
-        _sum: {
-          amount: true,
-          platformFee: true,
-          processingFee: true
-        }
-      });
+      const statusVolumes = await DatabaseQueryBuilder.groupBy(
+        models.payment,
+        ['status'],
+        {
+          _sum: {
+            amount: true,
+            platformFee: true,
+            processingFee: true
+          }
+        },
+        'Payment',
+        where
+      );
 
       // Calculate total fees
-      const totalFeesResult = await db.payment.aggregate({
+      const totalFeesResult = await models.payment.aggregate({
         where,
         _sum: {
           platformFee: true,
@@ -1012,9 +1141,15 @@ export class PaymentService {
 
     try {
       // Get task with payment information
-      const task = await db.task.findUnique({
-        where: { id: taskId },
-        include: {
+      const task = await DatabaseQueryBuilder.findById(
+        models.task,
+        taskId,
+        'Task',
+        {
+          id: true,
+          title: true,
+          ownerId: true,
+          assigneeId: true,
           owner: {
             select: {
               id: true,
@@ -1033,15 +1168,15 @@ export class PaymentService {
             orderBy: { createdAt: 'desc' }
           }
         }
-      });
+      );
 
       if (!task) {
         throw new NotFoundError('Task not found');
       }
 
       // Check if user is authorized to view task payments
-      const isOwner = task.owner.id === userId;
-      const isAssignee = task.assignee?.id === userId;
+      const isOwner = (task as any).owner.id === userId;
+      const isAssignee = (task as any).assignee?.id === userId;
 
       if (!isOwner && !isAssignee) {
         throw new ValidationError('Not authorized to view payments for this task');
@@ -1061,9 +1196,9 @@ export class PaymentService {
         completedAt: Date | null;
       };
 
-      const payments: PaymentTransaction[] = task.payments.map((payment: PaymentWithTask) => ({
+      const payments: PaymentTransaction[] = (task as any).payments.map((payment: PaymentWithTask) => ({
         id: payment.id,
-        taskId: task.id,
+        taskId: (task as any).id,
         payerId: payment.payerId,
         amount: payment.amount,
         platformFee: payment.platformFee,
@@ -1074,16 +1209,16 @@ export class PaymentService {
         createdAt: payment.createdAt,
         completedAt: payment.completedAt ?? undefined,
         task: {
-          id: task.id,
-          title: task.title,
-          paymentStatus: task.paymentStatus ?? undefined,
+          id: (task as any).id,
+          title: (task as any).title,
+          paymentStatus: (task as any).paymentStatus ?? undefined,
           owner: {
-            firstName: task.owner.firstName,
-            lastName: task.owner.lastName
+            firstName: (task as any).owner.firstName,
+            lastName: (task as any).owner.lastName
           },
-          assignee: task.assignee ? {
-            firstName: task.assignee.firstName,
-            lastName: task.assignee.lastName
+          assignee: (task as any).assignee ? {
+            firstName: (task as any).assignee.firstName,
+            lastName: (task as any).assignee.lastName
           } : null
         }
       }));
@@ -1133,16 +1268,22 @@ export class PaymentService {
     logger.info('Adding payment method', { userId, type: paymentMethodData.type, provider: paymentMethodData.provider });
 
     try {
+      // Import DatabaseQueryBuilder
+      const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
       // Check if this is the user's first payment method
-      const existingMethodsCount = await db.paymentMethod.count({
-        where: { userId, isActive: true }
-      });
+      const existingMethodsCount = await DatabaseQueryBuilder.count(
+        models.paymentMethod,
+        'PaymentMethod',
+        { userId, isActive: true }
+      );
 
       const isDefault = existingMethodsCount === 0;
 
       // Create payment method record
-      const paymentMethod = await db.paymentMethod.create({
-        data: {
+      const paymentMethod = await DatabaseQueryBuilder.create(
+        models.paymentMethod,
+        {
           userId,
           type: paymentMethodData.type,
           provider: paymentMethodData.provider,
@@ -1150,8 +1291,20 @@ export class PaymentService {
           details: paymentMethodData.details,
           isDefault,
           isActive: true
+        },
+        'PaymentMethod',
+        {
+          id: true,
+          userId: true,
+          type: true,
+          provider: true,
+          externalId: true,
+          details: true,
+          isDefault: true,
+          isActive: true,
+          createdAt: true
         }
-      });
+      );
 
       // Create masked details for response
       const maskedDetails: Record<string, unknown> = {};
@@ -1168,12 +1321,12 @@ export class PaymentService {
       }
 
       return {
-        id: paymentMethod.id,
-        type: paymentMethod.type,
-        provider: paymentMethod.provider,
+        id: (paymentMethod as any).id,
+        type: (paymentMethod as any).type,
+        provider: (paymentMethod as any).provider,
         maskedDetails,
-        isDefault: paymentMethod.isDefault,
-        createdAt: paymentMethod.createdAt
+        isDefault: (paymentMethod as any).isDefault,
+        createdAt: (paymentMethod as any).createdAt
       };
     } catch (error) {
       logger.error('Error adding payment method', { error, userId });
@@ -1195,40 +1348,56 @@ export class PaymentService {
     logger.info('Getting payment methods', { userId });
 
     try {
-      const paymentMethods = await db.paymentMethod.findMany({
-        where: {
-          userId,
-          isActive: true
+      // Import DatabaseQueryBuilder
+      const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
+      const { items: paymentMethods } = await DatabaseQueryBuilder.findMany(
+        models.paymentMethod,
+        {
+          where: {
+            userId,
+            isActive: true
+          },
+          select: {
+            id: true,
+            type: true,
+            provider: true,
+            details: true,
+            isDefault: true,
+            isActive: true,
+            createdAt: true
+          },
+          orderBy: [
+            { isDefault: 'desc' },
+            { createdAt: 'desc' }
+          ]
         },
-        orderBy: [
-          { isDefault: 'desc' },
-          { createdAt: 'desc' }
-        ]
-      });
+        'PaymentMethod'
+      );
 
       return paymentMethods.map(method => {
-        const details = method.details as Record<string, unknown>;
+        const details = (method as any).details as Record<string, unknown>;
         const maskedDetails: Record<string, unknown> = {};
 
-        if (method.type === 'CREDIT_CARD') {
+        if ((method as any).type === 'CREDIT_CARD') {
           maskedDetails.last4 = details.last4 ?? '****';
           maskedDetails.brand = details.brand ?? 'Unknown';
           maskedDetails.expiryMonth = details.expiryMonth;
           maskedDetails.expiryYear = details.expiryYear;
-        } else if (method.type === 'BANK_ACCOUNT') {
+        } else if ((method as any).type === 'BANK_ACCOUNT') {
           maskedDetails.last4 = details.last4 ?? '****';
           maskedDetails.name = details.name ?? 'Bank Account';
-        } else if (method.type === 'DIGITAL_WALLET') {
+        } else if ((method as any).type === 'DIGITAL_WALLET') {
           maskedDetails.name = details.name ?? 'Digital Wallet';
         }
 
         return {
-          id: method.id,
-          type: method.type,
+          id: (method as any).id,
+          type: (method as any).type,
           maskedDetails,
-          isDefault: method.isDefault,
-          isActive: method.isActive,
-          createdAt: method.createdAt
+          isDefault: (method as any).isDefault,
+          isActive: (method as any).isActive,
+          createdAt: (method as any).createdAt
         };
       });
     } catch (error) {
@@ -1244,43 +1413,62 @@ export class PaymentService {
     logger.info('Deleting payment method', { paymentMethodId, userId });
 
     try {
-      const paymentMethod = await db.paymentMethod.findUnique({
-        where: { id: paymentMethodId }
-      });
+      const paymentMethod = await DatabaseQueryBuilder.findById(
+        models.paymentMethod,
+        paymentMethodId,
+        'PaymentMethod',
+        {
+          id: true,
+          userId: true,
+          isDefault: true,
+          isActive: true
+        }
+      );
 
       if (!paymentMethod) {
         throw new NotFoundError('Payment method not found');
       }
 
-      if (paymentMethod.userId !== userId) {
+      if ((paymentMethod as any).userId !== userId) {
         throw new ValidationError('Not authorized to delete this payment method');
       }
 
       // Soft delete by setting isActive to false
-      await db.paymentMethod.update({
-        where: { id: paymentMethodId },
-        data: { 
+      await DatabaseQueryBuilder.update(
+        models.paymentMethod,
+        paymentMethodId,
+        {
           isActive: false,
           isDefault: false
-        }
-      });
+        },
+        'PaymentMethod'
+      );
 
       // If this was the default method, set another method as default
-      if (paymentMethod.isDefault) {
-        const nextMethod = await db.paymentMethod.findFirst({
-          where: {
+      if ((paymentMethod as any).isDefault) {
+        const nextMethod = await DatabaseQueryBuilder.findUnique(
+          models.paymentMethod,
+          {
             userId,
             isActive: true,
             id: { not: paymentMethodId }
           },
-          orderBy: { createdAt: 'desc' }
-        });
+          'PaymentMethod',
+          {
+            id: true,
+            userId: true,
+            isActive: true,
+            isDefault: true
+          }
+        );
 
         if (nextMethod) {
-          await db.paymentMethod.update({
-            where: { id: nextMethod.id },
-            data: { isDefault: true }
-          });
+          await DatabaseQueryBuilder.update(
+            models.paymentMethod,
+            (nextMethod as any).id,
+            { isDefault: true },
+            'PaymentMethod'
+          );
         }
       }
 
@@ -1315,16 +1503,25 @@ export class PaymentService {
       }
 
       // Get payment details from database to calculate fees
-      const paymentRecord = await db.payment.findUnique({
-        where: { id: paymentId }
-      });
+      const paymentRecord = await DatabaseQueryBuilder.findById(
+        models.payment,
+        paymentId,
+        'Payment',
+        {
+          id: true,
+          amount: true,
+          platformFee: true,
+          processingFee: true,
+          status: true
+        }
+      );
 
       if (!paymentRecord) {
         throw new NotFoundError('Payment record not found');
       }
 
-      const platformFee = paymentRecord.platformFee || 0;
-      const processingFee = paymentRecord.processingFee || 0;
+      const platformFee = (paymentRecord as any).platformFee || 0;
+      const processingFee = (paymentRecord as any).processingFee || 0;
       const totalFees = platformFee + processingFee;
       const netAmount = payment.amount - totalFees;
 

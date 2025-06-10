@@ -4,17 +4,14 @@
  * This module handles WebSocket events related to chat functionality.
  */
 
-import { PrismaClient } from '@prisma/client';
 import { Socket } from 'socket.io';
 import { NotificationType } from '../../../../shared/types/enums';
+import { prisma } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import { monitorError } from '../../utils/monitoring';
 import { sanitizeText } from '../../utils/security/sanitization';
 import { SocketManager } from '../socket-manager';
 import { createNotification } from './notification-handlers';
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
 
 /**
  * Registers chat-related event handlers for a socket

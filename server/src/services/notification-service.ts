@@ -8,8 +8,7 @@
  * - Handling notification preferences
  */
 
-import { db } from '../utils/database';
-import { NotFoundError } from '../utils/error-utils';
+import { DatabaseQueryBuilder, models } from '../utils/database-query-builder';
 import { logger } from '../utils/logger';
 import { EmailService } from './email-service';
 import { PushNotificationService } from './push-notification-service';
@@ -90,22 +89,34 @@ export class NotificationService {
     logger.info('Creating notification', { userId: data.userId, type: data.type });
 
     try {
+      // DatabaseQueryBuilder is now imported at the top
+
       // Create notification in database
-      const notification = await db.notification.create({
-        data: {
+      const notification = await DatabaseQueryBuilder.create(
+        models.notification,
+        {
           userId: data.userId,
           type: data.type,
           message: data.message,
-          metadata: data.metadata || {},
-          isRead: data.isRead || false,
-          createdAt: new Date()
+          data: data.metadata || {},
+          isRead: data.isRead || false
+        },
+        'Notification',
+        {
+          id: true,
+          userId: true,
+          type: true,
+          message: true,
+          data: true,
+          isRead: true,
+          createdAt: true
         }
-      });
+      );
 
       // Attempt to deliver notification through preferred channels
       this.deliverNotification(notification).catch(error => {
         // Log error but don't fail the notification creation
-        logger.error('Error delivering notification', { error, notificationId: notification.id });
+        logger.error('Error delivering notification', { error, notificationId: (notification as any)?.id });
       });
 
       return notification;
@@ -121,20 +132,22 @@ export class NotificationService {
   async getNotificationById(notificationId: string): Promise<any> {
     logger.info('Getting notification by ID', { notificationId });
 
-    try {
-      const notification = await db.notification.findUnique({
-        where: { id: notificationId }
-      });
+    // DatabaseQueryBuilder is now imported at the top
 
-      if (!notification) {
-        throw new NotFoundError('Notification not found');
+    return DatabaseQueryBuilder.findById(
+      models.notification,
+      notificationId,
+      'Notification',
+      {
+        id: true,
+        userId: true,
+        type: true,
+        message: true,
+        data: true,
+        isRead: true,
+        createdAt: true
       }
-
-      return notification;
-    } catch (error) {
-      logger.error('Error getting notification', { error, notificationId });
-      throw error;
-    }
+    );
   }
 
   /**
@@ -171,24 +184,37 @@ export class NotificationService {
         }
       }
 
-      // Get total count for pagination
-      const totalCount = await db.notification.count({ where });
+      // DatabaseQueryBuilder is now imported at the top
 
-      // Get notifications with pagination
-      const notifications = await db.notification.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit
-      });
+      // Get notifications with pagination using consolidated method
+      const { items: notifications, total: totalCount } = await DatabaseQueryBuilder.findMany(
+        models.notification,
+        {
+          where,
+          select: {
+            id: true,
+            userId: true,
+            type: true,
+            message: true,
+            data: true,
+            isRead: true,
+            createdAt: true
+          },
+          orderBy: { createdAt: 'desc' },
+          pagination: { page, skip, limit }
+        },
+        'Notification'
+      );
 
       // Get unread count
-      const unreadCount = await db.notification.count({
-        where: {
+      const unreadCount = await DatabaseQueryBuilder.count(
+        models.notification,
+        'Notification',
+        {
           userId,
           isRead: false
         }
-      });
+      );
 
       // Calculate total pages
       const totalPages = Math.ceil(totalCount / limit);
@@ -214,23 +240,24 @@ export class NotificationService {
     logger.info('Marking notification as read', { notificationId, userId });
 
     try {
-      // Find notification and verify ownership
-      const notification = await db.notification.findFirst({
-        where: {
-          id: notificationId,
-          userId
-        }
-      });
+      // DatabaseQueryBuilder is now imported at the top
 
-      if (!notification) {
-        throw new NotFoundError('Notification not found or does not belong to user');
-      }
+      // Find notification and verify ownership
+      await DatabaseQueryBuilder.findById(
+        models.notification,
+        notificationId,
+        'Notification',
+        { id: true, userId: true, isRead: true }
+      );
 
       // Update notification
-      await db.notification.update({
-        where: { id: notificationId },
-        data: { isRead: true }
-      });
+      await DatabaseQueryBuilder.update(
+        models.notification,
+        notificationId,
+        { isRead: true },
+        'Notification',
+        { id: true, isRead: true }
+      );
     } catch (error) {
       logger.error('Error marking notification as read', { error, notificationId, userId });
       throw error;
@@ -244,14 +271,19 @@ export class NotificationService {
     logger.info('Marking all notifications as read', { userId });
 
     try {
+      // Import DatabaseQueryBuilder
+      const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
       // Update all unread notifications for the user
-      const result = await db.notification.updateMany({
-        where: {
+      const result = await DatabaseQueryBuilder.updateMany(
+        models.notification,
+        {
           userId,
           isRead: false
         },
-        data: { isRead: true }
-      });
+        { isRead: true },
+        'Notification'
+      );
 
       return result.count;
     } catch (error) {
@@ -267,22 +299,23 @@ export class NotificationService {
     logger.info('Deleting notification', { notificationId, userId });
 
     try {
-      // Find notification and verify ownership
-      const notification = await db.notification.findFirst({
-        where: {
-          id: notificationId,
-          userId
-        }
-      });
+      // Import DatabaseQueryBuilder
+      const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
 
-      if (!notification) {
-        throw new NotFoundError('Notification not found or does not belong to user');
-      }
+      // Find notification and verify ownership
+      await DatabaseQueryBuilder.findById(
+        models.notification,
+        notificationId,
+        'Notification',
+        { id: true, userId: true }
+      );
 
       // Delete notification
-      await db.notification.delete({
-        where: { id: notificationId }
-      });
+      await DatabaseQueryBuilder.delete(
+        models.notification,
+        notificationId,
+        'Notification'
+      );
     } catch (error) {
       logger.error('Error deleting notification', { error, notificationId, userId });
       throw error;
@@ -320,10 +353,23 @@ export class NotificationService {
     logger.info('Getting user notification preferences', { userId });
 
     try {
+      // Import DatabaseQueryBuilder
+      const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
       // Get user preferences from database
-      const preferences = await db.notificationPreference.findUnique({
-        where: { userId }
-      });
+      const preferences = await DatabaseQueryBuilder.findUnique(
+        models.notificationPreference,
+        { userId },
+        'NotificationPreference',
+        {
+          id: true,
+          userId: true,
+          email: true,
+          push: true,
+          sms: true,
+          types: true
+        }
+      );
 
       // If no preferences exist, create default preferences
       if (!preferences) {
@@ -332,11 +378,11 @@ export class NotificationService {
 
       // Convert the JSON types to the expected format
       const typedPreferences: NotificationPreferences = {
-        userId: preferences.userId,
-        email: preferences.email,
-        push: preferences.push,
-        sms: preferences.sms,
-        types: preferences.types as NotificationPreferences['types'] ?? this.getDefaultNotificationTypes()
+        userId: (preferences as any).userId,
+        email: (preferences as any).email,
+        push: (preferences as any).push,
+        sms: (preferences as any).sms,
+        types: (preferences as any).types as NotificationPreferences['types'] ?? this.getDefaultNotificationTypes()
       };
 
       return typedPreferences;
@@ -365,23 +411,25 @@ export class NotificationService {
         : currentPreferences.types;
 
       // Update preferences in the database
-      const dbPreferences = await db.notificationPreference.update({
-        where: { userId },
-        data: {
+      const dbPreferences = await DatabaseQueryBuilder.update(
+        models.notificationPreference,
+        userId,
+        {
           email: preferences.email ?? currentPreferences.email,
           push: preferences.push ?? currentPreferences.push,
           sms: preferences.sms ?? currentPreferences.sms,
           types: updatedTypes as any // Prisma will handle the JSON serialization
-        }
-      });
+        },
+        'NotificationPreference'
+      );
 
       // Convert and return the typed preferences
       return {
-        userId: dbPreferences.userId,
-        email: dbPreferences.email,
-        push: dbPreferences.push,
-        sms: dbPreferences.sms,
-        types: dbPreferences.types as NotificationPreferences['types']
+        userId: (dbPreferences as any).userId,
+        email: (dbPreferences as any).email,
+        push: (dbPreferences as any).push,
+        sms: (dbPreferences as any).sms,
+        types: (dbPreferences as any).types as NotificationPreferences['types']
       };
     } catch (error) {
       logger.error('Error updating notification preferences', { error, userId });
@@ -405,21 +453,35 @@ export class NotificationService {
         types: this.getDefaultNotificationTypes()
       };
 
+      // Import DatabaseQueryBuilder
+      const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
       // Create preferences in database
-      const dbPreferences = await db.notificationPreference.create({
-        data: {
+      const dbPreferences = await DatabaseQueryBuilder.create(
+        models.notificationPreference,
+        {
           ...defaultPreferences,
           types: defaultPreferences.types as any // Prisma will handle the JSON serialization
+        },
+        'NotificationPreference',
+        {
+          id: true,
+          userId: true,
+          email: true,
+          push: true,
+          sms: true,
+          types: true,
+          createdAt: true
         }
-      });
+      );
 
       // Convert and return the typed preferences
       return {
-        userId: dbPreferences.userId,
-        email: dbPreferences.email,
-        push: dbPreferences.push,
-        sms: dbPreferences.sms,
-        types: dbPreferences.types as NotificationPreferences['types']
+        userId: (dbPreferences as any).userId,
+        email: (dbPreferences as any).email,
+        push: (dbPreferences as any).push,
+        sms: (dbPreferences as any).sms,
+        types: (dbPreferences as any).types as NotificationPreferences['types']
       };
     } catch (error) {
       logger.error('Error creating default notification preferences', { error, userId });
@@ -438,16 +500,21 @@ export class NotificationService {
       // Get user preferences
       const preferences = await this.getUserNotificationPreferences(userId);
 
+      // Import DatabaseQueryBuilder
+      const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
       // Get user information
-      const user = await db.user.findUnique({
-        where: { id: userId },
-        select: {
+      const user = await DatabaseQueryBuilder.findById(
+        models.user,
+        userId,
+        'User',
+        {
           id: true,
           email: true,
           firstName: true,
           deviceTokens: true
         }
-      });
+      );
 
       if (!user) {
         logger.warn('User not found for notification delivery', { userId });
@@ -458,15 +525,15 @@ export class NotificationService {
       const typePreferences = preferences.types[type];
 
       // Deliver via email if enabled
-      if (preferences.email && typePreferences?.email && user.email) {
-        this.deliverEmailNotification(user.email, user.firstName, notification).catch(error => {
+      if ((preferences as any).email && typePreferences?.email && (user as any).email) {
+        this.deliverEmailNotification((user as any).email, (user as any).firstName, notification).catch(error => {
           logger.error('Error delivering email notification', { error, userId, notificationId: notification.id });
         });
       }
 
       // Deliver via push if enabled
-      if (preferences.push && typePreferences?.push && user.deviceTokens?.length > 0) {
-        this.deliverPushNotification(user.deviceTokens, notification).catch(error => {
+      if ((preferences as any).push && typePreferences?.push && (user as any).deviceTokens?.length > 0) {
+        this.deliverPushNotification((user as any).deviceTokens, notification).catch(error => {
           logger.error('Error delivering push notification', { error, userId, notificationId: notification.id });
         });
       }
@@ -532,13 +599,15 @@ export class NotificationService {
       cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 
       // Delete notifications older than the cutoff date
-      const result = await db.notification.deleteMany({
-        where: {
+      const result = await DatabaseQueryBuilder.deleteMany(
+        models.notification,
+        {
           createdAt: {
             lt: cutoffDate
           }
-        }
-      });
+        },
+        'Notification'
+      );
 
       logger.info('Old notifications cleaned up', { count: result.count });
       return result.count;
@@ -568,5 +637,4 @@ export class NotificationService {
   }
 }
 
-// Export singleton instance
-export const notificationService = new NotificationService();
+

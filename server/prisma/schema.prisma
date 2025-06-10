@@ -16,10 +16,8 @@ model User {
   id             String     @id @default(uuid())
   email          String     @unique
   passwordHash   String
-  password       String?    // Added for auth service compatibility
   firstName      String
   lastName       String
-  name           String?    // Added for user service compatibility
   role           String     // Using UserRole enum from shared types
   averageRating  Float?
   trustScore     Int?
@@ -31,28 +29,26 @@ model User {
   country        String?
   zipCode        String?    // Added for location service
   bio            String?
-  avatar         String?
-  profileImage   String?    // Added for profile service
-  profilePicture String?    // Added for OAuth providers
-  latitude       Float?     // Added for location service
-  longitude      Float?     // Added for location service
-  location       String?    // Added for location service
-  balance        Float?     @default(0) // Added for payment service
-  pendingBalance Float?     @default(0) // Added for payment service
-  isActive       Boolean    @default(true) // Added for auth middleware
-  status         String?    // Added for websockets
-  lastActive     DateTime?  // Added for auth tracking
-  isOnline       Boolean?   @default(false) // Added for websockets
-  deviceTokens   String[]   @default([]) // Added for push notifications
-  emailVerificationExpires DateTime? // Added for user service
-  resetPasswordExpires     DateTime? // Added for user service
+  profileImage   String?
+  latitude       Float?
+  longitude      Float?
+  location       String?
+  balance        Float?     @default(0)
+  pendingBalance Float?     @default(0)
+  isActive       Boolean    @default(true)
+  status         String?
+  lastActive     DateTime?
+  isOnline       Boolean?   @default(false)
+  deviceTokens   String[]   @default([])
+  emailVerificationExpires DateTime?
+  resetPasswordExpires     DateTime?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
   // Relations
   ownedTasks     Task[]     @relation("TaskOwner")
   assignedTasks  Task[]     @relation("TaskAssignee")
-  completedTasks Task[]     @relation("TasksCompleted") // Keep only this one for completed tasks
+  completedTasks Task[]     @relation("TasksCompleted")
   bids           Bid[]
   reviewsGiven   Review[]   @relation("ReviewGiver")
   reviewsReceived Review[]  @relation("ReviewReceiver")
@@ -71,15 +67,15 @@ model User {
   oauthAccounts  OauthAccount[]
   contacts       Contact[]  @relation("UserContacts")
   contactedBy    Contact[]  @relation("ContactedUser")
-  disputes       Dispute[]  // Added for admin service
-  
+  disputes       Dispute[]
+
   // Verification relations
   emailVerifications        EmailVerification[]
   phoneVerifications        PhoneVerification[]
   documentVerifications     DocumentVerification[]
   manualVerificationRequests ManualVerificationRequest[]
 
-  // Token fields for legacy compatibility
+  // Token fields
   emailVerificationToken String?
   resetPasswordToken     String?
 }
@@ -104,22 +100,21 @@ model Task {
   ownerId      String
   categoryId   String
   assigneeId   String?
-  completedById  String? // For tracking who completed the task
-  status       String    // Using TaskStatus enum from shared types
-  priority     String    // Using TaskPriority enum from shared types
+  completedById  String?
+  status       String
+  priority     String
   budget       Float
-  budgetType   String    // Using BudgetType enum from shared types
+  budgetType   String
   isRemote     Boolean   @default(false)
   location     String?
-  city         String?   // Added for location service
-  state        String?   // Added for location service
+  city         String?
+  state        String?
   latitude     Float?
   longitude    Float?
   deadline     DateTime?
-  dueDate      DateTime? // Added for task service compatibility
-  completedAt  DateTime? // Added for task completion tracking
-  cancelledAt  DateTime? // Added for task cancellation tracking
-  paymentStatus String?  // Added for payment service
+  completedAt  DateTime?
+  cancelledAt  DateTime?
+  paymentStatus String?
   tags         String[]  @default([])
   requirements String[]  @default([])
   createdAt    DateTime  @default(now())
@@ -134,7 +129,7 @@ model Task {
   reviews      Review[]
   attachments  Attachment[]
   payments     Payment[]
-  disputes     Dispute[] // Added for admin service
+  disputes     Dispute[]
 }
 
 model Bid {
@@ -146,9 +141,8 @@ model Bid {
   message     String?
   timeline    String
   estimatedCompletionTime String?
-  status      String    // Using BidStatus enum from shared types
+  status      String
   submittedAt DateTime  @default(now())
-  createdAt   DateTime  @default(now()) // Added for bid service compatibility
   updatedAt   DateTime  @updatedAt
 
   // Relations
@@ -161,11 +155,9 @@ model Review {
   taskId      String
   reviewerId  String
   revieweeId  String
-  receiverId  String?   // Added for review service compatibility
-  userId      String?   // Added for various service compatibility
   rating      Int
-  communicationRating Int? // Added for trust score service
-  qualityRating Int?    // Added for trust score service
+  communicationRating Int?
+  qualityRating Int?
   title       String?
   comment     String
   createdAt   DateTime  @default(now())
@@ -180,15 +172,13 @@ model Review {
 model Notification {
   id        String    @id @default(uuid())
   userId    String
-  type      String    // Using NotificationType enum from shared types
-  title     String?   // Added for notification service
+  type      String
+  title     String?
   message   String
-  data      Json?     // Added for job processors (renamed from metadata for consistency)
-  metadata  Json?     // Added for notification service
+  data      Json?
   relatedId String?
   isRead    Boolean   @default(false)
-  read      Boolean   @default(false) // Added for notification service compatibility
-  archived  Boolean   @default(false) // Added for scheduled tasks
+  archived  Boolean   @default(false)
   createdAt DateTime  @default(now())
 
   // Relations
@@ -198,15 +188,15 @@ model Notification {
 model Message {
   id         String    @id @default(uuid())
   senderId   String
-  receiverId String?   // Made optional for messaging service compatibility
-  conversationId String? // Added for messaging service
+  receiverId String?
+  conversationId String?
   content    String
-  messageType String?  // Added for messaging service
-  fileUrl    String?   // Added for messaging service
-  fileName   String?   // Added for messaging service
-  fileType   String?   // Added for messaging service
+  messageType String?
+  fileUrl    String?
+  fileName   String?
+  fileType   String?
   isRead     Boolean   @default(false)
-  readAt     DateTime? // Added for messaging service
+  readAt     DateTime?
   createdAt  DateTime  @default(now())
 
   // Relations
@@ -247,12 +237,12 @@ model Verification {
   type      String   // PHONE, EMAIL, etc.
   token     String   @unique
   code      String?
-  status    String   @default("PENDING") // Added for admin service
+  status    String   @default("PENDING")
   expiresAt DateTime
   verified  Boolean  @default(false)
-  processedAt DateTime? // Added for admin service
-  processedBy String?   // Added for admin service
-  adminNotes  String?   // Added for admin service
+  processedAt DateTime?
+  processedBy String?
+  adminNotes  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -276,19 +266,19 @@ model Payment {
   id            String   @id @default(uuid())
   taskId        String
   userId        String
-  payerId       String   // Added for payment service
+  payerId       String
   amount        Float
   fees          Float    @default(0)
-  platformFee   Float    @default(0) // Added for payment service
-  processingFee Float    @default(0) // Added for payment service
-  refundedAmount Float   @default(0) // Added for payment service
-  status        String   // PENDING, COMPLETED, FAILED, REFUNDED
-  direction     String?  // Added for admin service (IN, OUT)
+  platformFee   Float    @default(0)
+  processingFee Float    @default(0)
+  refundedAmount Float   @default(0)
+  status        String
+  direction     String?
   paymentMethod String?
   stripePaymentIntentId String?
-  gatewayResponse Json?  // Added for payment service
-  gatewayTransactionId String? // Added for payment service
-  completedAt   DateTime? // Added for payment service
+  gatewayResponse Json?
+  gatewayTransactionId String?
+  completedAt   DateTime?
   description   String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -297,7 +287,7 @@ model Payment {
   task          Task     @relation(fields: [taskId], references: [id])
   user          User     @relation(fields: [userId], references: [id])
   refunds       Refund[]
-  disputes      Dispute[] // Added for admin service
+  disputes      Dispute[]
 }
 
 model Refund {
@@ -306,7 +296,7 @@ model Refund {
   amount    Float
   reason    String
   status    String   @default("PENDING")
-  requestedById String? // Added for payment service
+  requestedById String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -319,8 +309,8 @@ model Dispute {
   taskId      String?
   paymentId   String?
   userId      String
-  type        String   // PAYMENT, QUALITY, DELIVERY, etc.
-  status      String   @default("PENDING") // PENDING, INVESTIGATING, RESOLVED, CLOSED
+  type        String
+  status      String   @default("PENDING")
   subject     String
   description String
   resolution  String?
@@ -338,12 +328,12 @@ model Dispute {
 model PaymentMethod {
   id          String  @id @default(uuid())
   userId      String
-  type        String  // CARD, BANK_ACCOUNT
-  provider    String  // STRIPE, PAYPAL
-  externalId  String  // Stripe payment method ID
+  type        String
+  provider    String
+  externalId  String
   last4       String?
   brand       String?
-  details     Json?   // Added for payment method data
+  details     Json?
   isDefault   Boolean @default(false)
   isActive    Boolean @default(true)
   createdAt   DateTime @default(now())
@@ -356,9 +346,8 @@ model PaymentMethod {
 model PlatformRevenue {
   id          String   @id @default(uuid())
   amount      Float
-  source      String   // TASK_FEE, SUBSCRIPTION, etc.
-  sourceId    String?  // Added for payment service (renamed from taskId for consistency)
-  taskId      String?
+  source      String
+  sourceId    String?
   userId      String?
   description String?
   createdAt   DateTime @default(now())
@@ -367,8 +356,8 @@ model PlatformRevenue {
 model Conversation {
   id           String   @id @default(uuid())
   title        String?
-  taskId       String?  // Added for messaging service
-  isGroup      Boolean  @default(false) // Added for messaging service
+  taskId       String?
+  isGroup      Boolean  @default(false)
   lastMessageAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -403,7 +392,7 @@ model NotificationPreference {
   reviewUpdates   Boolean @default(true)
   paymentUpdates  Boolean @default(true)
   marketingEmails Boolean @default(false)
-  types           Json?   // Added for notification service
+  types           Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -416,8 +405,8 @@ model UserDevice {
   userId     String
   deviceId   String   @unique
   token      String
-  platform   String   // IOS, ANDROID, WEB
-  deviceInfo Json?    // Added for push notification service
+  platform   String
+  deviceInfo Json?
   isActive   Boolean  @default(true)
   lastUsed   DateTime @default(now())
   createdAt  DateTime @default(now())
@@ -433,15 +422,15 @@ model AuditLog {
   action     String
   entityType String
   entityId   String?
-  resource   String?  // Added for audit log middleware
-  targetId   String?  // Added for admin service
-  details    String?  // Added for admin service
+  resource   String?
+  targetId   String?
+  details    String?
   oldData    Json?
   newData    Json?
   metadata   Json?
   ipAddress  String?
   userAgent  String?
-  timestamp  DateTime @default(now()) // Added for audit utils
+  timestamp  DateTime @default(now())
   createdAt  DateTime @default(now())
 
   // Relations
@@ -452,12 +441,11 @@ model FeatureFlag {
   id          String   @id @default(uuid())
   name        String   @unique
   description String?
-  type        String?  // Added for feature flags utils
-  enabled     Boolean  @default(false) // Added for feature flags utils
+  type        String?
   isEnabled   Boolean  @default(false)
   rolloutPercentage Float @default(0)
   conditions  Json?
-  rules       Json?    // Added for feature flags utils
+  rules       Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -465,11 +453,11 @@ model FeatureFlag {
 model Export {
   id         String   @id @default(uuid())
   userId     String
-  type       String   // USER_DATA, TASKS, PAYMENTS
-  dataType   String?  // Added for job processors
+  type       String
+  dataType   String?
   status     String   @default("PENDING")
   fileUrl    String?
-  filePath   String?  // Added for job processors
+  filePath   String?
   requestedAt DateTime @default(now())
   completedAt DateTime?
   expiresAt   DateTime?
@@ -478,9 +466,9 @@ model Export {
 model OauthAccount {
   id           String @id @default(uuid())
   userId       String
-  provider     String // GOOGLE, FACEBOOK, GITHUB
+  provider     String
   providerId   String
-  providerUserId String? // Added for OAuth providers
+  providerUserId String?
   accessToken  String?
   refreshToken String?
   expiresAt    DateTime?
@@ -504,15 +492,15 @@ model File {
   url         String?
   uploadedBy  String?
   processed   Boolean  @default(false)
-  processingMetadata Json? // Added for job processors
-  processingError String? // Added for job processors
+  processingMetadata Json?
+  processingError String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Token {
   id        String   @id @default(uuid())
-  type      String   // ACCESS, REFRESH, VERIFICATION
+  type      String
   token     String   @unique
   userId    String?
   expiresAt DateTime
@@ -524,8 +512,7 @@ model Contact {
   id         String   @id @default(uuid())
   userId     String
   contactId  String
-  contactUserId String? // Added for user handlers compatibility
-  status     String   @default("PENDING") // PENDING, ACCEPTED, BLOCKED
+  status     String   @default("PENDING")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -567,10 +554,10 @@ model PhoneVerification {
 model DocumentVerification {
   id           String    @id @default(uuid())
   userId       String
-  type         String    // DocumentType: 'ID_DOCUMENT', 'ADDRESS_PROOF', 'BACKGROUND_CHECK'
+  type         String
   documentUrl  String
   notes        String?
-  status       String    @default("PENDING") // DocumentVerificationStatus: 'PENDING', 'VERIFIED', 'REJECTED'
+  status       String    @default("PENDING")
   submittedAt  DateTime  @default(now())
   processedAt  DateTime?
   processedBy  String?
@@ -584,7 +571,7 @@ model ManualVerificationRequest {
   id          String    @id @default(uuid())
   userId      String
   reason      String
-  status      String    @default("PENDING") // 'PENDING', 'APPROVED', 'REJECTED'
+  status      String    @default("PENDING")
   submittedAt DateTime  @default(now())
   processedAt DateTime?
   processedBy String?

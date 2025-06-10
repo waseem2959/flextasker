@@ -7,17 +7,8 @@
  * - Consistent logging and performance tracking
  */
 
+import { prisma } from '../utils/database';
 import { logger } from '../utils/logger';
-import {
-  prisma,
-  findById,
-  createRecord,
-  updateRecord,
-  deleteRecord,
-  getPaginatedRecords,
-  getCount,
-  buildPaginationOptions
-} from '../utils/database-utils';
 
 export abstract class BaseService<T> {
   protected readonly modelName: string;
@@ -41,7 +32,22 @@ export abstract class BaseService<T> {
    */
   async findById(id: string, options: any = {}): Promise<T> {
     logger.debug(`Finding ${this.modelName} by ID: ${id}`);
-    return findById(this.prismaModel, id, this.modelName, options);
+
+    try {
+      const record = await this.prismaModel.findUnique({
+        where: { id },
+        ...options
+      });
+
+      if (!record) {
+        throw new Error(`${this.modelName} with ID ${id} not found`);
+      }
+
+      return record;
+    } catch (error) {
+      logger.error(`Error finding ${this.modelName} by ID: ${id}`, { error });
+      throw error;
+    }
   }
 
   /**
@@ -51,7 +57,13 @@ export abstract class BaseService<T> {
    */
   async create(data: any): Promise<T> {
     logger.debug(`Creating new ${this.modelName}`, { data });
-    return createRecord(this.prismaModel, data, this.modelName);
+
+    try {
+      return await this.prismaModel.create({ data });
+    } catch (error) {
+      logger.error(`Error creating ${this.modelName}`, { error, data });
+      throw error;
+    }
   }
 
   /**
@@ -62,7 +74,16 @@ export abstract class BaseService<T> {
    */
   async update(id: string, data: any): Promise<T> {
     logger.debug(`Updating ${this.modelName} with ID: ${id}`, { data });
-    return updateRecord(this.prismaModel, id, data, this.modelName);
+
+    try {
+      return await this.prismaModel.update({
+        where: { id },
+        data
+      });
+    } catch (error) {
+      logger.error(`Error updating ${this.modelName} with ID: ${id}`, { error, data });
+      throw error;
+    }
   }
 
   /**
@@ -72,7 +93,15 @@ export abstract class BaseService<T> {
    */
   async delete(id: string): Promise<T> {
     logger.debug(`Deleting ${this.modelName} with ID: ${id}`);
-    return deleteRecord(this.prismaModel, id, this.modelName);
+
+    try {
+      return await this.prismaModel.delete({
+        where: { id }
+      });
+    } catch (error) {
+      logger.error(`Error deleting ${this.modelName} with ID: ${id}`, { error });
+      throw error;
+    }
   }
 
   /**
@@ -90,7 +119,38 @@ export abstract class BaseService<T> {
     select?: any;
   }): Promise<{ items: T[]; total: number }> {
     logger.debug(`Fetching paginated ${this.modelName} records`, params);
-    return getPaginatedRecords(this.prismaModel, params);
+
+    const {
+      where = {},
+      page = 1,
+      limit = 10,
+      sortBy = 'createdAt',
+      sortDir = 'desc',
+      include,
+      select
+    } = params;
+
+    try {
+      const skip = (page - 1) * limit;
+      const orderBy = { [sortBy]: sortDir };
+
+      const [items, total] = await Promise.all([
+        this.prismaModel.findMany({
+          where,
+          orderBy,
+          include,
+          select,
+          skip,
+          take: limit
+        }),
+        this.prismaModel.count({ where })
+      ]);
+
+      return { items, total };
+    } catch (error) {
+      logger.error(`Error fetching paginated ${this.modelName} records`, { error, params });
+      throw error;
+    }
   }
 
   /**
@@ -99,7 +159,12 @@ export abstract class BaseService<T> {
    * @returns Count of matching records
    */
   async count(where: any = {}): Promise<number> {
-    return getCount(this.prismaModel, where);
+    try {
+      return await this.prismaModel.count({ where });
+    } catch (error) {
+      logger.error(`Error counting ${this.modelName} records`, { error, where });
+      throw error;
+    }
   }
 
   /**
@@ -126,7 +191,12 @@ export abstract class BaseService<T> {
     sortBy: string = 'createdAt',
     sortDir: 'asc' | 'desc' = 'desc'
   ) {
-    return buildPaginationOptions(page, limit, sortBy, sortDir);
+    const skip = (page - 1) * limit;
+    return {
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortDir }
+    };
   }
 
   /**

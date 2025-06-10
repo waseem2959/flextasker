@@ -1,4 +1,4 @@
-import { db } from '../utils/database';
+import { DatabaseQueryBuilder, models } from '../utils/database-query-builder';
 import { NotFoundError } from '../utils/error-utils';
 import { logger } from '../utils/logger';
 
@@ -216,10 +216,12 @@ export class TrustScoreService {
     try {
       const factors = await this.calculateTrustScore(userId);
       
-      await db.user.update({
-        where: { id: userId },
-        data: { trustScore: factors.totalScore },
-      });
+      await DatabaseQueryBuilder.update(
+        models.user,
+        userId,
+        { trustScore: factors.totalScore },
+        'User'
+      );
 
       logger.info('User trust score updated successfully:', {
         userId,
@@ -269,22 +271,26 @@ export class TrustScoreService {
   async batchUpdateTrustScores(limit: number = 100): Promise<number> {
     try {
       // Get users who need trust score updates
-      const users = await db.user.findMany({
-        where: { isActive: true },
-        select: { id: true },
-        take: limit,
-      });
+      const { items: users } = await DatabaseQueryBuilder.findMany(
+        models.user,
+        {
+          where: { isActive: true },
+          select: { id: true },
+          pagination: { page: 1, skip: 0, limit }
+        },
+        'User'
+      );
 
       let updatedCount = 0;
       
       // Process users in batches to avoid overwhelming the database
       for (const user of users) {
         try {
-          await this.updateUserTrustScore(user.id);
+          await this.updateUserTrustScore((user as any).id);
           updatedCount++;
         } catch (error) {
-          logger.warn('Failed to update trust score for user:', { 
-            userId: user.id, 
+          logger.warn('Failed to update trust score for user:', {
+            userId: (user as any).id,
             error: error instanceof Error ? error.message : 'Unknown error'
           });
         }
@@ -317,9 +323,14 @@ export class TrustScoreService {
    * Fetch all user data needed for trust score calculation
    */
   private async fetchUserTrustData(userId: string): Promise<UserWithTrustData | null> {
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: {
+    // Import DatabaseQueryBuilder
+    const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
+    const user = await DatabaseQueryBuilder.findById(
+      models.user,
+      userId,
+      'User',
+      {
         id: true,
         emailVerified: true,
         phoneVerified: true,
@@ -355,21 +366,21 @@ export class TrustScoreService {
             type: true,
           },
         },
-      },
-    });
+      }
+    );
 
     if (!user) return null;
 
     // Transform the result to match UserWithTrustData interface
     return {
-      id: user.id,
-      emailVerified: user.emailVerified,
-      phoneVerified: user.phoneVerified,
-      trustScore: user.trustScore,
-      reviewsReceived: user.reviewsReceived,
-      ownedTasks: user.ownedTasks,
-      assignedTasks: user.assignedTasks,
-      verifications: user.verifications,
+      id: (user as any).id,
+      emailVerified: (user as any).emailVerified,
+      phoneVerified: (user as any).phoneVerified,
+      trustScore: (user as any).trustScore,
+      reviewsReceived: (user as any).reviewsReceived,
+      ownedTasks: (user as any).ownedTasks,
+      assignedTasks: (user as any).assignedTasks,
+      verifications: (user as any).verifications,
     };
   }
 

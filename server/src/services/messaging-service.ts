@@ -1,6 +1,6 @@
 /**
  * Messaging Service
- * 
+ *
  * This service handles all messaging-related operations including:
  * - Creating and managing conversations
  * - Sending and receiving messages
@@ -8,7 +8,7 @@
  * - Managing read/unread status
  */
 
-import { prisma } from '../utils/database-utils';
+import { DatabaseQueryBuilder, models } from '../utils/database-query-builder';
 import { NotFoundError, ValidationError } from '../utils/error-utils';
 import { logger } from '../utils/logger';
 import { PaginationInfo } from '../utils/response-utils';
@@ -80,7 +80,7 @@ export interface MessageSearchResult {
 
 /**
  * Messaging Service Class
- * 
+ *
  * Handles all messaging-related functionality including conversation management,
  * message sending/receiving, and message search.
  */
@@ -107,110 +107,141 @@ export class MessagingService {
       }
 
       // Check if all participants exist
-      const users = await prisma.user.findMany({
-        where: {
-          id: {
-            in: data.participantIds
+      const { items: users } = await DatabaseQueryBuilder.findMany(
+        models.user,
+        {
+          where: {
+            id: {
+              in: data.participantIds
+            }
+          },
+          select: {
+            id: true
           }
         },
-        select: {
-          id: true
-        }
-      });
+        'User'
+      );
 
-      if (users.length !== data.participantIds.length) {
+      if ((users as any).length !== data.participantIds.length) {
         throw new ValidationError('One or more participants do not exist');
       }
 
       // Check if a direct conversation already exists between these two users
       if (data.participantIds.length === 2 && !data.taskId) {
-        const existingConversation = await prisma.conversation.findFirst({
-          where: {
-            participants: {
-              every: {
-                userId: {
-                  in: data.participantIds
-                }
-              }
-            },
-            AND: [
-              {
-                participants: {
-                  some: {
-                    userId: data.participantIds[0]
+        const existingConversation = await DatabaseQueryBuilder.findFirst(
+          models.conversation,
+          {
+            where: {
+              participants: {
+                every: {
+                  userId: {
+                    in: data.participantIds
                   }
                 }
               },
-              {
-                participants: {
-                  some: {
-                    userId: data.participantIds[1]
+              AND: [
+                {
+                  participants: {
+                    some: {
+                      userId: data.participantIds[0]
+                    }
+                  }
+                },
+                {
+                  participants: {
+                    some: {
+                      userId: data.participantIds[1]
+                    }
                   }
                 }
-              }
-            ],
-            isGroup: false,
-            taskId: null
-          }
-        });
+              ],
+              isGroup: false,
+              taskId: null
+            }
+          },
+          'Conversation'
+        );
 
         if (existingConversation) {
-          logger.info('Found existing conversation', { conversationId: existingConversation.id });
-          
+          logger.info('Found existing conversation', { conversationId: (existingConversation as any).id });
+
           // If there's an initial message, add it to the existing conversation
           if (data.initialMessage) {
-            await prisma.message.create({
-              data: {
-                conversationId: existingConversation.id,
+            await DatabaseQueryBuilder.create(
+              models.message,
+              {
+                conversationId: (existingConversation as any).id,
                 senderId: creatorId,
                 content: data.initialMessage,
                 messageType: 'TEXT'
+              },
+              'Message',
+              {
+                id: true,
+                conversationId: true,
+                senderId: true,
+                content: true,
+                type: true,
+                createdAt: true
               }
-            });
+            );
           }
-          
-          return existingConversation.id;
+
+          return (existingConversation as any).id;
         }
       }
 
       // Create new conversation
-      const conversation = await prisma.$transaction(async (prismaClient) => {
-        // Create conversation
-        const newConversation = await prismaClient.conversation.create({
-          data: {
-            title: data.title ?? undefined,
-            taskId: data.taskId ?? undefined,
-            isGroup: data.participantIds.length > 2,
-            participants: {
-              createMany: {
-                data: data.participantIds.map(userId => ({
-                  userId,
-                  joinedAt: new Date()
-                }))
-              }
+      // Create conversation
+      const newConversation = await DatabaseQueryBuilder.create(
+        models.conversation,
+        {
+          title: data.title ?? undefined,
+          taskId: data.taskId ?? undefined,
+          isGroup: data.participantIds.length > 2,
+          participants: {
+            createMany: {
+              data: data.participantIds.map(userId => ({
+                userId,
+                joinedAt: new Date()
+              }))
             }
-          },
-          include: {
-            participants: true
           }
-        });
-        return newConversation;
-      });
-
+        },
+        'Conversation',
+        {
+          id: true,
+          title: true,
+          taskId: true,
+          isGroup: true,
+          createdAt: true,
+          participants: true
+        }
+      );
       // Add initial message if provided
       if (data.initialMessage) {
-        await prisma.message.create({
-          data: {
-            conversationId: conversation.id,
-            senderId: creatorId,
+        await DatabaseQueryBuilder.create(
+          models.message,
+          {
+            conversationId: (newConversation as any).id,
+            senderId: (data as any).senderId,
             content: data.initialMessage,
             messageType: 'TEXT'
+          },
+          'Message',
+          {
+            id: true,
+            conversationId: true,
+            senderId: true,
+            content: true,
+            messageType: true,
+            createdAt: true
           }
-        });
+        );
       }
 
-      logger.info('Conversation created successfully', { conversationId: conversation.id });
-      return conversation.id;
+      logger.info('Conversation created successfully', { conversationId: (newConversation as any).id });
+      return (newConversation as any).id;
     } catch (error) {
       logger.error('Error creating conversation', { error, creatorId });
       throw error;
@@ -225,23 +256,28 @@ export class MessagingService {
 
     try {
       // Validate conversation exists and user is a participant
-      const conversation = await prisma.conversation.findFirst({
-        where: {
-          id: data.conversationId,
-          participants: {
-            some: {
-              userId: senderId
+      const conversation = await DatabaseQueryBuilder.findFirst(
+        models.conversation,
+        {
+          where: {
+            id: data.conversationId,
+            participants: {
+              some: {
+                userId: senderId
+              }
+            }
+          },
+          select: {
+            id: true,
+            participants: {
+              select: {
+                userId: true
+              }
             }
           }
         },
-        include: {
-          participants: {
-            select: {
-              userId: true
-            }
-          }
-        }
-      });
+        'Conversation'
+      );
 
       if (!conversation) {
         throw new NotFoundError('Conversation not found or user is not a participant');
@@ -253,8 +289,9 @@ export class MessagingService {
       }
 
       // Create message
-      const message = await prisma.message.create({
-        data: {
+      const message = await DatabaseQueryBuilder.create(
+        models.message,
+        {
           conversationId: data.conversationId,
           senderId,
           content: data.content,
@@ -263,7 +300,17 @@ export class MessagingService {
           fileName: data.fileName ?? null,
           fileType: data.fileType ?? null
         },
-        include: {
+        'Message',
+        {
+          id: true,
+          conversationId: true,
+          senderId: true,
+          content: true,
+          messageType: true,
+          fileUrl: true,
+          fileName: true,
+          fileType: true,
+          createdAt: true,
           sender: {
             select: {
               id: true,
@@ -273,34 +320,36 @@ export class MessagingService {
             }
           }
         }
-      });
+      );
 
       // Update conversation's updatedAt timestamp
-      await prisma.conversation.update({
-        where: { id: data.conversationId },
-        data: { updatedAt: new Date() }
-      });
+      await DatabaseQueryBuilder.update(
+        models.conversation,
+        data.conversationId,
+        { updatedAt: new Date() },
+        'Conversation'
+      );
 
       // Format the message for response
       const formattedMessage: MessageWithSender = {
-        id: message.id,
-        conversationId: message.conversationId ?? '',
-        content: message.content ?? '',
-        messageType: message.messageType ?? 'TEXT',
-        fileUrl: message.fileUrl ?? undefined,
-        fileName: message.fileName ?? undefined,
-        fileType: message.fileType ?? undefined,
-        sentAt: message.createdAt,
-        readAt: message.readAt ?? undefined,
+        id: (message as any).id,
+        conversationId: (message as any).conversationId ?? '',
+        content: (message as any).content ?? '',
+        messageType: (message as any).messageType ?? 'TEXT',
+        fileUrl: (message as any).fileUrl ?? undefined,
+        fileName: (message as any).fileName ?? undefined,
+        fileType: (message as any).fileType ?? undefined,
+        sentAt: (message as any).createdAt,
+        readAt: (message as any).readAt ?? undefined,
         sender: {
-          id: message.sender.id,
-          firstName: message.sender.firstName,
-          lastName: message.sender.lastName,
-          avatar: message.sender.avatar ?? undefined
+          id: (message as any).sender.id,
+          firstName: (message as any).sender.firstName,
+          lastName: (message as any).sender.lastName,
+          avatar: (message as any).sender.avatar ?? undefined
         }
       };
 
-      logger.info('Message sent successfully', { messageId: message.id });
+      logger.info('Message sent successfully', { messageId: (message as any).id });
       return formattedMessage;
     } catch (error) {
       logger.error('Error sending message', { error, senderId, conversationId: data.conversationId });
@@ -319,86 +368,100 @@ export class MessagingService {
     logger.info('Getting user conversations', { userId, page, limit });
 
     try {
-      const skip = (page - 1) * limit;
+      // Skip calculation handled in pagination
 
       // Get total count for pagination
-      const totalCount = await prisma.conversation.count({
-        where: {
+      const totalCount = await DatabaseQueryBuilder.count(
+        models.conversation,
+        {
           participants: {
             some: {
               userId
             }
           }
-        }
-      });
+        } as any,
+        'Conversation'
+      );
 
       // Get conversations
-      const conversations = await prisma.conversation.findMany({
-        where: {
-          participants: {
-            some: {
-              userId
-            }
-          }
-        },
-        include: {
-          participants: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  avatar: true,
-                  lastActive: true
-                }
+      const { items: conversations } = await DatabaseQueryBuilder.findMany(
+        models.conversation,
+        {
+          where: {
+            participants: {
+              some: {
+                userId
               }
             }
           },
-          messages: {
-            orderBy: {
-              createdAt: 'desc'
+          select: {
+            id: true,
+            title: true,
+            taskId: true,
+            isGroup: true,
+            updatedAt: true,
+            participants: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    avatar: true,
+                    lastActive: true
+                  }
+                }
+              }
             },
-            take: 1,
-            include: {
-              sender: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true
+            messages: {
+              orderBy: {
+                createdAt: 'desc'
+              },
+              take: 1,
+              select: {
+                content: true,
+                senderId: true,
+                createdAt: true,
+                messageType: true,
+                sender: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
+                  }
                 }
               }
-            }
-          },
-          _count: {
-            select: {
-              messages: {
-                where: {
-                  readAt: null,
-                  senderId: {
-                    not: userId
+            },
+            _count: {
+              select: {
+                messages: {
+                  where: {
+                    readAt: null,
+                    senderId: {
+                      not: userId
+                    }
                   }
                 }
               }
             }
-          }
+          },
+          orderBy: {
+            updatedAt: 'desc'
+          },
+          pagination: { page, skip: (page - 1) * limit, limit }
         },
-        orderBy: {
-          updatedAt: 'desc'
-        },
-        skip,
-        take: limit
-      });
+        'Conversation'
+      );
 
       // Format conversations for response
       const formattedConversations: ConversationSummary[] = conversations.map((conv: any) => {
         // Format participants
         const participants = conv.participants.map((participant: any) => {
           const user = participant.user;
-          const isOnline = user.lastActive ? 
+          const isOnline = user.lastActive ?
             new Date().getTime() - user.lastActive.getTime() < 5 * 60 * 1000 : // 5 minutes
             false;
-          
+
           return {
             id: user.id,
             firstName: user.firstName,

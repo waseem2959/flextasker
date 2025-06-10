@@ -5,18 +5,15 @@
  * It uses the job queue system to schedule and execute recurring tasks.
  */
 
-import { PrismaClient } from '@prisma/client';
 import { NotificationType, TaskStatus } from '../../../shared/types/enums';
+import { prisma } from './database';
 import {
-  addRecurringJob,
-  EmailJobData,
-  QueueName,
-  TaskReminderJobData
-} from './job-queue'; // Removed unused NotificationJobData import
+    addRecurringJob,
+    EmailJobData,
+    QueueName,
+    TaskReminderJobData
+} from './job-queue';
 import { logger } from './logger';
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
 
 /**
  * Schedule task deadline reminders

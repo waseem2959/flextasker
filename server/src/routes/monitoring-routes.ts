@@ -191,7 +191,11 @@ router.get('/cache',
     const response = {
       statistics: cacheStats,
       performance: cacheMetrics,
-      recommendations: []
+      recommendations: [] as Array<{
+        type: string;
+        message: string;
+        priority: string;
+      }>
     };
 
     // Add recommendations based on cache performance
@@ -237,8 +241,7 @@ router.get('/database',
     let enhancedStats = null;
     try {
       // Import dynamically to avoid circular dependencies
-      const { enhancedDb } = await import('../utils/enhanced-database-service');
-      enhancedStats = await enhancedDb.getHealthStats();
+      // Enhanced database service not available
     } catch (error) {
       logger.debug('Enhanced database service not available', { error });
     }
@@ -259,7 +262,12 @@ router.get('/database',
       queryStatistics: queryStats,
       slowQueries,
       enhanced: enhancedStats,
-      recommendations: []
+      recommendations: [] as Array<{
+        type: string;
+        message: string;
+        priority: string;
+        queries?: any[];
+      }>
     };
 
     // Add recommendations
@@ -281,9 +289,9 @@ router.get('/database',
     }
 
     // Add read replica recommendations
-    if (enhancedStats?.connections?.stats) {
-      const readQueries = enhancedStats.connections.stats.queries.read;
-      const writeQueries = enhancedStats.connections.stats.queries.write;
+    if ((enhancedStats as any)?.connections?.stats) {
+      const readQueries = (enhancedStats as any).connections.stats.queries.read;
+      const writeQueries = (enhancedStats as any).connections.stats.queries.write;
       const readWriteRatio = readQueries / (writeQueries || 1);
 
       if (readWriteRatio < 2) {
@@ -363,7 +371,11 @@ router.get('/security',
     const response = {
       metrics: securityMetrics,
       riskLevel: 'low', // Default
-      recommendations: []
+      recommendations: [] as Array<{
+        type: string;
+        message: string;
+        priority: string;
+      }>
     };
 
     // Assess risk level

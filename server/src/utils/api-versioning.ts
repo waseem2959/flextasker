@@ -5,7 +5,7 @@
  * allowing for graceful evolution of the API without breaking existing clients.
  */
 
-import { Request, Response, NextFunction, Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 import semver from 'semver';
 import { logger } from './logger';
 import { sendError } from './response-utils';
@@ -334,19 +334,9 @@ export function versionedRoute(
 }
 
 /**
- * Extend Express Request interface to include API version information
+ * API version information is now defined in server/src/types/express.d.ts
+ * to avoid duplicate interface declarations
  */
-declare global {
-  namespace Express {
-    interface Request {
-      apiVersion?: {
-        requested: string | null;
-        effective: string;
-        status: VersionStatus;
-      };
-    }
-  }
-}
 
 export default {
   apiVersionMiddleware,

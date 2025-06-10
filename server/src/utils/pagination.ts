@@ -38,7 +38,7 @@ export interface PaginationParams {
 // Sort parameters interface
 export interface SortParams {
   sortBy?: string;
-  sortDir: 'asc' | 'desc' | 'ASC' | 'DESC';
+  sortDir?: 'asc' | 'desc' | 'ASC' | 'DESC';
 }
 
 // Pagination result interface

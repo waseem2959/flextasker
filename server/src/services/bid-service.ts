@@ -1,11 +1,11 @@
 /**
  * Bid Service
- * 
+ *
  * This module provides a comprehensive implementation of all bid-related functionality.
  */
 
 import { BidStatus, TaskStatus } from '../../../shared/types/enums';
-import { prisma } from '../utils/database-utils';
+import { DatabaseQueryBuilder, models } from '../utils/database-query-builder';
 import { AuthorizationError, NotFoundError, ValidationError } from '../utils/error-utils';
 import { logger } from '../utils/logger';
 
@@ -27,58 +27,68 @@ export class BidService {
    * Create a new bid for a task
    */
   async createBid(bidData: any): Promise<any> {
+    // DatabaseQueryBuilder is now imported at the top
+
     // Validate task exists and is open for bidding
-    const task = await prisma.task.findUnique({
-      where: { id: bidData.taskId },
-      select: { id: true, status: true, userId: true }
-    });
+    const task = await DatabaseQueryBuilder.findById(
+      models.task,
+      bidData.taskId,
+      'Task',
+      { id: true, status: true, ownerId: true }
+    );
 
-    if (!task) {
-      throw new NotFoundError('Task not found');
-    }
-
-    if (task.status !== TaskStatus.OPEN) {
+    if ((task as any).status !== TaskStatus.OPEN) {
       throw new ValidationError('Task is not open for bidding');
     }
 
-    if (task.userId === bidData.userId) {
+    if ((task as any).ownerId === bidData.userId) {
       throw new ValidationError('You cannot bid on your own task');
     }
 
     // Check if user already has a bid for this task
-    const existingBid = await prisma.bid.findFirst({
-      where: {
+    const existingBidExists = await DatabaseQueryBuilder.exists(
+      models.bid,
+      {
         taskId: bidData.taskId,
-        userId: bidData.userId,
+        bidderId: bidData.userId,
         status: {
           notIn: [BidStatus.WITHDRAWN, BidStatus.REJECTED]
         }
-      }
-    });
+      },
+      'Bid'
+    );
 
-    if (existingBid) {
+    if (existingBidExists) {
       throw new ValidationError('You already have an active bid for this task');
     }
 
     // Create the bid
-    const bid = await prisma.bid.create({
-      data: {
+    const bid = await DatabaseQueryBuilder.create(
+      models.bid,
+      {
         amount: bidData.amount,
         message: bidData.message,
         status: BidStatus.PENDING,
         estimatedCompletionTime: bidData.estimatedCompletionTime,
         description: bidData.message ?? '',
         timeline: bidData.estimatedCompletionTime,
-        task: {
-          connect: { id: bidData.taskId }
-        },
-        bidder: {
-          connect: { id: bidData.userId }
-        }
+        taskId: bidData.taskId,
+        bidderId: bidData.userId
+      },
+      'Bid',
+      {
+        id: true,
+        amount: true,
+        message: true,
+        status: true,
+        estimatedCompletionTime: true,
+        taskId: true,
+        bidderId: true,
+        submittedAt: true
       }
-    });
+    );
 
-    logger.info('Bid created', { bidId: bid.id, taskId: bid.taskId, userId: bid.userId });
+    logger.info('Bid created', { bidId: (bid as any).id, taskId: (bid as any).taskId, userId: (bid as any).bidderId });
     return bid;
   }
 
@@ -86,13 +96,24 @@ export class BidService {
    * Get a bid by its ID
    */
   async getBidById(bidId: string): Promise<any> {
-    const bid = await prisma.bid.findUnique({
-      where: { id: bidId },
-      include: {
-        user: {
+    // DatabaseQueryBuilder is now imported at the top
+
+    return await DatabaseQueryBuilder.findById(
+      models.bid,
+      bidId,
+      'Bid',
+      {
+        id: true,
+        amount: true,
+        message: true,
+        status: true,
+        estimatedCompletionTime: true,
+        submittedAt: true,
+        bidder: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             email: true,
             averageRating: true,
             profileImage: true
@@ -103,62 +124,80 @@ export class BidService {
             id: true,
             title: true,
             status: true,
-            userId: true
+            ownerId: true
           }
         }
       }
-    });
-
-    if (!bid) {
-      throw new NotFoundError('Bid not found');
-    }
-
-    return bid;
+    );
   }
 
   /**
    * Get all bids for a specific task
    */
   async getBidsForTask(taskId: string): Promise<any[]> {
-    const bids = await prisma.bid.findMany({
-      where: { taskId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            averageRating: true,
-            profileImage: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    // DatabaseQueryBuilder is now imported at the top
 
-    return bids;
+    const { items } = await DatabaseQueryBuilder.findMany(
+      models.bid,
+      {
+        where: { taskId },
+        select: {
+          id: true,
+          amount: true,
+          message: true,
+          status: true,
+          estimatedCompletionTime: true,
+          submittedAt: true,
+          bidder: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              averageRating: true,
+              profileImage: true
+            }
+          }
+        },
+        orderBy: { submittedAt: 'desc' }
+      },
+      'Bid'
+    );
+
+    return items;
   }
 
   /**
    * Get all bids made by a specific user
    */
   async getBidsForUser(userId: string): Promise<any[]> {
-    const bids = await prisma.bid.findMany({
-      where: { userId },
-      include: {
-        task: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            userId: true,
-            description: true,
-            budget: true
+    // DatabaseQueryBuilder is now imported at the top
+
+    const { items: bids } = await DatabaseQueryBuilder.findMany(
+      models.bid,
+      {
+        where: { bidderId: userId },
+        select: {
+          id: true,
+          amount: true,
+          message: true,
+          status: true,
+          submittedAt: true,
+          task: {
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              ownerId: true,
+              description: true,
+              budget: true
+            }
           }
-        }
+        },
+        orderBy: { submittedAt: 'desc' }
       },
-      orderBy: { createdAt: 'desc' }
-    });
+      'Bid'
+    );
 
     return bids;
   }
@@ -167,30 +206,42 @@ export class BidService {
    * Update a bid
    */
   async updateBid(bidId: string, updateData: any): Promise<any> {
+    // DatabaseQueryBuilder is now imported at the top
+
     // Get the current bid
-    const bid = await prisma.bid.findUnique({
-      where: { id: bidId },
-      include: { task: true }
-    });
+    const bid = await DatabaseQueryBuilder.findById(
+      models.bid,
+      bidId,
+      'Bid',
+      {
+        id: true,
+        amount: true,
+        message: true,
+        estimatedCompletionTime: true,
+        status: true
+      }
+    );
 
     if (!bid) {
       throw new NotFoundError('Bid not found');
     }
 
     // Check if bid can be updated
-    if (bid.status !== BidStatus.PENDING) {
+    if ((bid as any).status !== BidStatus.PENDING) {
       throw new ValidationError('Only pending bids can be updated');
     }
 
     // Update the bid
-    const updatedBid = await prisma.bid.update({
-      where: { id: bidId },
-      data: {
-        amount: updateData.amount ?? bid.amount,
-        message: updateData.message ?? bid.message,
-        estimatedCompletionTime: updateData.estimatedCompletionTime ?? bid.estimatedCompletionTime
-      }
-    });
+    const updatedBid = await DatabaseQueryBuilder.update(
+      models.bid,
+      bidId,
+      {
+        amount: updateData.amount ?? (bid as any).amount,
+        message: updateData.message ?? (bid as any).message,
+        estimatedCompletionTime: updateData.estimatedCompletionTime ?? (bid as any).estimatedCompletionTime
+      },
+      'Bid'
+    );
 
     logger.info('Bid updated', { bidId });
     return updatedBid;
@@ -200,115 +251,124 @@ export class BidService {
    * Accept a bid for a task
    */
   async acceptBid(bidId: string, taskId: string, userId: string): Promise<any> {
+    // DatabaseQueryBuilder is now imported at the top
+
     // Get the task and verify ownership
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      select: { id: true, userId: true, status: true }
-    });
+    const task = await DatabaseQueryBuilder.findById(
+      models.task,
+      taskId,
+      'Task',
+      { id: true, ownerId: true, status: true }
+    );
 
-    if (!task) {
-      throw new NotFoundError('Task not found');
-    }
-
-    if (task.userId !== userId) {
+    if ((task as any).ownerId !== userId) {
       throw new AuthorizationError('Only the task owner can accept bids');
     }
 
-    if (task.status !== TaskStatus.OPEN) {
+    if ((task as any).status !== TaskStatus.OPEN) {
       throw new ValidationError('Task is not open for bidding');
     }
 
     // Get the bid
-    const bid = await prisma.bid.findUnique({
-      where: { id: bidId },
-      select: { id: true, taskId: true, status: true, userId: true }
-    });
+    const bid = await DatabaseQueryBuilder.findById(
+      models.bid,
+      bidId,
+      'Bid',
+      { id: true, taskId: true, status: true, bidderId: true }
+    );
 
-    if (!bid) {
-      throw new NotFoundError('Bid not found');
-    }
-
-    if (bid.taskId !== taskId) {
+    if ((bid as any).taskId !== taskId) {
       throw new ValidationError('Bid is not for this task');
     }
 
-    if (bid.status !== BidStatus.PENDING) {
+    if ((bid as any).status !== BidStatus.PENDING) {
       throw new ValidationError('Only pending bids can be accepted');
     }
 
-    // Start a transaction to update bid and task
-    const result = await prisma.$transaction([
-      // Update the accepted bid
-      prisma.bid.update({
-        where: { id: bidId },
-        data: { status: BidStatus.ACCEPTED }
-      }),
-      
-      // Update all other bids to rejected
-      prisma.bid.updateMany({
-        where: {
-          taskId,
-          id: { not: bidId },
-          status: BidStatus.PENDING
-        },
-        data: { status: BidStatus.REJECTED }
-      }),
-      
-      // Update the task status and assign to the bidder
-      prisma.task.update({
-        where: { id: taskId },
-        data: {
-          status: TaskStatus.IN_PROGRESS,
-          assignedUserId: bid.userId
-        }
-      })
-    ]);
+    // Update the accepted bid
+    const updatedBid = await DatabaseQueryBuilder.update(
+      models.bid,
+      bidId,
+      { status: BidStatus.ACCEPTED },
+      'Bid'
+    );
 
-    logger.info('Bid accepted', { bidId, taskId, userId: bid.userId });
-    return result[0]; // Return the updated bid
+    // Update all other bids to rejected
+    await DatabaseQueryBuilder.updateMany(
+      models.bid,
+      {
+        taskId,
+        id: { not: bidId },
+        status: BidStatus.PENDING
+      },
+      { status: BidStatus.REJECTED },
+      'Bid'
+    );
+
+    // Update the task status and assign to the bidder
+    await DatabaseQueryBuilder.update(
+      models.task,
+      taskId,
+      {
+        status: TaskStatus.IN_PROGRESS,
+        assigneeId: (bid as any).bidderId
+      },
+      'Task'
+    );
+
+    logger.info('Bid accepted', { bidId, taskId, userId: (bid as any).bidderId });
+    return updatedBid;
   }
 
   /**
    * Reject a bid for a task
    */
   async rejectBid(bidId: string, taskId: string, userId: string): Promise<any> {
+    // DatabaseQueryBuilder is now imported at the top
+
     // Get the task and verify ownership
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      select: { id: true, userId: true }
-    });
+    const task = await DatabaseQueryBuilder.findById(
+      models.task,
+      taskId,
+      'Task',
+      { id: true, ownerId: true }
+    );
 
     if (!task) {
       throw new NotFoundError('Task not found');
     }
 
-    if (task.userId !== userId) {
+    if ((task as any).ownerId !== userId) {
       throw new AuthorizationError('Only the task owner can reject bids');
     }
 
     // Get the bid
-    const bid = await prisma.bid.findUnique({
-      where: { id: bidId },
-      select: { id: true, taskId: true, status: true }
-    });
+    const bid = await DatabaseQueryBuilder.findById(
+      models.bid,
+      bidId,
+      'Bid',
+      { id: true, taskId: true, status: true }
+    );
 
     if (!bid) {
       throw new NotFoundError('Bid not found');
     }
 
-    if (bid.taskId !== taskId) {
+    if ((bid as any).taskId !== taskId) {
       throw new ValidationError('Bid is not for this task');
     }
 
-    if (bid.status !== BidStatus.PENDING) {
+    if ((bid as any).status !== BidStatus.PENDING) {
       throw new ValidationError('Only pending bids can be rejected');
     }
 
     // Update the bid
-    const updatedBid = await prisma.bid.update({
-      where: { id: bidId },
-      data: { status: BidStatus.REJECTED }
-    });
+    const updatedBid = await DatabaseQueryBuilder.update(
+      models.bid,
+      bidId,
+      { status: BidStatus.REJECTED },
+      'Bid'
+    );
 
     logger.info('Bid rejected', { bidId, taskId });
     return updatedBid;
@@ -318,29 +378,35 @@ export class BidService {
    * Withdraw a bid
    */
   async withdrawBid(bidId: string, userId: string): Promise<any> {
+    // DatabaseQueryBuilder is now imported at the top
+
     // Get the bid
-    const bid = await prisma.bid.findUnique({
-      where: { id: bidId },
-      select: { id: true, userId: true, status: true }
-    });
+    const bid = await DatabaseQueryBuilder.findById(
+      models.bid,
+      bidId,
+      'Bid',
+      { id: true, bidderId: true, status: true }
+    );
 
     if (!bid) {
       throw new NotFoundError('Bid not found');
     }
 
-    if (bid.userId !== userId) {
+    if ((bid as any).bidderId !== userId) {
       throw new AuthorizationError('Only the bid owner can withdraw the bid');
     }
 
-    if (bid.status !== BidStatus.PENDING) {
+    if ((bid as any).status !== BidStatus.PENDING) {
       throw new ValidationError('Only pending bids can be withdrawn');
     }
 
     // Update the bid
-    const updatedBid = await prisma.bid.update({
-      where: { id: bidId },
-      data: { status: BidStatus.WITHDRAWN }
-    });
+    const updatedBid = await DatabaseQueryBuilder.update(
+      models.bid,
+      bidId,
+      { status: BidStatus.WITHDRAWN },
+      'Bid'
+    );
 
     logger.info('Bid withdrawn', { bidId, userId });
     return updatedBid;
@@ -359,33 +425,46 @@ export class BidService {
     if (userId) where.userId = userId;
     if (status) where.status = status;
 
+    // DatabaseQueryBuilder is now imported at the top
+
     // Execute the query with pagination
-    const bids = await prisma.bid.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            averageRating: true,
-            profileImage: true
+    const { items: bids } = await DatabaseQueryBuilder.findMany(
+      models.bid,
+      {
+        where,
+        select: {
+          id: true,
+          taskId: true,
+          userId: true,
+          amount: true,
+          message: true,
+          status: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              averageRating: true,
+              profileImage: true
+            }
+          },
+          task: {
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              description: true,
+              budget: true
+            }
           }
         },
-        task: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            description: true,
-            budget: true
-          }
-        }
+        orderBy: { createdAt: 'desc' },
+        pagination: { page, skip: (page - 1) * limit, limit }
       },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit
-    });
+      'Bid'
+    );
 
     return bids;
   }
@@ -394,24 +473,32 @@ export class BidService {
    * Get bid statistics for a task
    */
   async getBidStatistics(taskId: string): Promise<any> {
+    // DatabaseQueryBuilder is now imported at the top
+
     // Verify task exists
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      select: { id: true }
-    });
+    const task = await DatabaseQueryBuilder.findById(
+      models.task,
+      taskId,
+      'Task',
+      { id: true }
+    );
 
     if (!task) {
       throw new NotFoundError('Task not found');
     }
 
     // Get all bids for the task
-    const bids = await prisma.bid.findMany({
-      where: { taskId },
-      select: {
-        amount: true,
-        status: true
-      }
-    });
+    const { items: bids } = await DatabaseQueryBuilder.findMany(
+      models.bid,
+      {
+        where: { taskId },
+        select: {
+          amount: true,
+          status: true
+        }
+      },
+      'Bid'
+    );
 
     if (bids.length === 0) {
       return {
@@ -428,14 +515,14 @@ export class BidService {
     }
 
     // Calculate statistics
-    const amounts = bids.map(bid => bid.amount);
+    const amounts = bids.map(bid => (bid as any).amount);
     const averageBid = amounts.reduce((sum, amount) => sum + amount, 0) / amounts.length;
     const minBid = Math.min(...amounts);
     const maxBid = Math.max(...amounts);
 
     // Count by status
-    const statusCounts = bids.reduce((counts, bid) => {
-      counts[bid.status] = (counts[bid.status] || 0) + 1;
+    const statusCounts = bids.reduce((counts: Record<string, number>, bid) => {
+      counts[(bid as any).status] = (counts[(bid as any).status] ?? 0) + 1;
       return counts;
     }, {} as Record<string, number>);
 
@@ -445,10 +532,10 @@ export class BidService {
       averageBid: Math.round(averageBid * 100) / 100, // Round to 2 decimal places
       minBid,
       maxBid,
-      pendingBids: statusCounts[BidStatus.PENDING] || 0,
-      acceptedBids: statusCounts[BidStatus.ACCEPTED] || 0,
-      rejectedBids: statusCounts[BidStatus.REJECTED] || 0,
-      withdrawnBids: statusCounts[BidStatus.WITHDRAWN] || 0
+      pendingBids: (statusCounts as Record<string, number>)[BidStatus.PENDING] ?? 0,
+      acceptedBids: (statusCounts as Record<string, number>)[BidStatus.ACCEPTED] ?? 0,
+      rejectedBids: (statusCounts as Record<string, number>)[BidStatus.REJECTED] ?? 0,
+      withdrawnBids: (statusCounts as Record<string, number>)[BidStatus.WITHDRAWN] ?? 0
     };
   }
 }

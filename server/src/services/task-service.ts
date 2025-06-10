@@ -5,7 +5,7 @@
  */
 
 import { TaskPriority, TaskStatus } from '../../../shared/types/enums';
-import { prisma } from '../utils/database-utils';
+import { DatabaseQueryBuilder, models } from '../utils/database-query-builder';
 import { AuthorizationError, NotFoundError, ValidationError } from '../utils/error-utils';
 import { logger } from '../utils/logger';
 
@@ -33,34 +33,45 @@ export class TaskService {
     }
 
     try {
-      const task = await prisma.task.create({
-        data: {
+      // DatabaseQueryBuilder is now imported at the top
+
+      const task = await DatabaseQueryBuilder.create(
+        models.task,
+        {
           title: taskData.title,
           description: taskData.description,
-          owner: {
-            connect: { id: taskData.userId }
-          },
+          ownerId: taskData.userId,
           priority: taskData.priority ?? 'NORMAL',
           location: taskData.location,
           budget: taskData.budget,
           budgetType: taskData.budgetType,
-          category: taskData.category,
-          dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
+          categoryId: taskData.category,
+          deadline: taskData.dueDate ? new Date(taskData.dueDate) : null,
           status: TaskStatus.OPEN
         },
-        include: {
+        'Task',
+        {
+          id: true,
+          title: true,
+          description: true,
+          budget: true,
+          status: true,
+          location: true,
+          createdAt: true,
+          deadline: true,
           owner: {
             select: {
               id: true,
-              name: true,
+              firstName: true,
+              lastName: true,
               profileImage: true,
               averageRating: true
             }
           }
         }
-      });
+      );
 
-      logger.info('Task created', { taskId: task.id });
+      logger.info('Task created', { taskId: (task as any).id });
       return task;
     } catch (error) {
       logger.error('Error creating task', { error });
@@ -72,22 +83,38 @@ export class TaskService {
    * Get a task by its ID
    */
   async getTaskById(taskId: string): Promise<any> {
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      include: {
-        user: {
+    // DatabaseQueryBuilder is now imported at the top
+
+    return await DatabaseQueryBuilder.findById(
+      models.task,
+      taskId,
+      'Task',
+      {
+        id: true,
+        title: true,
+        description: true,
+        budget: true,
+        budgetType: true,
+        status: true,
+        priority: true,
+        location: true,
+        deadline: true,
+        createdAt: true,
+        owner: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             email: true,
             profileImage: true,
             averageRating: true
           }
         },
-        assignedUser: {
+        assignee: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             email: true,
             profileImage: true,
             averageRating: true
@@ -95,10 +122,11 @@ export class TaskService {
         },
         bids: {
           include: {
-            user: {
+            bidder: {
               select: {
                 id: true,
-                name: true,
+                firstName: true,
+                lastName: true,
                 profileImage: true,
                 averageRating: true
               }
@@ -106,13 +134,7 @@ export class TaskService {
           }
         }
       }
-    });
-
-    if (!task) {
-      throw new NotFoundError('Task not found');
-    }
-
-    return task;
+    );
   }
 
   /**
@@ -148,33 +170,45 @@ export class TaskService {
     }
 
     // Execute the query with pagination
-    const tasks = await prisma.task.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            profileImage: true,
-            averageRating: true
+    const { items: tasks } = await DatabaseQueryBuilder.findMany(
+      models.task,
+      {
+        where,
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          budget: true,
+          status: true,
+          location: true,
+          createdAt: true,
+          owner: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              profileImage: true,
+              averageRating: true
+            }
+          },
+          assignee: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              profileImage: true,
+              averageRating: true
+            }
+          },
+          _count: {
+            select: { bids: true }
           }
         },
-        assignedUser: {
-          select: {
-            id: true,
-            name: true,
-            profileImage: true,
-            averageRating: true
-          }
-        },
-        _count: {
-          select: { bids: true }
-        }
+        orderBy: { [sortBy]: sortOrder },
+        pagination: { page, skip: (page - 1) * limit, limit }
       },
-      orderBy: { [sortBy]: sortOrder },
-      skip: (page - 1) * limit,
-      take: limit
-    });
+      'Task'
+    );
 
     return tasks;
   }
@@ -184,38 +218,42 @@ export class TaskService {
    */
   async updateTask(taskId: string, userId: string, updateData: any): Promise<any> {
     // Get the current task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      select: { id: true, userId: true, status: true }
-    });
+    const task = await DatabaseQueryBuilder.findById(
+      models.task,
+      taskId,
+      'Task',
+      { id: true, ownerId: true, status: true }
+    );
 
     if (!task) {
       throw new NotFoundError('Task not found');
     }
 
     // Check if user is authorized to update the task
-    if (task.userId !== userId) {
+    if ((task as any).ownerId !== userId) {
       throw new AuthorizationError('Only the task owner can update the task');
     }
 
     // Check if task can be updated
-    if (task.status !== TaskStatus.OPEN) {
+    if ((task as any).status !== TaskStatus.OPEN) {
       throw new ValidationError('Only open tasks can be updated');
     }
 
     // Update the task
-    const updatedTask = await prisma.task.update({
-      where: { id: taskId },
-      data: {
+    const updatedTask = await DatabaseQueryBuilder.update(
+      models.task,
+      taskId,
+      {
         title: updateData.title,
         description: updateData.description,
         budget: updateData.budget,
         budgetType: updateData.budgetType,
         category: updateData.category,
         location: updateData.location,
-        dueDate: updateData.dueDate ? new Date(updateData.dueDate) : undefined
-      }
-    });
+        deadline: updateData.dueDate ? new Date(updateData.dueDate) : undefined
+      },
+      'Task'
+    );
 
     logger.info('Task updated', { taskId });
     return updatedTask;
@@ -225,32 +263,29 @@ export class TaskService {
    * Delete a task
    */
   async deleteTask(taskId: string, userId: string): Promise<any> {
-    // Get the current task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      select: { id: true, userId: true, status: true }
-    });
+    // DatabaseQueryBuilder is now imported at the top
 
-    if (!task) {
-      throw new NotFoundError('Task not found');
-    }
+    // Get the current task to check authorization
+    const task = await DatabaseQueryBuilder.findById(
+      models.task,
+      taskId,
+      'Task',
+      { id: true, ownerId: true, status: true }
+    );
 
     // Check if user is authorized to delete the task
-    if (task.userId !== userId) {
+    if ((task as any).ownerId !== userId) {
       throw new AuthorizationError('Only the task owner can delete the task');
     }
 
     // Check if task can be deleted
-    if (task.status !== TaskStatus.OPEN) {
+    if ((task as any).status !== TaskStatus.OPEN) {
       throw new ValidationError('Only open tasks can be deleted');
     }
 
     // Delete the task
-    await prisma.task.delete({
-      where: { id: taskId }
-    });
+    await DatabaseQueryBuilder.delete(models.task, taskId, 'Task');
 
-    logger.info('Task deleted', { taskId });
     return { success: true, message: 'Task deleted successfully' };
   }
 
@@ -259,37 +294,41 @@ export class TaskService {
    */
   async completeTask(taskId: string, userId: string): Promise<any> {
     // Get the current task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      select: { id: true, userId: true, status: true, assignedUserId: true }
-    });
+    const task = await DatabaseQueryBuilder.findById(
+      models.task,
+      taskId,
+      'Task',
+      { id: true, ownerId: true, status: true, assigneeId: true }
+    );
 
     if (!task) {
       throw new NotFoundError('Task not found');
     }
 
     // Check if user is authorized to complete the task
-    if (task.userId !== userId) {
+    if ((task as any).ownerId !== userId) {
       throw new AuthorizationError('Only the task owner can mark a task as completed');
     }
 
     // Check if task can be completed
-    if (task.status !== TaskStatus.IN_PROGRESS) {
+    if ((task as any).status !== TaskStatus.IN_PROGRESS) {
       throw new ValidationError('Only in-progress tasks can be marked as completed');
     }
 
-    if (!task.assignedUserId) {
+    if (!(task as any).assigneeId) {
       throw new ValidationError('Task must be assigned to a user before it can be completed');
     }
 
     // Update the task
-    const updatedTask = await prisma.task.update({
-      where: { id: taskId },
-      data: {
+    const updatedTask = await DatabaseQueryBuilder.update(
+      models.task,
+      taskId,
+      {
         status: TaskStatus.COMPLETED,
         completedAt: new Date()
-      }
-    });
+      },
+      'Task'
+    );
 
     logger.info('Task completed', { taskId });
     return updatedTask;
@@ -300,33 +339,37 @@ export class TaskService {
    */
   async cancelTask(taskId: string, userId: string): Promise<any> {
     // Get the current task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      select: { id: true, userId: true, status: true }
-    });
+    const task = await DatabaseQueryBuilder.findById(
+      models.task,
+      taskId,
+      'Task',
+      { id: true, ownerId: true, status: true }
+    );
 
     if (!task) {
       throw new NotFoundError('Task not found');
     }
 
     // Check if user is authorized to cancel the task
-    if (task.userId !== userId) {
+    if ((task as any).ownerId !== userId) {
       throw new AuthorizationError('Only the task owner can cancel a task');
     }
 
     // Check if task can be cancelled
-    if (![TaskStatus.OPEN, TaskStatus.IN_PROGRESS].includes(task.status as TaskStatus)) {
+    if (![TaskStatus.OPEN, TaskStatus.IN_PROGRESS].includes((task as any).status as TaskStatus)) {
       throw new ValidationError('Only open or in-progress tasks can be cancelled');
     }
 
     // Update the task
-    const updatedTask = await prisma.task.update({
-      where: { id: taskId },
-      data: {
+    const updatedTask = await DatabaseQueryBuilder.update(
+      models.task,
+      taskId,
+      {
         status: TaskStatus.CANCELLED,
         cancelledAt: new Date()
-      }
-    });
+      },
+      'Task'
+    );
 
     logger.info('Task cancelled', { taskId });
     return updatedTask;
@@ -337,33 +380,37 @@ export class TaskService {
    */
   async assignTask(taskId: string, assignedUserId: string, userId: string): Promise<any> {
     // Get the current task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      select: { id: true, userId: true, status: true }
-    });
+    const task = await DatabaseQueryBuilder.findById(
+      models.task,
+      taskId,
+      'Task',
+      { id: true, ownerId: true, status: true }
+    );
 
     if (!task) {
       throw new NotFoundError('Task not found');
     }
 
     // Check if user is authorized to assign the task
-    if (task.userId !== userId) {
+    if ((task as any).ownerId !== userId) {
       throw new AuthorizationError('Only the task owner can assign a task');
     }
 
     // Check if task can be assigned
-    if (task.status !== TaskStatus.OPEN) {
+    if ((task as any).status !== TaskStatus.OPEN) {
       throw new ValidationError('Only open tasks can be assigned');
     }
 
     // Update the task
-    const updatedTask = await prisma.task.update({
-      where: { id: taskId },
-      data: {
-        assignedUserId,
+    const updatedTask = await DatabaseQueryBuilder.update(
+      models.task,
+      taskId,
+      {
+        assigneeId: assignedUserId,
         status: TaskStatus.IN_PROGRESS
-      }
-    });
+      },
+      'Task'
+    );
 
     logger.info('Task assigned', { taskId, assignedUserId });
     return updatedTask;
@@ -411,26 +458,40 @@ export class TaskService {
       where.location = { contains: location, mode: 'insensitive' };
     }
     
+    // DatabaseQueryBuilder is now imported at the top
+
     // Execute the query with pagination
-    const tasks = await prisma.task.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            profileImage: true,
-            averageRating: true
+    const { items: tasks } = await DatabaseQueryBuilder.findMany(
+      models.task,
+      {
+        where,
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          budget: true,
+          budgetType: true,
+          location: true,
+          status: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              profileImage: true,
+              averageRating: true
+            }
+          },
+          _count: {
+            select: { bids: true }
           }
         },
-        _count: {
-          select: { bids: true }
-        }
+        orderBy: { createdAt: 'desc' },
+        pagination: { page, skip: (page - 1) * limit, limit }
       },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit
-    });
+      'Task'
+    );
     
     return tasks;
   }
@@ -440,22 +501,24 @@ export class TaskService {
    */
   async updateTaskStatus(taskId: string, userId: string, status: TaskStatus, notes?: string): Promise<any> {
     // Get the current task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      select: { id: true, userId: true, status: true, assignedUserId: true }
-    });
+    const task = await DatabaseQueryBuilder.findById(
+      models.task,
+      taskId,
+      'Task',
+      { id: true, ownerId: true, status: true, assigneeId: true }
+    );
 
     if (!task) {
       throw new NotFoundError('Task not found');
     }
 
     // Check authorization - task owner or assigned user can update status
-    if (task.userId !== userId && task.assignedUserId !== userId) {
+    if ((task as any).ownerId !== userId && (task as any).assigneeId !== userId) {
       throw new AuthorizationError('Only task owner or assigned user can update task status');
     }
 
     // Validate status transitions
-    const currentStatus = task.status as TaskStatus;
+    const currentStatus = (task as any).status as TaskStatus;
     const validTransitions: Record<TaskStatus, TaskStatus[]> = {
       [TaskStatus.OPEN]: [TaskStatus.IN_PROGRESS, TaskStatus.CANCELLED],
       [TaskStatus.ACCEPTED]: [TaskStatus.IN_PROGRESS, TaskStatus.CANCELLED],
@@ -482,28 +545,12 @@ export class TaskService {
       updateData.cancelledAt = new Date();
     }
 
-    const updatedTask = await prisma.task.update({
-      where: { id: taskId },
-      data: updateData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            profileImage: true
-          }
-        },
-        assignedUser: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            profileImage: true
-          }
-        }
-      }
-    });
+    const updatedTask = await DatabaseQueryBuilder.update(
+      models.task,
+      taskId,
+      updateData,
+      'Task'
+    );
 
     logger.info('Task status updated', { taskId, oldStatus: currentStatus, newStatus: status, userId });
     return updatedTask;
@@ -526,11 +573,19 @@ export class TaskService {
       where.status = status;
     }
 
-    const [tasks, total] = await Promise.all([
-      prisma.task.findMany({
+    const { items: tasks, total } = await DatabaseQueryBuilder.findMany(
+      models.task,
+      {
         where,
-        include: {
-          assignedUser: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          status: true,
+          budget: true,
+          location: true,
+          createdAt: true,
+          assignee: {
             select: {
               id: true,
               name: true,
@@ -543,13 +598,12 @@ export class TaskService {
           }
         },
         orderBy: { [sortBy]: sortOrder },
-        skip: (page - 1) * limit,
-        take: limit
-      }),
-      prisma.task.count({ where })
-    ]);
+        pagination: { page, skip: (page - 1) * limit, limit }
+      },
+      'Task'
+    );
 
-    logger.info('Retrieved user tasks', { userId, count: tasks.length, total });
+    logger.info('Retrieved user tasks', { userId, count: (tasks as any).length, total });
     
     return {
       tasks,
@@ -579,11 +633,19 @@ export class TaskService {
       where.status = status;
     }
 
-    const [tasks, total] = await Promise.all([
-      prisma.task.findMany({
+    const { items: tasks, total } = await DatabaseQueryBuilder.findMany(
+      models.task,
+      {
         where,
-        include: {
-          user: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          status: true,
+          budget: true,
+          location: true,
+          createdAt: true,
+          owner: {
             select: {
               id: true,
               name: true,
@@ -593,13 +655,12 @@ export class TaskService {
           }
         },
         orderBy: { [sortBy]: sortOrder },
-        skip: (page - 1) * limit,
-        take: limit
-      }),
-      prisma.task.count({ where })
-    ]);
+        pagination: { page, skip: (page - 1) * limit, limit }
+      },
+      'Task'
+    );
 
-    logger.info('Retrieved assigned tasks', { userId, count: tasks.length, total });
+    logger.info('Retrieved assigned tasks', { userId, count: (tasks as any).length, total });
     
     return {
       tasks,
@@ -617,17 +678,19 @@ export class TaskService {
    */
   async addTaskAttachment(taskId: string, userId: string, attachmentData: any): Promise<any> {
     // Get the current task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      select: { id: true, userId: true, assignedUserId: true }
-    });
+    const task = await DatabaseQueryBuilder.findById(
+      models.task,
+      taskId,
+      'Task',
+      { id: true, ownerId: true, assigneeId: true }
+    );
 
     if (!task) {
       throw new NotFoundError('Task not found');
     }
 
     // Check authorization - task owner or assigned user can add attachments
-    if (task.userId !== userId && task.assignedUserId !== userId) {
+    if ((task as any).ownerId !== userId && (task as any).assigneeId !== userId) {
       throw new AuthorizationError('Only task owner or assigned user can add attachments');
     }
 
@@ -637,19 +700,28 @@ export class TaskService {
     }
 
     // Create attachment record
-    const attachment = await prisma.attachment.create({
-      data: {
-        task: {
-          connect: { id: taskId }
-        },
+    const attachment = await DatabaseQueryBuilder.create(
+      models.attachment,
+      {
+        taskId: taskId,
         fileName: attachmentData.filename,
         fileUrl: attachmentData.fileUrl,
         size: attachmentData.fileSize ?? 0,
         contentType: attachmentData.mimeType ?? 'application/octet-stream'
+      },
+      'Attachment',
+      {
+        id: true,
+        taskId: true,
+        fileName: true,
+        fileUrl: true,
+        size: true,
+        contentType: true,
+        createdAt: true
       }
-    });
+    );
 
-    logger.info('Task attachment added', { taskId, attachmentId: attachment.id, userId });
+    logger.info('Task attachment added', { taskId, attachmentId: (attachment as any).id, userId });
     return attachment;
   }
 
@@ -658,35 +730,41 @@ export class TaskService {
    */
   async removeTaskAttachment(taskId: string, attachmentId: string, userId: string): Promise<any> {
     // Get the attachment with task info
-    const attachment = await prisma.attachment.findUnique({
-      where: { id: attachmentId },
-      include: {
+    const attachment = await DatabaseQueryBuilder.findById(
+      models.attachment,
+      attachmentId,
+      'Attachment',
+      {
+        id: true,
+        taskId: true,
         task: {
-          select: { id: true, userId: true, assignedUserId: true }
+          select: { id: true, ownerId: true, assigneeId: true }
         }
       }
-    });
+    );
 
     if (!attachment) {
       throw new NotFoundError('Attachment not found');
     }
 
-    if (attachment.taskId !== taskId) {
+    if ((attachment as any).taskId !== taskId) {
       throw new ValidationError('Attachment does not belong to this task');
     }
 
     // Check authorization - only task owner or assigned user can remove attachments
-    const canRemove = attachment.task.userId === userId || 
-                     attachment.task.assignedUserId === userId;
+    const canRemove = (attachment as any).task.ownerId === userId ||
+                     (attachment as any).task.assigneeId === userId;
 
     if (!canRemove) {
       throw new AuthorizationError('Insufficient permissions to remove this attachment');
     }
 
     // Remove attachment
-    await prisma.attachment.delete({
-      where: { id: attachmentId }
-    });
+    await DatabaseQueryBuilder.delete(
+      models.attachment,
+      attachmentId,
+      'Attachment'
+    );
 
     logger.info('Task attachment removed', { taskId, attachmentId, userId });
     return { success: true, message: 'Attachment removed successfully' };
@@ -708,7 +786,7 @@ export class TaskService {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     // Get average budget to determine "high budget" threshold
-    const budgetStats = await prisma.task.aggregate({
+    const budgetStats = await models.task.aggregate({
       where: {
         status: TaskStatus.OPEN,
         budget: { not: undefined }
@@ -719,44 +797,55 @@ export class TaskService {
     const avgBudget = budgetStats._avg?.budget ?? 0;
     const highBudgetThreshold = avgBudget * 1.5; // 50% above average
 
-    const tasks = await prisma.task.findMany({
-      where: {
-        status: TaskStatus.OPEN,
-        createdAt: { gte: thirtyDaysAgo },
-        OR: [
-          {
-            AND: [
-              { budget: { not: undefined } },
-              { budget: { gte: highBudgetThreshold } }
-            ]
+    const { items: tasks } = await DatabaseQueryBuilder.findMany(
+      models.task,
+      {
+        where: {
+          status: TaskStatus.OPEN,
+          createdAt: { gte: thirtyDaysAgo },
+          OR: [
+            {
+              AND: [
+                { budget: { not: undefined } },
+                { budget: { gte: highBudgetThreshold } }
+              ]
+            },
+            { priority: { in: [TaskPriority.HIGH, TaskPriority.URGENT] } }
+          ],
+          description: { not: undefined },
+          title: { not: undefined }
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          budget: true,
+          priority: true,
+          location: true,
+          createdAt: true,
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              profileImage: true,
+              averageRating: true
+            }
           },
-          { priority: { in: [TaskPriority.HIGH, TaskPriority.URGENT] } }
-        ],
-        description: { not: undefined },
-        title: { not: undefined }
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            profileImage: true,
-            averageRating: true
+          _count: {
+            select: { bids: true }
           }
         },
-        _count: {
-          select: { bids: true }
-        }
+        orderBy: [
+          { priority: 'desc' },
+          { budget: 'desc' },
+          { createdAt: 'desc' }
+        ],
+        pagination: { page: 1, skip: 0, limit }
       },
-      orderBy: [
-        { priority: 'desc' },
-        { budget: 'desc' },
-        { createdAt: 'desc' }
-      ],
-      take: limit
-    });
+      'Task'
+    );
 
-    logger.info('Retrieved featured tasks', { count: tasks.length });
+    logger.info('Retrieved featured tasks', { count: (tasks as any).length });
     return tasks;
   }
 }

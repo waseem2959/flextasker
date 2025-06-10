@@ -1,5 +1,5 @@
-import winston from 'winston';
-import path from 'path';
+import * as path from 'path';
+import * as winston from 'winston';
 
 /**
  * Logger configuration - think of this as our application's journal.

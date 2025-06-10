@@ -155,12 +155,14 @@ module.exports = {
       },
     }
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/line-clamp'),
+  ],
   // Optimize for production
   corePlugins: {
     // Disable unused core plugins to reduce CSS size
     preflight: true,
-    container: false, // We use custom container classes
+    container: true, // Enable container for consistent layouts
   },
   // Purge unused styles in production
   purge: {

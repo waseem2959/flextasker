@@ -14,7 +14,7 @@ import { getRedisClient, redisManager } from './redis-client';
  * Cache entry interface for Redis storage
  */
 interface RedisCacheEntry {
-  data: any;
+  data: unknown;
   timestamp: number;
   ttl: number;
 }
@@ -37,28 +37,46 @@ interface CacheStats {
  */
 export class RedisCache {
   private client: Redis | Cluster | null = null;
-  private fallbackCache = new Map<string, RedisCacheEntry>();
-  private maxFallbackSize = 100; // Smaller fallback cache
-  private stats = {
+  private readonly fallbackCache = new Map<string, RedisCacheEntry>();
+  private readonly maxFallbackSize = 100; // Smaller fallback cache
+  private readonly stats = {
     hits: 0,
     misses: 0,
     errors: 0
   };
+  private isInitialized = false;
 
-  constructor() {
-    this.initializeRedis();
+  /**
+   * Static factory method for creating initialized instance
+   */
+  static async create(): Promise<RedisCache> {
+    const instance = new RedisCache();
+    await instance.initializeRedis();
+    return instance;
+  }
+
+  /**
+   * Ensure Redis is initialized before operations
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (!this.isInitialized) {
+      await this.initializeRedis();
+    }
   }
 
   /**
    * Initialize Redis connection
    */
   private async initializeRedis(): Promise<void> {
+    if (this.isInitialized) return;
+
     try {
       this.client = await getRedisClient();
+      this.isInitialized = true;
       logger.info('Redis cache initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize Redis cache, using fallback', { 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      logger.error('Failed to initialize Redis cache, using fallback', {
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
@@ -66,7 +84,8 @@ export class RedisCache {
   /**
    * Set cache entry with TTL
    */
-  async set(key: string, data: any, ttlSeconds: number = 300): Promise<void> {
+  async set(key: string, data: unknown, ttlSeconds: number = 300): Promise<void> {
+    await this.ensureInitialized();
     const entry: RedisCacheEntry = {
       data,
       timestamp: Date.now(),
@@ -102,7 +121,9 @@ export class RedisCache {
   /**
    * Get cache entry
    */
-  async get(key: string): Promise<any | null> {
+  async get(key: string): Promise<unknown> {
+    await this.ensureInitialized();
+
     try {
       if (this.client && redisManager.isRedisConnected()) {
         const result = await this.client.get(this.formatKey(key));
@@ -145,6 +166,8 @@ export class RedisCache {
    * Delete cache entry
    */
   async delete(key: string): Promise<void> {
+    await this.ensureInitialized();
+
     try {
       if (this.client && redisManager.isRedisConnected()) {
         await this.client.del(this.formatKey(key));
@@ -169,6 +192,8 @@ export class RedisCache {
    * Clear all cache entries
    */
   async clear(): Promise<void> {
+    await this.ensureInitialized();
+
     try {
       if (this.client && redisManager.isRedisConnected()) {
         // Use pattern to clear only our keys
@@ -225,7 +250,8 @@ export class RedisCache {
       if (this.client && redisManager.isRedisConnected()) {
         // Get Redis memory usage and key count
         const info = await this.client.info('memory');
-        const memoryMatch = info.match(/used_memory:(\d+)/);
+        const memoryRegex = /used_memory:(\d+)/;
+        const memoryMatch = memoryRegex.exec(info);
         if (memoryMatch) {
           memoryUsage = parseInt(memoryMatch[1], 10);
         }
@@ -330,7 +356,7 @@ export class RedisCache {
    * Format cache key with prefix
    */
   private formatKey(key: string): string {
-    const prefix = process.env.REDIS_KEY_PREFIX || 'flextasker:';
+    const prefix = process.env.REDIS_KEY_PREFIX ?? 'flextasker:';
     return `${prefix}cache:${key}`;
   }
 
@@ -352,7 +378,7 @@ export class RedisCache {
   /**
    * Get entry from fallback memory cache
    */
-  private getFromFallbackCache(key: string): any | null {
+  private getFromFallbackCache(key: string): unknown {
     const entry = this.fallbackCache.get(key);
     
     if (!entry) {
@@ -372,7 +398,15 @@ export class RedisCache {
   }
 }
 
-// Export singleton instance
+// Export singleton instance - lazy initialization
+let redisCacheInstance: RedisCache | null = null;
+
+export const getRedisCache = async (): Promise<RedisCache> => {
+  redisCacheInstance ??= await RedisCache.create();
+  return redisCacheInstance;
+};
+
+// For backward compatibility - synchronous access (will initialize on first use)
 export const redisCache = new RedisCache();
 
 export default redisCache;

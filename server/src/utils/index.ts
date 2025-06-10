@@ -47,8 +47,7 @@ export * from './api-docs';
 // API versioning utilities
 export * from './api-versioning';
 
-// Controller utilities
-export * from './controller-utils';
+// Controller utilities (consolidated into pagination.ts and base-controller.ts)
 
 // Response utilities
 export { ApiErrorResponse, ApiResponse, ApiSuccessResponse, ErrorDetail, PaginationInfo, createPagination, sendConflictError, sendError, sendForbiddenError, sendNotFoundError, sendPaginatedSuccess, sendSuccess, sendUnauthorizedError, sendValidationError } from './response-utils';

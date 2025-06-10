@@ -7,7 +7,6 @@
 
 import { PrismaClient } from '@prisma/client';
 import { Request } from 'express';
-import { CacheService } from './cache/cache-service';
 import { config } from './config';
 import { logger } from './logger';
 
@@ -15,10 +14,10 @@ import { logger } from './logger';
 const prisma = new PrismaClient();
 
 // Cache TTL for feature flags
-const FEATURE_FLAGS_CACHE_TTL = 5 * 60; // 5 minutes
+// const FEATURE_FLAGS_CACHE_TTL = 5 * 60; // 5 minutes
 
 // Feature flag cache key
-const FEATURE_FLAGS_CACHE_KEY = 'system:feature_flags';
+// const FEATURE_FLAGS_CACHE_KEY = 'system:feature_flags';
 
 /**
  * Initialize feature flags system
@@ -161,11 +160,11 @@ export interface FeatureFlag {
 export async function getAllFeatureFlags(): Promise<FeatureFlag[]> {
   try {
     // Try to get flags from cache first
-    const cachedFlags = await CacheService.get<FeatureFlag[]>(FEATURE_FLAGS_CACHE_KEY);
+    // const cachedFlags = await CacheService.get<FeatureFlag[]>(FEATURE_FLAGS_CACHE_KEY);
     
-    if (cachedFlags) {
-      return cachedFlags;
-    }
+    // if (cachedFlags) {
+    //   return cachedFlags;
+    // }
     
     // If not in cache, get from database
     const flags = await prisma.featureFlag.findMany();
@@ -178,11 +177,11 @@ export async function getAllFeatureFlags(): Promise<FeatureFlag[]> {
     }));
     
     // Cache the transformed flags
-    await CacheService.set(
-      FEATURE_FLAGS_CACHE_KEY,
-      transformedFlags,
-      FEATURE_FLAGS_CACHE_TTL
-    );
+    // await CacheService.set(
+    //   FEATURE_FLAGS_CACHE_KEY,
+    //   transformedFlags,
+    //   FEATURE_FLAGS_CACHE_TTL
+    // );
     
     return transformedFlags;
   } catch (error) {
@@ -351,7 +350,7 @@ export async function setFeatureFlag(flag: Omit<FeatureFlag, 'id' | 'createdAt' 
     }
     
     // Invalidate cache
-    await CacheService.invalidate(FEATURE_FLAGS_CACHE_KEY);
+    // await CacheService.invalidate(FEATURE_FLAGS_CACHE_KEY);
     
     // Convert rules back to object
     return {
@@ -387,7 +386,7 @@ export async function deleteFeatureFlag(featureName: string): Promise<boolean> {
     });
     
     // Invalidate cache
-    await CacheService.invalidate(FEATURE_FLAGS_CACHE_KEY);
+    // await CacheService.invalidate(FEATURE_FLAGS_CACHE_KEY);
     
     return true;
   } catch (error) {

@@ -5,7 +5,7 @@
  * session management, and real-time features with cluster support.
  */
 
-import Redis, { Cluster, RedisOptions, ClusterOptions } from 'ioredis';
+import Redis, { Cluster, ClusterOptions, RedisOptions } from 'ioredis';
 import { logger } from './logger';
 
 /**
@@ -38,7 +38,7 @@ interface RedisClusterConfig {
  * Environment-based Redis configuration
  */
 const getRedisConfig = (): RedisConfig | RedisClusterConfig => {
-  const isProduction = process.env.NODE_ENV === 'production';
+  // const isProduction = process.env.NODE_ENV === 'production';
   const isCluster = process.env.REDIS_CLUSTER === 'true';
 
   if (isCluster) {
@@ -58,7 +58,6 @@ const getRedisConfig = (): RedisConfig | RedisClusterConfig => {
         redisOptions: {
           password: process.env.REDIS_PASSWORD,
           keyPrefix: process.env.REDIS_KEY_PREFIX || 'flextasker:',
-          retryDelayOnFailover: 100,
           maxRetriesPerRequest: 3,
           lazyConnect: true,
           keepAlive: 30000,
@@ -67,23 +66,13 @@ const getRedisConfig = (): RedisConfig | RedisClusterConfig => {
           commandTimeout: 5000
         },
         enableOfflineQueue: false,
-        redisOptions: {
-          password: process.env.REDIS_PASSWORD
-        },
         scaleReads: 'slave',
         maxRedirections: 16,
         retryDelayOnFailover: 100,
         retryDelayOnClusterDown: 300,
         retryDelayOnMoved: 0,
-        retryDelayOnAsk: 0,
-        maxRedirections: 16,
-        enableReadyCheck: true,
-        redisOptions: {
-          connectTimeout: 10000,
-          commandTimeout: 5000,
-          retryDelayOnFailover: 100,
-          maxRetriesPerRequest: 3
-        }
+        // retryDelayOnAsk: 0, // This property doesn't exist in ClusterOptions
+        enableReadyCheck: true
       }
     };
   }

@@ -5,14 +5,11 @@
  */
 
 import { Socket } from 'socket.io';
+import { NotificationType } from '../../../../shared/types/enums';
+import { prisma } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import { monitorError } from '../../utils/monitoring';
 import { SocketManager } from '../socket-manager';
-import { PrismaClient } from '@prisma/client';
-import { NotificationType } from '../../../../shared/types/enums';
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
 
 /**
  * Registers notification-related event handlers for a socket

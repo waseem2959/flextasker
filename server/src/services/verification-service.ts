@@ -443,39 +443,44 @@ export class VerificationService {
     logger.info('Getting user verification status', { userId });
 
     try {
+      // Import DatabaseQueryBuilder
+      const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
       // Get user information
-      const user = await db.user.findUnique({
-        where: { id: userId },
-        select: {
+      const user = await DatabaseQueryBuilder.findById(
+        models.user,
+        userId,
+        'User',
+        {
           id: true,
           emailVerified: true,
           phoneVerified: true,
           trustScore: true
         }
-      });
-
-      if (!user) {
-        throw new NotFoundError('User not found');
-      }
+      );
 
       // Get document verifications
-      const documentVerifications = await db.documentVerification.findMany({
-        where: { userId },
-        select: {
-          type: true,
-          status: true
-        }
-      });
+      const { items: documentVerifications } = await DatabaseQueryBuilder.findMany(
+        models.documentVerification,
+        {
+          where: { userId },
+          select: {
+            type: true,
+            status: true
+          }
+        },
+        'DocumentVerification'
+      );
 
       // Determine document status
       let documentStatus: DocumentStatus = 'NONE';
       
       if (documentVerifications.length > 0) {
         const hasVerified = documentVerifications.some(
-          (doc) => doc.status === 'VERIFIED'
+          (doc: any) => doc.status === 'VERIFIED'
         );
         const hasPending = documentVerifications.some(
-          (doc) => doc.status === 'PENDING'
+          (doc: any) => doc.status === 'PENDING'
         );
         
         if (hasVerified) {
@@ -490,17 +495,17 @@ export class VerificationService {
       // Determine verification level
       let verificationLevel: VerificationLevel = 'BASIC';
       
-      if (user.emailVerified && user.phoneVerified && documentStatus === 'VERIFIED') {
+      if ((user as any).emailVerified && (user as any).phoneVerified && documentStatus === 'VERIFIED') {
         verificationLevel = 'PREMIUM';
-      } else if (user.emailVerified && user.phoneVerified) {
+      } else if ((user as any).emailVerified && (user as any).phoneVerified) {
         verificationLevel = 'STANDARD';
       }
 
       return {
-        emailVerified: user.emailVerified,
-        phoneVerified: user.phoneVerified,
+        emailVerified: (user as any).emailVerified,
+        phoneVerified: (user as any).phoneVerified,
         documentStatus,
-        trustScore: user.trustScore ?? 0,
+        trustScore: (user as any).trustScore ?? 0,
         verificationLevel
       };
     } catch (error) {

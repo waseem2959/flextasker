@@ -1,12 +1,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
@@ -48,7 +48,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <nav className="bg-white shadow-sm border-b border-neutral-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
@@ -56,17 +56,17 @@ export const Navbar: React.FC = () => {
                 <img
                   src="/flextasker.svg"
                   alt="FlexTasker - Get things done with trusted local experts"
-                  className="h-10 w-auto"
+                  className="h-8 w-auto"
                   loading="eager"
                 />
               </Link>
             </div>
             
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <NavLink 
-                to="/tasks" 
+              <NavLink
+                to="/tasks"
                 className={({isActive}) => cn(
-                  'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors',
+                  'inline-flex items-center px-3 py-2 h-16 border-b-2 text-sm font-medium transition-colors',
                   isActive
                     ? 'border-primary-600 text-neutral-900'
                     : 'border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-900'
@@ -80,10 +80,10 @@ export const Navbar: React.FC = () => {
                   {/* FIXED: Use semantic helper function instead of direct string comparison */}
                   {/* This makes the code more maintainable and self-documenting */}
                   {isUserClient() && (
-                    <NavLink 
-                      to="/post-task" 
+                    <NavLink
+                      to="/post-task"
                       className={({isActive}) => cn(
-                        'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors',
+                        'inline-flex items-center px-3 py-2 h-16 border-b-2 text-sm font-medium transition-colors',
                         isActive
                           ? 'border-primary-600 text-neutral-900'
                           : 'border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-900'
@@ -92,10 +92,10 @@ export const Navbar: React.FC = () => {
                       Post a Task
                     </NavLink>
                   )}
-                  <NavLink 
-                    to="/dashboard" 
+                  <NavLink
+                    to="/dashboard"
                     className={({isActive}) => cn(
-                      'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors',
+                      'inline-flex items-center px-3 py-2 h-16 border-b-2 text-sm font-medium transition-colors',
                       isActive
                         ? 'border-primary-600 text-neutral-900'
                         : 'border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-900'
@@ -106,10 +106,10 @@ export const Navbar: React.FC = () => {
                 </>
               )}
               
-              <NavLink 
-                to="/how-it-works" 
+              <NavLink
+                to="/how-it-works"
                 className={({isActive}) => cn(
-                  'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors',
+                  'inline-flex items-center px-3 py-2 h-16 border-b-2 text-sm font-medium transition-colors',
                   isActive
                     ? 'border-primary-600 text-neutral-900'
                     : 'border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-900'
@@ -120,10 +120,10 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
           
-          <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-3">
+          <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
             {isAuthenticated ? (
               <>
-                <Button variant="ghost" size="icon" className="relative" onClick={() => navigate('/notifications')}>
+                <Button variant="ghost" size="icon" className="relative h-10 w-10" onClick={() => navigate('/notifications')}>
                   <Bell className="h-5 w-5" />
                   <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
                 </Button>
@@ -178,7 +178,7 @@ export const Navbar: React.FC = () => {
                 </Button>
                 <Button
                   onClick={() => navigate('/register')}
-                  className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 h-10 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                  className="bg-primary-600 hover:bg-primary-700 text-neutral-700 font-bold px-6 h-10 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   Sign up
                 </Button>

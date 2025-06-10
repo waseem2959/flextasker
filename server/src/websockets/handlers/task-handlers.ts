@@ -5,20 +5,17 @@
  * real-time updates for task status changes, bids, and comments.
  */
 
-import { PrismaClient } from '@prisma/client';
 import { Socket } from 'socket.io';
 import {
-  BidStatus,
-  NotificationType,
-  TaskStatus
+    BidStatus,
+    NotificationType,
+    TaskStatus
 } from '../../../../shared/types/enums';
+import { prisma } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import { monitorError } from '../../utils/monitoring';
 import { SocketManager } from '../socket-manager';
 import { createNotification } from './notification-handlers';
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
 
 /**
  * Validate bid submission data

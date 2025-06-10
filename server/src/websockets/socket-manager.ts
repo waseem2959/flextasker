@@ -6,17 +6,16 @@
  */
 
 import { Server as HttpServer } from 'http';
-import { Server as SocketServer, Socket } from 'socket.io';
-import { verifyJwt } from '../utils/security/jwt';
+import { Socket, Server as SocketServer } from 'socket.io';
+import { UserRole } from '../../../shared/types/enums';
 import { logger } from '../utils/logger';
 import { monitorError } from '../utils/monitoring';
 import metricsService from '../utils/monitoring/metrics-service';
-import { wrapSocketEmit } from './handlers/websocket-metrics';
-import { UserRole } from '../../../shared/types/enums';
+import { verifyJwt } from '../utils/security/jwt';
 
 // Import event handlers
-import { registerNotificationHandlers } from './handlers/notification-handlers';
 import { registerChatHandlers } from './handlers/chat-handlers';
+import { registerNotificationHandlers } from './handlers/notification-handlers';
 import { registerTaskHandlers } from './handlers/task-handlers';
 import { registerUserHandlers, updateUserOnlineStatus } from './handlers/user-handlers';
 
@@ -105,7 +104,7 @@ export class SocketManager {
         logger.info('Socket connected', { userId: user.id, socketId: socket.id });
         
         // Wrap socket emit with metrics tracking
-        wrapSocketEmit(socket);
+        metricsService.wrapSocketEmit(socket);
         
         // Track connection event
         metricsService.trackWebSocketEvent('connection', false, 'system', socket.data?.user?.id);

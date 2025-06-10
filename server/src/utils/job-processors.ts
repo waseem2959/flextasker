@@ -5,7 +5,6 @@
  * It handles asynchronous tasks like sending emails, notifications, and file processing.
  */
 
-import { PrismaClient } from '@prisma/client';
 import { Job } from 'bullmq';
 import { render } from 'ejs';
 import { existsSync } from 'fs';
@@ -15,6 +14,7 @@ import path from 'path';
 import { performance } from 'perf_hooks';
 import sharp from 'sharp';
 import { config } from './config';
+import { prisma } from './database';
 import { logger } from './logger';
 import { recordResponseTime } from './monitoring/performance';
 
@@ -103,8 +103,7 @@ const notificationHandler = {
   }
 };
 
-// Initialize prisma client 
-const prisma = new PrismaClient();
+
 
 /**
  * Email processor
@@ -511,9 +510,18 @@ async function processDataExportJob(job: Job<DataExportJobData>): Promise<any> {
       }
         
       case 'profile': {
-        data = await prisma.user.findUnique({
-          where: { id: userId },
-          include: {
+        // Import DatabaseQueryBuilder
+        const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
+        data = await DatabaseQueryBuilder.findById(
+          models.user,
+          userId,
+          'User',
+          {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
             ownedTasks: true,
             assignedTasks: true,
             bids: true,
@@ -529,7 +537,7 @@ async function processDataExportJob(job: Job<DataExportJobData>): Promise<any> {
               }
             }
           }
-        });
+        );
         break;
       }
         

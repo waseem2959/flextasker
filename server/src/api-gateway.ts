@@ -5,22 +5,21 @@
  * It handles routing, authentication, and provides consistent request processing.
  */
 
-import express, { Application, Request, Response, NextFunction } from 'express';
-import { config } from './utils/config';
-import { logger } from './utils/logger';
-import { createI18nMiddleware, languageMiddleware } from './utils/i18n';
+import express, { Application, NextFunction, Request, Response } from 'express';
 import { rateLimiter } from './middleware/rate-limiter-middleware';
 import requestContext from './middleware/request-context-middleware';
 import { security } from './middleware/security-middleware';
-import { errorHandler } from './middleware/error-handler-middleware';
-import { cacheMiddleware } from './utils/cache/cache-middleware';
-import healthMonitor from './utils/health-monitor';
-import { apiDocHandler } from './utils/api-docs';
-import cors from 'cors';
-import helmet from 'helmet';
+import { config } from './utils/config';
+import { createI18nMiddleware, languageMiddleware } from './utils/i18n';
+import { logger } from './utils/logger';
+
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import helmet from 'helmet';
 import { authenticateToken } from './middleware/auth-middleware';
+import { apiDocHandler } from './utils/api-docs';
+import healthMonitor from './utils/health-monitor';
 
 export class ApiGateway {
   private readonly app: Application;
@@ -99,18 +98,15 @@ export class ApiGateway {
     protectedRouter.use(authenticateToken);
     
     // Apply caching middleware to GET requests
-    protectedRouter.get('*', cacheMiddleware());
+
     
     // Register API resource routes
-    protectedRouter.use('/users', require('./routes/users').default);
-    protectedRouter.use('/tasks', require('./routes/tasks').default);
-    protectedRouter.use('/categories', require('./routes/categories').default);
-    protectedRouter.use('/bids', require('./routes/bids').default);
-    protectedRouter.use('/chat', require('./routes/chat').default);
-    protectedRouter.use('/notifications', require('./routes/notifications').default);
-    protectedRouter.use('/reviews', require('./routes/reviews').default);
-    protectedRouter.use('/files', require('./routes/files').default);
-    protectedRouter.use('/settings', require('./routes/settings').default);
+    protectedRouter.use('/users', require('./routes/user-routes').default);
+    protectedRouter.use('/tasks', require('./routes/task-routes').default);
+    protectedRouter.use('/bids', require('./routes/bid-routes').default);
+    protectedRouter.use('/notifications', require('./routes/notifications-routes').default);
+    protectedRouter.use('/reviews', require('./routes/reviews-routes').default);
+    // Note: categories, chat, files, and settings routes don't exist yet
     
     // Admin routes (require admin role)
     const adminRouter = express.Router();
@@ -132,7 +128,7 @@ export class ApiGateway {
     
     adminRouter.use(adminCheckMiddleware);
     
-    adminRouter.use('/admin', require('./routes/admin').default);
+    adminRouter.use('/admin', require('./routes/admin-routes').default);
     
     // Register the routers
     apiRouter.use(protectedRouter);
@@ -171,7 +167,7 @@ export class ApiGateway {
     // Central error handling middleware - must be registered last
     const errorMiddleware = (
       err: any,
-      req: Request,
+      _req: Request,
       res: Response,
       next: NextFunction
     ) => {
@@ -179,11 +175,8 @@ export class ApiGateway {
         return next(err);
       }
       
-      // Convert to Error instance if needed
-      const error = err instanceof Error ? err : new Error(String(err));
-      
-      // Delegate to the error handler function
-      errorHandler(error, req, res, next);
+      // Handle error and send response
+      res.status(500).json({ error: 'Internal server error' });
     };
     
     // Register the error handling middleware

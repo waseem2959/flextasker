@@ -124,14 +124,14 @@ export const LiveTaskExamples: React.FC<LiveTaskExamplesProps> = ({ category = '
           to={`/tasks/${task.id}`}
           className="block group"
         >
-          <div className="flex items-center p-6 bg-white border border-neutral-200 rounded-xl hover:border-primary-300 hover:shadow-lg transition-all duration-200 group-hover:scale-[1.02]">
+          <div className="flex items-center p-6 bg-white border border-neutral-200 rounded-xl hover:border-primary-300 hover:shadow-lg transition-all duration-200 group-hover:scale-[1.02] min-h-[120px]">
             <img
               src={task.avatar}
               alt={task.userName}
-              className="w-14 h-14 rounded-full object-cover mr-4 flex-shrink-0"
+              className="w-16 h-16 rounded-full object-cover mr-4 flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium text-primary-700 bg-primary-100 px-3 py-1 rounded-full">
                   {task.category}
                 </span>
@@ -139,7 +139,7 @@ export const LiveTaskExamples: React.FC<LiveTaskExamplesProps> = ({ category = '
                   ${task.price}
                 </span>
               </div>
-              <h3 className="text-base font-semibold text-neutral-900 group-hover:text-primary-700 transition-colors mb-2 leading-tight">
+              <h3 className="text-base font-semibold text-neutral-900 group-hover:text-primary-700 transition-colors mb-3 leading-tight">
                 {task.title}
               </h3>
               <div className="flex items-center">

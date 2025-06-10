@@ -276,19 +276,7 @@
 
 /* Flextasker Custom Classes */
 @layer components {
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 var(--space-md);
-  }
-  
-  @media (min-width: 768px) {
-    .container { padding: 0 var(--space-lg); }
-  }
-
-  @media (min-width: 1024px) {
-    .container { padding: 0 var(--space-xl); }
-  }
+  /* Removed conflicting .container class - use Tailwind's container instead */
 
   .task-card {
     display: flex;

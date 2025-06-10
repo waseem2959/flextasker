@@ -5,12 +5,12 @@
  */
 
 // Re-export all monitoring components
+export * from '../health-monitor';
 export * from './performance';
-export * from './health';
 
 // Import types
-import type { HealthStatus } from './health';
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
+import type { HealthStatus } from '../health-monitor';
 import { logger } from '../logger';
 
 // Re-export HealthStatus for consumers
@@ -22,23 +22,17 @@ export type { HealthStatus };
  */
 export function initializeMonitoring(app: any): void {
   // Import the monitoring utilities
-  const { 
-    scheduleHealthChecks, 
-    healthCheckHandler, 
+  const {
+    healthCheckHandler,
     readinessProbeHandler,
-    performanceMonitoringMiddleware
-  } = require('./health');
-  
-  // Set up performance monitoring middleware
-  app.use(performanceMonitoringMiddleware);
-  
+    livenessProbeHandler
+  } = require('../health-monitor');
+
   // Set up health check endpoints
   app.get('/health', healthCheckHandler);
+  app.get('/health/liveness', livenessProbeHandler);
   app.get('/health/readiness', readinessProbeHandler);
-  
-  // Schedule periodic health checks
-  scheduleHealthChecks();
-  
+
   logger.info('Monitoring systems initialized');
 }
 

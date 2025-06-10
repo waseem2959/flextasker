@@ -92,9 +92,9 @@ const featuredTaskersData: FeaturedTasker[] = [
 
 export const FeaturedTaskers: React.FC = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
       {featuredTaskersData.map((tasker) => (
-        <div key={tasker.id} className="bg-white rounded-xl border border-neutral-200 overflow-hidden hover:shadow-xl hover:scale-105 transition-all duration-300">
+        <div key={tasker.id} className="bg-white rounded-xl border border-neutral-200 overflow-hidden hover:shadow-xl hover:scale-105 transition-all duration-300 h-full">
           <div className="p-6">
             <div className="flex items-center mb-4">
               <img

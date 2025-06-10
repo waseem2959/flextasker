@@ -1,6 +1,6 @@
 /**
  * Location Service
- * 
+ *
  * This service handles all location-related operations including:
  * - Geocoding addresses to coordinates
  * - Finding nearby users and tasks
@@ -8,7 +8,6 @@
  * - Providing location-based analytics
  */
 
-import { db } from '../utils/database';
 import { logger } from '../utils/logger';
 
 /**
@@ -66,11 +65,11 @@ export interface NearbyTasksResult {
 
 /**
  * Define proper types for database entities returned by Prisma.
- * 
+ *
  * These interfaces bridge the gap between what Prisma returns
  * (which uses 'null' for missing database values) and what our application
  * interfaces expect (which use 'undefined' for optional properties).
- * 
+ *
  * This separation is crucial for maintaining clean architecture - it allows
  * us to handle database concerns separately from business logic concerns.
  */
@@ -136,14 +135,14 @@ interface LocationStatistics {
 
 /**
  * Location Service Class
- * 
+ *
  * Handles location-related functionality including geocoding, distance calculations,
  * and finding nearby users and tasks.
  */
 export class LocationService {
   /**
    * Utility method to safely convert null to undefined.
-   * 
+   *
    * This is a common pattern when working with databases and TypeScript.
    * Databases use NULL to represent missing values, but TypeScript applications typically
    * use undefined for optional properties. This method creates a clean conversion boundary.
@@ -162,7 +161,7 @@ export class LocationService {
 
   /**
    * Utility method to ensure we always have a valid Date.
-   * 
+   *
    * For critical fields like createdAt, we should never allow
    * undefined values. This method provides a defensive approach - if somehow
    * the date is missing, we log a warning and provide a fallback.
@@ -177,7 +176,7 @@ export class LocationService {
 
   /**
    * Geocode an address to get latitude and longitude
-   * 
+   *
    * This would typically integrate with Google Maps Geocoding API
    * or similar service to convert addresses to coordinates.
    */
@@ -187,25 +186,25 @@ export class LocationService {
     try {
       // In a real implementation, this would call an external geocoding API
       // For this example, we'll simulate a response
-      
+
       // This is a mock implementation
       // In production, you would use a service like Google Maps Geocoding API
-      
+
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       // Generate plausible coordinates based on the address string
       // This is just for demonstration - real geocoding would return accurate coordinates
       const hash = address.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      
+
       // Generate latitude between -90 and 90
       const latitude = ((hash % 180) - 90) + (Math.random() * 0.1);
-      
+
       // Generate longitude between -180 and 180
       const longitude = ((hash * 2) % 360) - 180 + (Math.random() * 0.1);
-      
+
       logger.info('Address geocoded successfully', { address, latitude, longitude });
-      
+
       return { latitude, longitude };
     } catch (error) {
       logger.error('Error geocoding address', { error, address });
@@ -215,7 +214,7 @@ export class LocationService {
 
   /**
    * Update user location with geocoding
-   * 
+   *
    * This updates a user's location information and automatically
    * geocodes their address to get precise coordinates.
    */
@@ -223,19 +222,26 @@ export class LocationService {
     logger.info('Updating user location', { userId });
 
     try {
+      // Import DatabaseQueryBuilder
+      const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
       // Validate user exists
-      const user = await db.user.findUnique({
-        where: { id: userId }
-      });
+      const user = await DatabaseQueryBuilder.findById(
+        models.user,
+        userId,
+        'User',
+        { id: true }
+      );
 
       if (!user) {
         throw new Error('User not found');
       }
 
       // Update user location
-      await db.user.update({
-        where: { id: userId },
-        data: {
+      await DatabaseQueryBuilder.update(
+        models.user,
+        userId,
+        {
           location: locationData.address,
           city: locationData.city,
           state: locationData.state,
@@ -243,8 +249,9 @@ export class LocationService {
           zipCode: locationData.zipCode,
           latitude: locationData.latitude,
           longitude: locationData.longitude
-        }
-      });
+        },
+        'User'
+      );
 
       logger.info('User location updated successfully', { userId });
     } catch (error) {
@@ -255,10 +262,10 @@ export class LocationService {
 
   /**
    * Calculate distance between two geographic points
-   * 
+   *
    * Uses the Haversine formula to calculate the great-circle distance
    * between two points on Earth given their latitude and longitude.
-   * 
+   *
    * The Haversine formula is the standard way to calculate
    * distances on a sphere. It accounts for the Earth's curvature, which is
    * important for accurate distance calculations over longer distances.
@@ -266,20 +273,20 @@ export class LocationService {
   calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     // Earth's radius in kilometers
     const R = 6371;
-    
+
     // Convert degrees to radians
     const dLat = this.toRadians(lat2 - lat1);
     const dLon = this.toRadians(lon2 - lon1);
-    
+
     // Haversine formula
-    const a = 
+    const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) * 
+      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
       Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    
+
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c; // Distance in kilometers
-    
+
     return parseFloat(distance.toFixed(2)); // Round to 2 decimal places
   }
 
@@ -293,10 +300,10 @@ export class LocationService {
 
   /**
    * Find nearby users (taskers) within a specified radius
-   * 
+   *
    * This is like searching for service providers in your area.
    * It finds users with the TASKER role within the specified distance.
-   * 
+   *
    * This method demonstrates the layered approach to data processing:
    * 1. Fetch raw data from database (with null values)
    * 2. Process and filter the data (applying business logic)
@@ -315,7 +322,7 @@ export class LocationService {
     try {
       // Fetch taskers from database
       const taskers = await this.fetchTaskersFromDatabase(minTrustScore, limit);
-      
+
       // Process taskers and calculate distances
       const nearbyTaskers = await this.processTaskersWithDistance(
         taskers,
@@ -323,13 +330,13 @@ export class LocationService {
         centerLon,
         radiusKm
       );
-      
+
       // Sort by distance (closest first)
       nearbyTaskers.sort((a, b) => a.distance - b.distance);
-      
+
       // Apply limit
       const limitedResults = nearbyTaskers.slice(0, limit);
-      
+
       logger.info('Found nearby taskers', { count: limitedResults.length });
       return limitedResults;
     } catch (error) {
@@ -340,12 +347,15 @@ export class LocationService {
 
   /**
    * Fetch taskers from database with proper typing
-   * 
+   *
    * By separating the database query into its own method,
    * we create a clear boundary between data access and business logic.
    * This makes the code easier to test and maintain.
    */
   private async fetchTaskersFromDatabase(minTrustScore?: number, limit: number = 20): Promise<TaskerUser[]> {
+    // Import DatabaseQueryBuilder
+    const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
     // Build where clause
     const where: any = {
       role: 'TASKER',
@@ -353,54 +363,60 @@ export class LocationService {
       latitude: { not: null },
       longitude: { not: null }
     };
-    
+
     // Add trust score filter if provided
     if (minTrustScore !== undefined) {
       where.trustScore = { gte: minTrustScore };
     }
-    
+
     // Query database
-    return db.user.findMany({
-      where,
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        avatar: true,
-        trustScore: true,
-        latitude: true,
-        longitude: true,
-        city: true,
-        state: true,
-        country: true,
-        emailVerified: true,
-        phoneVerified: true,
-        reviewsReceived: {
-          select: {
-            rating: true
+    const { items } = await DatabaseQueryBuilder.findMany(
+      models.user,
+      {
+        where,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          avatar: true,
+          trustScore: true,
+          latitude: true,
+          longitude: true,
+          city: true,
+          state: true,
+          country: true,
+          emailVerified: true,
+          phoneVerified: true,
+          reviewsReceived: {
+            select: {
+              rating: true
+            }
+          },
+          assignedTasks: {
+            where: {
+              status: 'COMPLETED'
+            },
+            select: {
+              id: true
+            }
           }
         },
-        assignedTasks: {
-          where: {
-            status: 'COMPLETED'
-          },
-          select: {
-            id: true
-          }
-        }
+        pagination: { page: 1, skip: 0, limit: limit * 2 }
       },
-      take: limit * 2 // Fetch more than needed to account for distance filtering
-    });
+      'User'
+    );
+
+    return items as TaskerUser[];
   }
 
   /**
    * Process taskers and calculate distances
-   * 
+   *
    * This method demonstrates the transformation pattern WITH async operations.
    * Notice how we make this method async so we can await the verification level calculation
    * for each tasker. This is a common pattern when transforming data that requires additional
    * database queries during the transformation process.
-   * 
+   *
    * When any part of your data transformation requires async operations
    * (like database queries), the entire transformation method must be async, and you
    * need to carefully handle the async operations - either with await in a loop (as shown here)
@@ -413,13 +429,13 @@ export class LocationService {
     radiusKm: number
   ): Promise<ProximityMatch[]> {
     const result: ProximityMatch[] = [];
-    
+
     for (const tasker of taskers) {
       // Skip taskers without location data
       if (tasker.latitude === null || tasker.longitude === null) {
         continue;
       }
-      
+
       // Calculate distance
       const distance = this.calculateDistance(
         centerLat,
@@ -427,18 +443,18 @@ export class LocationService {
         tasker.latitude,
         tasker.longitude
       );
-      
+
       // Skip taskers outside the radius
       if (distance > radiusKm) {
         continue;
       }
-      
+
       // Calculate verification level
       const verificationLevel = await this.calculateVerificationLevel(tasker);
-      
+
       // Calculate average rating
       const averageRating = this.calculateAverageRating(tasker.reviewsReceived);
-      
+
       // Create proximity match
       result.push({
         userId: tasker.id,
@@ -457,13 +473,13 @@ export class LocationService {
         completedTasks: tasker.assignedTasks.length
       });
     }
-    
+
     return result;
   }
 
   /**
    * Calculate verification level for a tasker
-   * 
+   *
    * This encapsulates business logic for determining
    * verification levels. By keeping this in a separate method, we can
    * easily modify the logic or add more sophisticated verification rules.
@@ -473,31 +489,45 @@ export class LocationService {
     if (!tasker.emailVerified) {
       return 'UNVERIFIED';
     }
-    
+
     // Standard verification requires email and phone verification
     if (!tasker.phoneVerified) {
       return 'BASIC';
     }
-    
+
+    // Import DatabaseQueryBuilder
+    const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
     // Check for document verification
-    const documentVerification = await db.documentVerification.findFirst({
-      where: {
-        userId: tasker.id,
-        status: 'VERIFIED'
-      }
-    });
-    
+    const { items: documentVerifications } = await DatabaseQueryBuilder.findMany(
+      models.documentVerification,
+      {
+        where: {
+          userId: tasker.id,
+          status: 'VERIFIED'
+        },
+        select: {
+          id: true,
+          status: true,
+          type: true
+        }
+      },
+      'DocumentVerification'
+    );
+
+    const documentVerification = documentVerifications.length > 0 ? documentVerifications[0] : null;
+
     // Premium verification requires document verification
     if (!documentVerification) {
       return 'STANDARD';
     }
-    
+
     return 'PREMIUM';
   }
 
   /**
    * Calculate average rating from reviews
-   * 
+   *
    * This method demonstrates defensive programming.
    * We handle the case where there are no reviews gracefully.
    */
@@ -505,19 +535,19 @@ export class LocationService {
     if (reviews.length === 0) {
       return undefined;
     }
-    
+
     const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
     const average = sum / reviews.length;
-    
+
     return parseFloat(average.toFixed(1)); // Round to 1 decimal place
   }
 
   /**
    * Find nearby tasks within a specified radius
-   * 
+   *
    * This is like browsing job opportunities in your area.
    * It finds open tasks within the specified distance.
-   * 
+   *
    * This method follows the same pattern as findNearbyTaskers:
    * fetch, process, transform, sort, and return. This consistency makes the
    * codebase easier to understand and maintain.
@@ -531,14 +561,14 @@ export class LocationService {
     budgetMax?: number,
     limit: number = 20
   ): Promise<NearbyTasksResult[]> {
-    logger.info('Finding nearby tasks', { 
-      centerLat, 
-      centerLon, 
-      radiusKm, 
-      categoryId, 
-      budgetMin, 
-      budgetMax, 
-      limit 
+    logger.info('Finding nearby tasks', {
+      centerLat,
+      centerLon,
+      radiusKm,
+      categoryId,
+      budgetMin,
+      budgetMax,
+      limit
     });
 
     try {
@@ -549,7 +579,7 @@ export class LocationService {
         budgetMax,
         limit * 2 // Fetch more than needed to account for distance filtering
       );
-      
+
       // Process tasks and calculate distances
       const nearbyTasks = this.processTasksWithDistance(
         tasks,
@@ -557,13 +587,13 @@ export class LocationService {
         centerLon,
         radiusKm
       );
-      
+
       // Sort by distance (closest first)
       nearbyTasks.sort((a, b) => a.distance - b.distance);
-      
+
       // Apply limit
       const limitedResults = nearbyTasks.slice(0, limit);
-      
+
       logger.info('Found nearby tasks', { count: limitedResults.length });
       return limitedResults;
     } catch (error) {
@@ -574,7 +604,7 @@ export class LocationService {
 
   /**
    * Fetch tasks from database with filters
-   * 
+   *
    * This method builds the database query dynamically
    * based on the provided filters. The use of Record<string, unknown>
    * provides type safety while allowing flexible query building.
@@ -591,65 +621,74 @@ export class LocationService {
       latitude: { not: null },
       longitude: { not: null }
     };
-    
+
     // Add category filter if provided
     if (categoryId) {
       where.categoryId = categoryId;
     }
-    
+
     // Add budget filters if provided
     if (budgetMin !== undefined || budgetMax !== undefined) {
       where.budget = {};
-      
+
       if (budgetMin !== undefined) {
         (where.budget as any).gte = budgetMin;
       }
-      
+
       if (budgetMax !== undefined) {
         (where.budget as any).lte = budgetMax;
       }
     }
-    
+
+    // Import DatabaseQueryBuilder
+    const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
     // Query database
-    return db.task.findMany({
-      where: where as any, // Type assertion needed due to dynamic nature
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        budget: true,
-        budgetType: true,
-        latitude: true,
-        longitude: true,
-        location: true,
-        city: true,
-        state: true,
-        createdAt: true,
-        owner: {
-          select: {
-            firstName: true,
-            lastName: true,
-            avatar: true,
-            trustScore: true
+    const { items } = await DatabaseQueryBuilder.findMany(
+      models.task,
+      {
+        where: where as any, // Type assertion needed due to dynamic nature
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          budget: true,
+          budgetType: true,
+          latitude: true,
+          longitude: true,
+          location: true,
+          city: true,
+          state: true,
+          createdAt: true,
+          owner: {
+            select: {
+              firstName: true,
+              lastName: true,
+              avatar: true,
+              trustScore: true
+            }
+          },
+          _count: {
+            select: {
+              bids: true
+            }
           }
         },
-        _count: {
-          select: {
-            bids: true
-          }
-        }
+        pagination: { page: 1, skip: 0, limit }
       },
-      take: limit
-    });
+      'Task'
+    );
+
+    return items as TaskWithLocation[];
   }
 
   /**
    * Process tasks and calculate distances
-   * 
+   *
    * This is where the main transformation happens.
    * We convert from TaskWithLocation (database format) to NearbyTasksResult
    * (application format). Notice how we handle each field carefully:
-   * 
+   *
    * 1. Required fields are passed through directly
    * 2. Nullable fields are converted using our utility methods
    * 3. Calculated fields (like distance) are added
@@ -661,13 +700,13 @@ export class LocationService {
     radiusKm: number
   ): NearbyTasksResult[] {
     const result: NearbyTasksResult[] = [];
-    
+
     for (const task of tasks) {
       // Skip tasks without location data
       if (task.latitude === null || task.longitude === null) {
         continue;
       }
-      
+
       // Calculate distance
       const distance = this.calculateDistance(
         centerLat,
@@ -675,12 +714,12 @@ export class LocationService {
         task.latitude,
         task.longitude
       );
-      
+
       // Skip tasks outside the radius
       if (distance > radiusKm) {
         continue;
       }
-      
+
       // Create nearby task result
       result.push({
         taskId: task.id,
@@ -705,15 +744,15 @@ export class LocationService {
         bidCount: task._count.bids
       });
     }
-    
+
     return result;
   }
 
   /**
    * Get location statistics for analytics
-   * 
+   *
    * This provides insights about geographic distribution of users and tasks.
-   * 
+   *
    * This method demonstrates working with Prisma's groupBy
    * functionality and handling aggregate data. The return type is explicitly
    * defined to ensure type safety.
@@ -722,69 +761,64 @@ export class LocationService {
     logger.info('Getting location statistics');
 
     try {
+      // Import DatabaseQueryBuilder
+      const { DatabaseQueryBuilder, models } = await import('../utils/database-query-builder');
+
       // Get user distribution by location
-      const userDistribution = await db.user.groupBy({
-        by: ['city', 'state', 'country'],
-        where: {
+      const userDistribution = await DatabaseQueryBuilder.groupBy(
+        models.user,
+        ['city', 'state', 'country'],
+        { _count: { id: true } },
+        'User',
+        {
           city: { not: null },
           state: { not: null },
           country: { not: null }
-        },
-        _count: {
-          id: true
-        },
-        orderBy: {
-          _count: {
-            id: 'desc'
-          }
-        },
-        take: 20 // Top 20 locations
-      });
-      
+        }
+      );
+
       // Get task distribution by location
-      const taskDistribution = await db.task.groupBy({
-        by: ['city', 'state'],
-        where: {
+      const taskDistribution = await DatabaseQueryBuilder.groupBy(
+        models.task,
+        ['city', 'state'],
+        { _count: { id: true } },
+        'Task',
+        {
           city: { not: null },
           state: { not: null }
-        },
-        _count: {
-          id: true
-        },
-        orderBy: {
-          _count: {
-            id: 'desc'
-          }
-        },
-        take: 20 // Top 20 locations
-      });
-      
+        }
+      );
+
       // Count users with location data
-      const totalUsersWithLocation = await db.user.count({
-        where: {
+      const totalUsersWithLocation = await DatabaseQueryBuilder.count(
+        models.user,
+        'User',
+        {
           latitude: { not: null },
           longitude: { not: null }
         }
-      });
-      
+      );
+
       // Count total users
-      const totalUsers = await db.user.count();
-      
+      const totalUsers = await DatabaseQueryBuilder.count(models.user, 'User');
+
       // Count tasks with location data
-      const totalTasksWithLocation = await db.task.count({
-        where: {
+      const totalTasksWithLocation = await DatabaseQueryBuilder.count(
+        models.task,
+        'Task',
+        {
           latitude: { not: null },
           longitude: { not: null }
         }
-      });
-      
+      );
+
       // Count total tasks
-      const totalTasks = await db.task.count();
-      
+      const totalTasks = await DatabaseQueryBuilder.count(models.task, 'Task');
+
       // Calculate coverage percentages
       const userCoverage = totalUsers > 0 ? (totalUsersWithLocation / totalUsers) * 100 : 0;
       const taskCoverage = totalTasks > 0 ? (totalTasksWithLocation / totalTasks) * 100 : 0;
-      
+
       return {
         userDistribution,
         taskDistribution,

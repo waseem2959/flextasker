@@ -6,9 +6,11 @@
  */
 
 import { Request, Response } from 'express';
-import { BaseController } from './base-controller';
-import { notificationService } from '../services/notification-service';
+import { NotificationService } from '../services/notification-service';
 import { logger } from '../utils/logger';
+import { BaseController } from './base-controller';
+
+const notificationService = new NotificationService();
 
 class NotificationController extends BaseController {
   /**

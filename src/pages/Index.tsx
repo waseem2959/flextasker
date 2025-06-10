@@ -56,9 +56,9 @@ const Index = () => {
       </section>
 
       {/* 3-Step Process Section */}
-      <section className="py-16 bg-white">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-neutral-900 font-heading mb-4">
               Post your first task in seconds
             </h2>
@@ -67,7 +67,7 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
             <div className="text-center p-6">
               <div className="w-20 h-20 bg-primary-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold shadow-lg">
                 1
@@ -107,7 +107,7 @@ const Index = () => {
 
           <div className="text-center">
             <Link to="/post-task">
-              <Button size="lg" className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-8 py-3 rounded-lg">
+              <Button size="lg" className="bg-primary-600 hover:bg-primary-700 text-white font-heading font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
                 Post your task
               </Button>
             </Link>
@@ -119,9 +119,9 @@ const Index = () => {
       <VisualCategoryGrid />
 
       {/* Live Task Examples Section */}
-      <section className="py-16 bg-neutral-50">
+      <section className="py-20 bg-neutral-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
+          <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-neutral-900 font-heading mb-4">
               See what others are getting done
             </h2>
@@ -145,9 +145,9 @@ const Index = () => {
       <TrustSafetyFeatures />
 
       {/* Be Your Own Boss Section */}
-      <section className="py-16 bg-white">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-4xl font-bold text-neutral-900 font-heading mb-6">
                 Be your own boss
@@ -174,7 +174,7 @@ const Index = () => {
                 </li>
               </ul>
               <Link to="/register">
-                <Button size="lg" className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-8 py-3 rounded-lg">
+                <Button size="lg" className="bg-primary-600 hover:bg-primary-700 text-white font-heading font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
                   Earn money as a Tasker
                 </Button>
               </Link>
@@ -189,9 +189,9 @@ const Index = () => {
       </section>
 
       {/* Featured Taskers Section */}
-      <section className="py-16 bg-neutral-50">
+      <section className="py-20 bg-neutral-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-neutral-900 font-heading">
               50,000 Taskers have earned an income on FlexTasker
             </h2>
@@ -205,20 +205,20 @@ const Index = () => {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-16 bg-primary-600 text-white">
+      <section className="py-20 bg-primary-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold font-heading mb-4">Ready to get started?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
+          <h2 className="text-4xl font-bold font-heading mb-6">Ready to get started?</h2>
+          <p className="text-xl mb-12 max-w-2xl mx-auto">
             Join FlexTasker today and connect with skilled workers or find work opportunities near you.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-6">
             <Link to="/post-task">
-              <Button size="lg" className="bg-white text-primary-600 hover:bg-neutral-100 font-semibold px-8 py-3 rounded-lg">
+              <Button size="lg" className="bg-white text-primary-600 hover:bg-neutral-100 font-heading font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200 min-w-[200px]">
                 Post a Task
               </Button>
             </Link>
             <Link to="/register">
-              <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-primary-600 font-semibold px-8 py-3 rounded-lg">
+              <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-primary-600 font-heading font-semibold px-8 py-4 rounded-xl transition-all duration-200 min-w-[200px]">
                 Sign Up
               </Button>
             </Link>

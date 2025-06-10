@@ -17,7 +17,7 @@ class ReviewController extends BaseController {
   createReview = this.asyncHandler(async (req: Request, res: Response) => {
     const reviewData = {
       ...req.body,
-      authorId: req.user!.id
+      authorId: (req.user as any)!.id
     };
 
     logger.info('Creating new review', { taskId: reviewData.taskId, subjectId: reviewData.subjectId });
@@ -48,7 +48,7 @@ class ReviewController extends BaseController {
     const sort = req.query.sort as string || 'newest';
 
     logger.info('Retrieving reviews for user', { userId, page, limit, sort });
-    const reviews = await reviewService.getReviewsForUser(userId, { page, limit, sort });
+    const reviews = await reviewService.getReviewsForUser(userId, { page, limit } as any);
     
     return this.sendSuccess(res, reviews, 'User reviews retrieved successfully');
   });
@@ -70,7 +70,7 @@ class ReviewController extends BaseController {
    */
   updateReview = this.asyncHandler(async (req: Request, res: Response) => {
     const reviewId = req.params.id;
-    const userId = req.user!.id;
+    const userId = (req.user as any)!.id;
     const updateData = req.body;
 
     logger.info('Updating review', { reviewId, userId });
@@ -84,7 +84,7 @@ class ReviewController extends BaseController {
    */
   deleteReview = this.asyncHandler(async (req: Request, res: Response) => {
     const reviewId = req.params.id;
-    const userId = req.user!.id;
+    const userId = (req.user as any)!.id;
 
     logger.info('Deleting review', { reviewId, userId });
     await reviewService.deleteReview(reviewId, userId);
@@ -97,7 +97,7 @@ class ReviewController extends BaseController {
    */
   respondToReview = this.asyncHandler(async (req: Request, res: Response) => {
     const reviewId = req.params.id;
-    const userId = req.user!.id;
+    const userId = (req.user as any)!.id;
     const { response } = req.body;
 
     logger.info('Responding to review', { reviewId, userId });
@@ -111,7 +111,7 @@ class ReviewController extends BaseController {
    */
   reportReview = this.asyncHandler(async (req: Request, res: Response) => {
     const reviewId = req.params.id;
-    const userId = req.user!.id;
+    const userId = (req.user as any)!.id;
     const { reason, details } = req.body;
 
     logger.info('Reporting review', { reviewId, userId, reason });
@@ -125,7 +125,7 @@ class ReviewController extends BaseController {
    */
   flagReview = this.asyncHandler(async (req: Request, res: Response) => {
     const reviewId = req.params.id;
-    const userId = req.user!.id;
+    const userId = (req.user as any)!.id;
     const { reason } = req.body;
 
     logger.info('Flagging review', { reviewId, userId, reason });

@@ -96,8 +96,8 @@ export const VisualCategoryGrid: React.FC = () => {
               to={`/tasks?category=${encodeURIComponent(category.name)}`}
               className="flex-shrink-0 mx-2 group"
             >
-              <div className="w-64 bg-white border border-neutral-200 rounded-xl p-6 hover:border-primary-300 hover:shadow-lg transition-all duration-200 group-hover:scale-105">
-                <div className="flex items-start mb-4">
+              <div className="w-72 bg-white border border-neutral-200 rounded-xl p-6 hover:border-primary-300 hover:shadow-lg transition-all duration-200 group-hover:scale-105 flex-shrink-0">
+                <div className="flex items-start">
                   <img
                     src={category.image}
                     alt={category.name}
@@ -107,7 +107,7 @@ export const VisualCategoryGrid: React.FC = () => {
                     <h3 className="font-semibold text-neutral-900 group-hover:text-primary-700 transition-colors text-base mb-2 leading-tight">
                       {category.name}
                     </h3>
-                    <p className="text-sm text-neutral-600 leading-relaxed">
+                    <p className="text-sm text-neutral-600 leading-relaxed line-clamp-2">
                       {category.description}
                     </p>
                   </div>
@@ -125,8 +125,8 @@ export const VisualCategoryGrid: React.FC = () => {
               to={`/tasks?category=${encodeURIComponent(category.name)}`}
               className="flex-shrink-0 mx-2 group"
             >
-              <div className="w-64 bg-white border border-neutral-200 rounded-xl p-6 hover:border-primary-300 hover:shadow-lg transition-all duration-200 group-hover:scale-105">
-                <div className="flex items-start mb-4">
+              <div className="w-72 bg-white border border-neutral-200 rounded-xl p-6 hover:border-primary-300 hover:shadow-lg transition-all duration-200 group-hover:scale-105 flex-shrink-0">
+                <div className="flex items-start">
                   <img
                     src={category.image}
                     alt={category.name}
@@ -136,7 +136,7 @@ export const VisualCategoryGrid: React.FC = () => {
                     <h3 className="font-semibold text-neutral-900 group-hover:text-primary-700 transition-colors text-base mb-2 leading-tight">
                       {category.name}
                     </h3>
-                    <p className="text-sm text-neutral-600 leading-relaxed">
+                    <p className="text-sm text-neutral-600 leading-relaxed line-clamp-2">
                       {category.description}
                     </p>
                   </div>

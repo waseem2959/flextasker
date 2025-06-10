@@ -20,12 +20,8 @@ import morgan from 'morgan';
 import errorHandler from '../middleware/error-handler-middleware';
 import { getEndpointMetricsMiddleware, metricsMiddleware } from '../middleware/metrics-middleware';
 import { performanceMonitoringMiddleware } from '../monitoring/performance-monitor';
-import { cacheMiddleware } from './cache/cache-middleware';
-import { redisClient } from './cache/redis-client';
 import { logger } from './logger';
-// Monitoring is initialized in the monitoring module
 
-// Redis client is imported as a singleton
 
 /**
  * Initialize common Express middleware
@@ -51,9 +47,7 @@ export function initializeMiddleware(app: Application): void {
   // Performance monitoring middleware (should be early in the chain)
   app.use(performanceMonitoringMiddleware);
 
-  // Cache middleware with default 5 minute cache duration
-  app.use(cacheMiddleware());
-  logger.info('Cache middleware applied');
+  // Cache middleware is disabled (Redis not configured)
 
   // Metrics middleware for monitoring migration to consolidated services
   app.use(metricsMiddleware);
@@ -92,15 +86,14 @@ export function initializeRoutes(app: Application): void {
   app.use('/api/verification', verificationRoutes);
   app.use('/api/monitoring', monitoringRoutes);
   
-  // Admin dashboard routes
-  // Add any admin-specific routes here
+
   
   // API health check route
   app.get('/api/health', (_req, res) => {
     res.status(200).json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      redis: redisClient ? 'connected' : 'disconnected'
+      redis: 'disconnected'
     });
   });
   
@@ -153,15 +146,7 @@ export function gracefulShutdown(server: HttpServer): void {
       // Monitoring system cleanup
       logger.info('Monitoring system cleanup complete');
       
-      // Close Redis connections
-      try {
-        if (redisClient) {
-          await redisClient.quit();
-          logger.info('Redis connections closed');
-        }
-      } catch (error) {
-        logger.error('Error closing Redis connections', { error });
-      }
+      // Redis connections cleanup (disabled - Redis not configured)
       
       // Exit with success code
       logger.info('Shutdown complete');

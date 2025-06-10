@@ -7,7 +7,7 @@
  * - Handling notification delivery status
  */
 
-import { prisma as db } from '../utils/database-utils';
+import { prisma as db } from '../utils/database-query-builder';
 import { logger } from '../utils/logger';
 
 // Using require for firebase-admin to avoid TypeScript declaration issues

@@ -6,25 +6,13 @@
  * debugging, and performance monitoring.
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Extend the Express Request type to include our context properties
+ * Request context properties are now defined in server/src/types/express.d.ts
+ * to avoid duplicate interface declarations
  */
-declare module 'express-serve-static-core' {
-  interface Request {
-    context: {
-      requestId: string;
-      startTime: number;
-      ipAddress: string;
-      userAgent: string;
-      correlationId: string;
-      transactionId: string;
-      user?: Record<string, any>; // Will be populated by auth middleware
-    }
-  }
-}
 
 /**
  * Middleware that provides request context data
