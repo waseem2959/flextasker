@@ -67,10 +67,10 @@ const getEnvVar = (key: string, defaultValue?: string) => {
  * Environment-specific configuration
  */
 export const environmentConfig: EnvironmentConfig = {
-  apiUrl: getEnvVar('VITE_API_URL', 'http://localhost:3000/api/v1'),
+  apiUrl: getEnvVar('VITE_API_URL', 'http://localhost:3000/api'),
   socketUrl: getEnvVar('VITE_SOCKET_URL', 'http://localhost:3000'),
   uploadUrl: getEnvVar('VITE_UPLOAD_URL', 'http://localhost:3000/uploads'),
-  authEndpoint: getEnvVar('VITE_AUTH_ENDPOINT', '/api/v1/auth'),
+  authEndpoint: getEnvVar('VITE_AUTH_ENDPOINT', '/api/auth'),
   isDevelopment: getEnvVar('DEV') === 'true' || getEnvVar('NODE_ENV') === 'development',
   isProduction: getEnvVar('PROD') === 'true' || getEnvVar('NODE_ENV') === 'production',
   isTest: getEnvVar('MODE') === 'test' || getEnvVar('NODE_ENV') === 'test',

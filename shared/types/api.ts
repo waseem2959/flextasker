@@ -14,15 +14,7 @@ import { BudgetType, TaskPriority, TaskStatus } from './enums';
  */
 export type { ApiResponse, PaginatedApiResponse, PaginationInfo } from '../../src/types/api-types';
 
-/**
- * @deprecated Use ApiResponse from api-types.ts instead
- */
-export interface ApiSuccessResponse<T = any> {
-  success: true;
-  message: string;
-  data: T;
-  timestamp: string;
-}
+// Removed deprecated ApiSuccessResponse - use ApiResponse from api-types.ts instead
 
 /**
  * Task-related API types

@@ -12,7 +12,10 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage --watchAll=false"
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "test:performance": "jest --coverage --verbose --detectOpenHandles",
+    "test:debug": "jest --detectOpenHandles --runInBand --verbose",
+    "test:monitor": "node scripts/test-performance.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -80,6 +83,7 @@
     "@eslint/js": "^9.27.0",
     "@tailwindcss/postcss": "^4.1.7",
     "@tailwindcss/typography": "^0.5.16",
+    "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/react-hooks": "^8.0.1",

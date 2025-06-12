@@ -6,64 +6,16 @@
  * Provides standardized CRUD operations with caching, read replicas, error handling, and logging.
  */
 
-import { PrismaClient } from '@prisma/client';
 import { DatabaseError, NotFoundError, ValidationError } from './error-utils';
 import { logger } from './logger';
 import { PaginationParams } from './pagination';
+// Use centralized database client instead of creating a new one
+import { prisma } from './database';
 
-// Define DatabaseErrorDetails interface
-interface DatabaseErrorDetails {
-  operation: string;
-  errorCode: string;
-  meta?: Record<string, unknown>;
-}
+// DatabaseErrorDetails interface removed - error handling is now centralized
 
-// Initialize Prisma client with comprehensive configuration
-const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development'
-    ? [
-        { level: 'query', emit: 'event' },
-        { level: 'error', emit: 'stdout' },
-        { level: 'warn', emit: 'stdout' },
-      ]
-    : [
-        { level: 'error', emit: 'stdout' },
-        { level: 'warn', emit: 'stdout' },
-      ],
-});
-
-// Log database queries in development
-if (process.env.NODE_ENV === 'development') {
-  prisma.$on('query' as any, (e: any) => {
-    logger.debug('Query: ' + e.query);
-    logger.debug('Params: ' + e.params);
-    logger.debug('Duration: ' + e.duration + 'ms');
-  });
-}
-
-// Handle database connection errors
-prisma.$use(async (params: any, next: (params: any) => Promise<any>) => {
-  try {
-    return await next(params);
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown database error';
-    const errorStack = error instanceof Error ? error.stack : undefined;
-
-    logger.error('Database operation failed', {
-      model: params.model,
-      action: params.action,
-      error: errorMessage,
-      stack: errorStack,
-    });
-    throw error;
-  }
-});
-
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  await prisma.$disconnect();
-  process.exit(0);
-});
+// Note: Using centralized Prisma client from ./database.ts
+// This eliminates duplicate client instances and middleware
 
 /**
  * Standard select fields for user queries to avoid duplication
@@ -154,37 +106,9 @@ async function executeDbOperation<T>(
   } catch (error) {
     logger.error(`Database error: ${errorMessage}`, { error });
 
-    // Handle Prisma-specific errors
-    if ((error as any).code) {
-      // P2025 is "Record not found"
-      if ((error as any).code === 'P2025') {
-        throw new NotFoundError(errorMessage);
-      }
-
-      // P2002 is "Unique constraint failed"
-      if ((error as any).code === 'P2002') {
-        const fields = (error as any).meta?.target as string[] || [];
-        throw new DatabaseError(`${errorMessage}: Duplicate entry for ${fields.join(', ')}`);
-      }
-    }
-
-    // Generic database error
-    const errorDetails: DatabaseErrorDetails = {
-      operation: 'database_operation',
-      errorCode: 'UNKNOWN_ERROR'
-    };
-
-    // Safely extract error code if available
-    if (error && typeof error === 'object' && 'code' in error) {
-      errorDetails.errorCode = String(error.code);
-    }
-
-    // Safely extract meta if available
-    if (error && typeof error === 'object' && 'meta' in error) {
-      errorDetails.meta = error.meta as Record<string, unknown>;
-    }
-
-    throw new DatabaseError(errorMessage, errorDetails);
+    // Error handling is now done by centralized database middleware
+    // Re-throw the original error
+    throw error;
   }
 }
 
@@ -261,12 +185,7 @@ export class DatabaseQueryBuilder {
       return record;
     } catch (error) {
       logger.error(`Error creating ${entityName}`, { data, error });
-      
-      // Handle Prisma unique constraint violations
-      if ((error as any).code === 'P2002') {
-        throw new ValidationError(`${entityName} with this information already exists`);
-      }
-      
+      // Error handling is now done by centralized database middleware
       throw new DatabaseError(`Failed to create ${entityName}`);
     }
   }

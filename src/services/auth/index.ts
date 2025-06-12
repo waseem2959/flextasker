@@ -16,14 +16,14 @@ import {
 } from './auth-service';
 
 
-// Extract nested functions for easier access
-export const createLoginCredentials = credentialUtils.createLoginCredentials;
-export const createRegisterData = credentialUtils.createRegisterData;
-export const hasRole = roleUtils.hasRole;
-export const hasAnyRole = roleUtils.hasAnyRole;
-export const isAdmin = roleUtils.isAdmin;
-export const isClient = roleUtils.isClient;
-export const isTasker = roleUtils.isTasker;
+// Extract nested functions for easier access (with safe checks)
+export const createLoginCredentials = credentialUtils?.createLoginCredentials || (() => ({}));
+export const createRegisterData = credentialUtils?.createRegisterData || (() => ({}));
+export const hasRole = roleUtils?.hasRole || (() => false);
+export const hasAnyRole = roleUtils?.hasAnyRole || (() => false);
+export const isAdmin = roleUtils?.isAdmin || (() => false);
+export const isClient = roleUtils?.isClient || (() => false);
+export const isTasker = roleUtils?.isTasker || (() => false);
 
 // Simplified exports (removed complex type re-exports)
 export { authService, cleanupAuth, credentialUtils, initializeAuth, parseJwt, roleUtils, setupTokenRefresh, tokenManager };

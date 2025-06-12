@@ -6,6 +6,21 @@
 
 import '@testing-library/jest-dom';
 
+// === POLYFILLS ===
+
+// Mock TextEncoder/TextDecoder for React Router
+global.TextEncoder = class TextEncoder {
+  encode(input?: string): Uint8Array {
+    return new Uint8Array(Buffer.from(input || '', 'utf8'));
+  }
+};
+
+global.TextDecoder = class TextDecoder {
+  decode(input?: BufferSource): string {
+    return Buffer.from(input as ArrayBuffer).toString('utf8');
+  }
+};
+
 // === GLOBAL MOCKS ===
 
 // Mock IntersectionObserver
@@ -229,6 +244,74 @@ declare global {
 // Set test environment variables
 process.env.NODE_ENV = 'test';
 process.env.VITE_API_URL = 'http://localhost:3001';
+
+// === TEST UTILITIES EXPORT ===
+
+import { render, RenderOptions } from '@testing-library/react';
+import React, { ReactElement } from 'react';
+import { BrowserRouter } from 'react-router-dom';
+
+// Mock data
+export const mockUser = {
+  id: 'test-user-1',
+  firstName: 'Test',
+  lastName: 'User',
+  email: 'test@example.com',
+  role: 'USER' as const,
+  avatar: 'https://example.com/avatar.jpg',
+  createdAt: new Date('2023-01-01'),
+  emailVerified: true,
+  phoneVerified: false,
+};
+
+export const mockTask = {
+  id: 'test-task-1',
+  title: 'Test Task',
+  description: 'This is a test task',
+  budget: 100,
+  budgetType: 'FIXED' as const,
+  category: 'Technology',
+  location: 'Test City',
+  status: 'OPEN' as const,
+  priority: 'MEDIUM' as const,
+  createdAt: new Date('2023-01-01'),
+  dueDate: new Date('2023-12-31'),
+  userId: 'test-user-1',
+  user: mockUser,
+};
+
+// Test providers
+interface AllTheProvidersProps {
+  children: React.ReactNode;
+}
+
+const AllTheProviders = ({ children }: AllTheProvidersProps) => {
+  return React.createElement(BrowserRouter, null, children);
+};
+
+// Custom render
+const customRender = (
+  ui: ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'>
+) => render(ui, { wrapper: AllTheProviders, ...options });
+
+// Utilities
+export const createMockApiResponse = <T>(data: T, delay = 0) => {
+  return new Promise<T>((resolve) => {
+    setTimeout(() => resolve(data), delay);
+  });
+};
+
+export const createMockApiError = (message = 'Test error', status = 500) => {
+  const error = new Error(message) as any;
+  error.response = { status, data: { message } };
+  return Promise.reject(error);
+};
+
+// Re-exports
+export * from '@testing-library/react';
+export { default as userEvent } from '@testing-library/user-event';
+export { customRender as render };
 
 // === MOCK IMPLEMENTATIONS ===
 

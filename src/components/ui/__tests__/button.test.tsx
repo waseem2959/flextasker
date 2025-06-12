@@ -4,7 +4,8 @@
  * Comprehensive tests for the Button component covering all variants, sizes, and interactions.
  */
 
-import { render, screen, fireEvent } from '@/test-utils';
+import { fireEvent, render, screen } from '@/test-utils';
+import userEvent from '@testing-library/user-event';
 import { Button } from '../button';
 
 describe('Button Component', () => {
@@ -15,7 +16,7 @@ describe('Button Component', () => {
       
       const button = screen.getByRole('button', { name: /click me/i });
       expect(button).toBeInTheDocument();
-      expect(button).toHaveClass('bg-primary');
+      expect(button).toHaveClass('bg-primary-900');
     });
 
     it('should render with custom text', () => {
@@ -43,42 +44,42 @@ describe('Button Component', () => {
       render(<Button variant="default">Default</Button>);
       
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('bg-primary');
+      expect(button).toHaveClass('bg-primary-900');
     });
 
     it('should render destructive variant', () => {
       render(<Button variant="destructive">Delete</Button>);
       
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('bg-destructive');
+      expect(button).toHaveClass('bg-error-500');
     });
 
     it('should render outline variant', () => {
       render(<Button variant="outline">Outline</Button>);
       
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('border-input');
+      expect(button).toHaveClass('border-primary-700');
     });
 
     it('should render secondary variant', () => {
       render(<Button variant="secondary">Secondary</Button>);
       
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('bg-secondary');
+      expect(button).toHaveClass('bg-primary-500');
     });
 
     it('should render ghost variant', () => {
       render(<Button variant="ghost">Ghost</Button>);
       
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('hover:bg-accent');
+      expect(button).toHaveClass('hover:bg-primary-50');
     });
 
     it('should render link variant', () => {
       render(<Button variant="link">Link</Button>);
       
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('text-primary');
+      expect(button).toHaveClass('text-primary-700');
     });
   });
 
@@ -88,7 +89,7 @@ describe('Button Component', () => {
       render(<Button size="default">Default Size</Button>);
       
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('h-10', 'px-4', 'py-2');
+      expect(button).toHaveClass('h-11', 'px-4', 'py-2.5');
     });
 
     it('should render small size', () => {
@@ -102,14 +103,14 @@ describe('Button Component', () => {
       render(<Button size="lg">Large</Button>);
       
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('h-11', 'px-8');
+      expect(button).toHaveClass('h-12', 'px-6', 'py-3');
     });
 
     it('should render icon size', () => {
       render(<Button size="icon">🔍</Button>);
       
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('h-10', 'w-10');
+      expect(button).toHaveClass('h-11', 'w-11');
     });
   });
 
@@ -146,23 +147,25 @@ describe('Button Component', () => {
       expect(handleClick).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle keyboard events', () => {
+    it('should handle keyboard events', async () => {
       const handleClick = jest.fn();
       render(<Button onClick={handleClick}>Keyboard</Button>);
-      
+
       const button = screen.getByRole('button');
-      fireEvent.keyDown(button, { key: 'Enter' });
-      
+      button.focus();
+      await userEvent.keyboard('{Enter}');
+
       expect(handleClick).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle space key', () => {
+    it('should handle space key', async () => {
       const handleClick = jest.fn();
       render(<Button onClick={handleClick}>Space</Button>);
-      
+
       const button = screen.getByRole('button');
-      fireEvent.keyDown(button, { key: ' ' });
-      
+      button.focus();
+      await userEvent.keyboard(' ');
+
       expect(handleClick).toHaveBeenCalledTimes(1);
     });
   });
