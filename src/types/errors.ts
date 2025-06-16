@@ -2,25 +2,25 @@ import { AxiosError } from 'axios';
 import type { ApiResponse } from './api-types';
 // Import shared error types as the canonical source
 import {
-  ErrorResponse,
-  ErrorType,
-  HttpStatusCode,
-  ValidationErrorDetail,
-  ValidationErrorResponse,
-  errorTypeToStatusCode,
-  statusCodeToErrorType
+    ErrorResponse,
+    ErrorType,
+    HttpStatusCode,
+    ValidationErrorDetail,
+    ValidationErrorResponse,
+    errorTypeToStatusCode,
+    statusCodeToErrorType
 } from '../../shared/types/errors';
 
 // Re-export shared types for convenience
 export {
-  ErrorType,
-  errorTypeToStatusCode,
-  statusCodeToErrorType
+    ErrorType,
+    errorTypeToStatusCode,
+    statusCodeToErrorType
 };
 export type {
-  ErrorResponse,
-  HttpStatusCode,
-  ValidationErrorDetail, ValidationErrorResponse
+    ErrorResponse,
+    HttpStatusCode,
+    ValidationErrorDetail, ValidationErrorResponse
 };
 
 /**
@@ -357,7 +357,7 @@ export function createError(
 /**
  * Create a standardized error response
  */
-export function createErrorResponse<T = undefined>(error: any): ApiResponse<T> {
+export function createErrorResponse<T = null>(error: any): ApiResponse<T> {
   // Create appropriate error object
   let appError: AppError;
   
@@ -370,12 +370,12 @@ export function createErrorResponse<T = undefined>(error: any): ApiResponse<T> {
   
   return {
     success: false,
-    message: appError.message,
-    errors: appError instanceof ValidationError 
-      ? Object.values(appError.errors).flat() 
+    data: null as T,
+    errors: appError instanceof ValidationError
+      ? Object.values(appError.errors).flat()
       : [appError.message],
     timestamp: new Date().toISOString()
-  };
+  } as ApiResponse<T>;
 }
 
 /**

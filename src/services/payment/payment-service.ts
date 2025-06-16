@@ -5,9 +5,9 @@
  * including processing payments, checking status, and handling refunds.
  */
 
+import errorService from '@/services/error-service';
 import { ApiResponse, PaginatedApiResponse, Task } from '@/types';
 import { apiClient } from '../api/api-client';
-import { errorService } from '../error/error-service';
 
 /**
  * Payment method types - Stripe only

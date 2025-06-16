@@ -322,8 +322,8 @@ export function TaskForm({ task, categories, onCancel }: TaskFormProps) {
               className="rounded-l-none"
             />
           </div>
-          {form.errors['budget.amount'] && form.touched['budget.amount'] && (
-            <p className="text-sm text-red-500">{form.errors['budget.amount'][0]}</p>
+          {form.errors.budget && form.touched.budget && (
+            <p className="text-sm text-red-500">{form.errors.budget[0]}</p>
           )}
         </div>
         

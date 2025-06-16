@@ -4,9 +4,9 @@
  * This context provides real-time notification functionality throughout the application.
  */
 
-import { useRealtime } from '@/hooks/use-realtime';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
+import useSocket from '../hooks/use-socket';
 import { apiClient } from '../services/api/api-client';
 import { SocketEvent } from '../services/realtime/socket-events';
 import { realtimeService } from '../services/realtime/socket-service';
@@ -55,7 +55,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const { isConnected } = useRealtime();
+  const { isConnected } = useSocket();
   
   // Handle new notification events
   const handleNewNotification = useCallback((notification: any) => {

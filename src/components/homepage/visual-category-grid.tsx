@@ -60,7 +60,7 @@ const categoryData: CategoryItem[] = [
   {
     id: 'design',
     name: 'Marketing & design',
-    description: 'Help with website',
+    description: 'Help with website development and branding',
     image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=73&h=73&fit=crop'
   },
   {
@@ -72,43 +72,52 @@ const categoryData: CategoryItem[] = [
 ];
 
 export const VisualCategoryGrid: React.FC = () => {
-  // Create two rows for the infinite scroll effect
+  // Create two rows for the infinite scroll effect by duplicating the categories
   const duplicatedCategories = [...categoryData, ...categoryData];
 
   return (
     <section className="py-16 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-neutral-900 font-heading mb-4">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Popular Categories
           </h2>
-          <p className="text-xl text-neutral-700 font-body">
+          <p className="text-xl text-gray-600">
             Browse tasks by category to find what you need
           </p>
         </div>
       </div>
+      
       <div className="relative">
         {/* First row - scrolling left */}
-        <div className="flex animate-scroll-left mb-4">
+        <div className="flex animate-scroll-left mb-6 whitespace-nowrap">
           {duplicatedCategories.map((category, index) => (
             <Link
               key={`${category.id}-${index}`}
               to={`/tasks?category=${encodeURIComponent(category.name)}`}
-              className="flex-shrink-0 mx-2 group"
+              className="inline-block mx-3 group"
             >
-              <div className="w-72 bg-white border border-neutral-200 rounded-xl p-6 hover:border-primary-300 hover:shadow-lg transition-all duration-200 group-hover:scale-105 flex-shrink-0">
-                <div className="flex items-start">
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="w-16 h-16 rounded-xl object-cover mr-4 flex-shrink-0"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-neutral-900 group-hover:text-primary-700 transition-colors text-base mb-2 leading-tight">
+              <div className="w-80 h-28 bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-400 hover:shadow-lg transition-all duration-200 transform hover:scale-105">
+                <div className="flex items-center h-full">
+                  {/* Image container with fixed dimensions */}
+                  <div className="w-16 h-16 flex-shrink-0 mr-4">
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="w-full h-full rounded-lg object-cover"
+                    />
+                  </div>
+                  
+                  {/* Text container with overflow handling */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-base mb-1 truncate">
                       {category.name}
                     </h3>
-                    <p className="text-sm text-neutral-600 leading-relaxed line-clamp-2">
-                      {category.description}
+                    <p className="text-sm text-gray-600 leading-snug">
+                      {/* Limit description to prevent overflow */}
+                      {category.description.length > 40 
+                        ? `${category.description.substring(0, 40)}...` 
+                        : category.description}
                     </p>
                   </div>
                 </div>
@@ -118,26 +127,34 @@ export const VisualCategoryGrid: React.FC = () => {
         </div>
 
         {/* Second row - scrolling right */}
-        <div className="flex animate-scroll-right">
+        <div className="flex animate-scroll-right whitespace-nowrap">
           {duplicatedCategories.map((category, index) => (
             <Link
               key={`${category.id}-reverse-${index}`}
               to={`/tasks?category=${encodeURIComponent(category.name)}`}
-              className="flex-shrink-0 mx-2 group"
+              className="inline-block mx-3 group"
             >
-              <div className="w-72 bg-white border border-neutral-200 rounded-xl p-6 hover:border-primary-300 hover:shadow-lg transition-all duration-200 group-hover:scale-105 flex-shrink-0">
-                <div className="flex items-start">
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="w-16 h-16 rounded-xl object-cover mr-4 flex-shrink-0"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-neutral-900 group-hover:text-primary-700 transition-colors text-base mb-2 leading-tight">
+              <div className="w-80 h-28 bg-white border border-gray-200 rounded-xl p-5 hover:border-blue-400 hover:shadow-lg transition-all duration-200 transform hover:scale-105">
+                <div className="flex items-center h-full">
+                  {/* Image container with fixed dimensions */}
+                  <div className="w-16 h-16 flex-shrink-0 mr-4">
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="w-full h-full rounded-lg object-cover"
+                    />
+                  </div>
+                  
+                  {/* Text container with overflow handling */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-base mb-1 truncate">
                       {category.name}
                     </h3>
-                    <p className="text-sm text-neutral-600 leading-relaxed line-clamp-2">
-                      {category.description}
+                    <p className="text-sm text-gray-600 leading-snug">
+                      {/* Limit description to prevent overflow */}
+                      {category.description.length > 40 
+                        ? `${category.description.substring(0, 40)}...` 
+                        : category.description}
                     </p>
                   </div>
                 </div>

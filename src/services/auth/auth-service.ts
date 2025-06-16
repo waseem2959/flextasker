@@ -130,7 +130,7 @@ export function setupTokenRefresh(
   const calculateRefreshTime = (token: string): number => {
     try {
       const payload = parseJwt(token);
-      if (!payload || !payload.exp) {
+      if (!payload?.exp) {
         return 5 * 60 * 1000; // Default to 5 minutes if no expiration found
       }
       
@@ -151,58 +151,61 @@ export function setupTokenRefresh(
     }
   };
   
+  // Helper function to handle successful token refresh
+  const handleRefreshSuccess = (accessToken: string, refreshToken: string): void => {
+    // Update stored tokens
+    tokenManager.setTokens(accessToken, refreshToken);
+
+    // Schedule next refresh
+    scheduleRefresh(accessToken);
+
+    // Call success callback if provided
+    if (config.onRefreshSuccess) {
+      config.onRefreshSuccess({ accessToken, refreshToken });
+    }
+  };
+
+  // Helper function to handle refresh failure
+  const handleRefreshFailure = (error: Error): void => {
+    clearTimer();
+
+    // Call failure callback if provided
+    if (config.onRefreshFailure) {
+      config.onRefreshFailure(error);
+    }
+
+    // Dispatch auth error event
+    document.dispatchEvent(new CustomEvent('auth-token-expired'));
+  };
+
   // Function to refresh the token
   const refreshToken = async (): Promise<void> => {
     try {
       // Get the current refresh token
       const currentRefreshToken = tokenManager.getRefreshToken();
-      
+
       if (!currentRefreshToken) {
         console.warn('No refresh token available');
         return;
       }
-      
+
       // Call the refresh endpoint
       const response = await axios.post(config.refreshEndpoint, {
         refreshToken: currentRefreshToken
       });
-      
+
       if (response.data.success && response.data.data) {
         const { accessToken, refreshToken } = response.data.data;
-        
-        // Update stored tokens
-        tokenManager.setTokens(accessToken, refreshToken);
-        
-        // Schedule next refresh
-        scheduleRefresh(accessToken);
-        
-        // Call success callback if provided
-        if (config.onRefreshSuccess) {
-          config.onRefreshSuccess({ accessToken, refreshToken });
-        }
+        handleRefreshSuccess(accessToken, refreshToken);
       } else {
         console.warn('Token refresh failed:', response.data.message);
-        clearTimer();
-        
-        // Call failure callback if provided
-        if (config.onRefreshFailure) {
-          config.onRefreshFailure(new Error(response.data.message || 'Token refresh failed'));
-        }
-        
-        // Dispatch auth error event
-        document.dispatchEvent(new CustomEvent('auth-token-expired'));
+        const error = new Error(response.data.message ?? 'Token refresh failed');
+        handleRefreshFailure(error);
       }
     } catch (error) {
       console.error('Error refreshing token:', error instanceof Error ? error.message : String(error));
-      clearTimer();
-      
-      // Call failure callback if provided
-      if (config.onRefreshFailure) {
-        config.onRefreshFailure(error instanceof Error ? error : new Error(String(error)));
-      }
-      
-      // Dispatch auth error event
-      document.dispatchEvent(new CustomEvent('auth-token-expired'));
+      const refreshError = error instanceof Error ? error : new Error(String(error));
+      handleRefreshFailure(refreshError);
     }
   };
   
@@ -367,7 +370,7 @@ export const credentialUtils = {
     // Validate password
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
-      throw new Error(passwordValidation.message || 'Invalid password');
+      throw new Error(passwordValidation.message ?? 'Invalid password');
     }
     
     // Create the registration data
@@ -417,7 +420,7 @@ export const authService = {
       
       return {
         success: false,
-        message: (response as any).message || 'Registration failed'
+        message: (response as any).message ?? 'Registration failed'
       };
     } catch (error) {
       return {
@@ -452,7 +455,7 @@ export const authService = {
       
       return {
         success: false,
-        message: (response as any).message || 'Login failed'
+        message: (response as any).message ?? 'Login failed'
       };
     } catch (error) {
       return {
@@ -492,7 +495,7 @@ export const authService = {
       return (response.data as any);
     }
     
-    throw new Error((response as any).message || 'Failed to get current user');
+    throw new Error((response as any).message ?? 'Failed to get current user');
   },
   
   /**
@@ -530,7 +533,7 @@ export const authService = {
     
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
-      throw new Error(passwordValidation.message || 'Invalid password');
+      throw new Error(passwordValidation.message ?? 'Invalid password');
     }
     
     await apiClient.post('/auth/reset-password', { token, password });
@@ -549,7 +552,7 @@ export const authService = {
       return (response.data as any);
     }
     
-    throw new Error((response as any).message || 'Failed to update profile');
+    throw new Error((response as any).message ?? 'Failed to update profile');
   },
   
   /**
@@ -565,7 +568,7 @@ export const authService = {
     
     const passwordValidation = validatePassword(newPassword);
     if (!passwordValidation.isValid) {
-      throw new Error(passwordValidation.message || 'Invalid new password');
+      throw new Error(passwordValidation.message ?? 'Invalid new password');
     }
     
     await apiClient.put('/users/me/password', { 

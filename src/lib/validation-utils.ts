@@ -8,6 +8,7 @@
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
+  message?: string; // First error message for backward compatibility
 }
 
 /**
@@ -26,6 +27,7 @@ export const validateEmail = (email: string): ValidationResult => {
   return {
     isValid: errors.length === 0,
     errors,
+    message: errors.length > 0 ? errors[0] : undefined,
   };
 };
 
@@ -34,17 +36,18 @@ export const validateEmail = (email: string): ValidationResult => {
  */
 export const validatePhoneNumber = (phone: string): ValidationResult => {
   const errors: string[] = [];
-  const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/;
-  
+  const phoneRegex = /^\+?[\d\s\-()]{10,}$/;
+
   if (!phone) {
     errors.push('Phone number is required');
   } else if (!phoneRegex.test(phone)) {
     errors.push('Please enter a valid phone number');
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors,
+    message: errors.length > 0 ? errors[0] : undefined,
   };
 };
 
@@ -77,6 +80,7 @@ export const validatePassword = (password: string): ValidationResult => {
   return {
     isValid: errors.length === 0,
     errors,
+    message: errors.length > 0 ? errors[0] : undefined,
   };
 };
 
@@ -97,6 +101,7 @@ export const validateAmount = (amount: number, min = 0, max = Infinity): Validat
   return {
     isValid: errors.length === 0,
     errors,
+    message: errors.length > 0 ? errors[0] : undefined,
   };
 };
 
@@ -109,24 +114,25 @@ export const validateFile = (
   maxSizeMB = 10
 ): ValidationResult => {
   const errors: string[] = [];
-  
+
   if (!file) {
     errors.push('File is required');
-    return { isValid: false, errors };
+    return { isValid: false, errors, message: 'File is required' };
   }
-  
+
   if (!allowedTypes.includes(file.type)) {
     errors.push(`File type not allowed. Allowed types: ${allowedTypes.join(', ')}`);
   }
-  
+
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
   if (file.size > maxSizeBytes) {
     errors.push(`File size cannot exceed ${maxSizeMB}MB`);
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors,
+    message: errors.length > 0 ? errors[0] : undefined,
   };
 };
 
@@ -165,6 +171,7 @@ export const validateAddress = (address: {
   return {
     isValid: errors.length === 0,
     errors,
+    message: errors.length > 0 ? errors[0] : undefined,
   };
 };
 
@@ -173,17 +180,17 @@ export const validateAddress = (address: {
  */
 export const validateDate = (date: string | Date, minAge = 18): ValidationResult => {
   const errors: string[] = [];
-  
+
   if (!date) {
     errors.push('Date is required');
-    return { isValid: false, errors };
+    return { isValid: false, errors, message: 'Date is required' };
   }
-  
+
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
+
   if (isNaN(dateObj.getTime())) {
     errors.push('Please enter a valid date');
-    return { isValid: false, errors };
+    return { isValid: false, errors, message: 'Please enter a valid date' };
   }
   
   // Check minimum age for date of birth
@@ -204,6 +211,7 @@ export const validateDate = (date: string | Date, minAge = 18): ValidationResult
   return {
     isValid: errors.length === 0,
     errors,
+    message: errors.length > 0 ? errors[0] : undefined,
   };
 };
 
@@ -217,7 +225,7 @@ export const validateText = (
   fieldName = 'Field'
 ): ValidationResult => {
   const errors: string[] = [];
-  
+
   if (!text?.trim() && minLength > 0) {
     errors.push(`${fieldName} is required`);
   } else if (text) {
@@ -228,10 +236,11 @@ export const validateText = (
       errors.push(`${fieldName} cannot exceed ${maxLength} characters`);
     }
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors,
+    message: errors.length > 0 ? errors[0] : undefined,
   };
 };
 
@@ -240,14 +249,15 @@ export const validateText = (
  */
 export const validateRating = (rating: number): ValidationResult => {
   const errors: string[] = [];
-  
+
   if (isNaN(rating) || rating < 1 || rating > 5) {
     errors.push('Rating must be between 1 and 5');
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors,
+    message: errors.length > 0 ? errors[0] : undefined,
   };
 };
 
@@ -256,10 +266,11 @@ export const validateRating = (rating: number): ValidationResult => {
  */
 export const validateFields = (validations: ValidationResult[]): ValidationResult => {
   const allErrors = validations.flatMap(v => v.errors);
-  
+
   return {
     isValid: allErrors.length === 0,
     errors: allErrors,
+    message: allErrors.length > 0 ? allErrors[0] : undefined,
   };
 };
 

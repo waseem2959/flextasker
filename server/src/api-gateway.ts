@@ -1,10 +1,3 @@
-/**
- * API Gateway
- * 
- * This module serves as the central entry point for all API requests.
- * It handles routing, authentication, and provides consistent request processing.
- */
-
 import express, { Application, NextFunction, Request, Response } from 'express';
 import { rateLimiter } from './middleware/rate-limiter-middleware';
 import requestContext from './middleware/request-context-middleware';
@@ -32,9 +25,6 @@ export class ApiGateway {
     this.setupErrorHandling();
   }
   
-  /**
-   * Set up standard middleware
-   */
   private setupMiddleware(): void {
     // Parse JSON and URL-encoded bodies
     this.app.use(express.json({ limit: '2mb' }));
@@ -71,10 +61,6 @@ export class ApiGateway {
       next();
     });
   }
-  
-  /**
-   * Set up health check routes
-   */
   private setupHealthRoutes(): void {
     this.app.get('/health', healthMonitor.livenessProbeHandler);
     this.app.get('/health/ready', healthMonitor.readinessProbeHandler);
@@ -159,10 +145,6 @@ export class ApiGateway {
       });
     });
   }
-  
-  /**
-   * Set up error handling
-   */
   private setupErrorHandling(): void {
     // Central error handling middleware - must be registered last
     const errorMiddleware = (
@@ -174,25 +156,14 @@ export class ApiGateway {
       if (res.headersSent) {
         return next(err);
       }
-      
-      // Handle error and send response
       res.status(500).json({ error: 'Internal server error' });
     };
     
-    // Register the error handling middleware
     this.app.use(errorMiddleware as express.ErrorRequestHandler);
   }
-  
-  /**
-   * Get the Express application
-   */
   public getApp(): Application {
     return this.app;
   }
-  
-  /**
-   * Start the API gateway
-   */
   public start(): void {
     const port = config.PORT || 3000;
     

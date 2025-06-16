@@ -5,9 +5,9 @@
  * reputation management, and AI-powered moderation for marketplace trust.
  */
 
+import errorService from '@/services/error-service';
 import { ApiResponse } from '@/types';
 import { apiClient } from '../api/api-client';
-import { errorService } from '../error/error-service';
 
 export type ReviewType = 'task_completion' | 'service_quality' | 'communication' | 'overall';
 export type ReviewStatus = 'pending' | 'published' | 'flagged' | 'removed' | 'under_review';

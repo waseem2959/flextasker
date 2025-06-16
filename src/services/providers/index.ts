@@ -8,5 +8,4 @@
 // Export provider components
 export { default as ApiProvider } from './api-provider';
 export { default as AuthProvider } from './auth-provider';
-export { default as EnhancedApiProvider } from './enhanced-api-provider';
 

@@ -9,14 +9,14 @@
 export { default as useAuth } from './use-auth';
 
 // Socket/Realtime hooks
-export { default as useRealtime, useRealtimeEvent } from './use-realtime';
-export { default as useSocket, useSocketEvent } from './use-socket';
+export { default as useSocket, useSocketEvent, useTaskUpdates } from './use-socket';
 
 // Task-related hooks
 export * from './use-tasks';
 
 // Chat/Messaging hooks
 export { default as useChat } from './use-chat';
+export { useChat as useSocketChat } from './use-socket';
 
 // Toast notifications
 export { toast, useToast } from './use-toast';

@@ -6,7 +6,7 @@
  */
 
 import { authService } from '@/services/auth';
-import errorService from '@/services/error';
+import errorService from '@/services/error-service';
 import { AuthContextType, LoginCredentials, RegisterData, User, UserRole } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';

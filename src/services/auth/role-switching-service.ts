@@ -5,11 +5,11 @@
  * User and Tasker roles within their account while maintaining data integrity.
  */
 
+import errorService from '@/services/error-service';
 import { ApiResponse } from '@/types';
+import { UserRole } from '../../../shared/types/common/enums';
 import { RoleAvailabilityCheck, RoleSwitchRequest, RoleSwitchResponse } from '../../../shared/types/common/user-types';
-import { UserRole } from '../../../shared/types/enums';
 import { apiClient } from '../api/api-client';
-import { errorService } from '../error/error-service';
 
 /**
  * Switch user's active role

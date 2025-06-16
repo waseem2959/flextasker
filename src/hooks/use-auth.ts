@@ -10,7 +10,7 @@
 
 import { AuthContext } from '@/contexts/context-instance';
 import { authService } from '@/services/auth';
-import errorService from '@/services/error';
+import errorService from '@/services/error-service';
 // Import realtime service conditionally to handle missing module
 let realtimeService: any;
 try {

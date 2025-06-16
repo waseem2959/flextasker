@@ -61,32 +61,88 @@ export function useSocketEvent<T = any>(eventType: string, callback: (data: T) =
 }
 
 /**
+ * Helper function to create query invalidation handler
+ */
+const createQueryInvalidationHandler = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  keys: string[]
+) => {
+  return () => {
+    keys.forEach(key => {
+      queryClient.invalidateQueries({ queryKey: [key] });
+    });
+  };
+};
+
+/**
+ * Helper function to setup event handlers for query invalidation
+ */
+const setupQueryInvalidationHandlers = (
+  queryKeys: Record<string, string[]>,
+  queryClient: ReturnType<typeof useQueryClient>
+): (() => void)[] => {
+  const unsubscribers: (() => void)[] = [];
+
+  Object.entries(queryKeys).forEach(([eventType, keys]) => {
+    const handler = createQueryInvalidationHandler(queryClient, keys);
+    unsubscribers.push(realtimeService.on(eventType, handler));
+  });
+
+  return unsubscribers;
+};
+
+/**
  * Hook for invalidating queries when socket events are received
  */
 export function useSocketQueryInvalidation(queryKeys: Record<string, string[]>) {
   const queryClient = useQueryClient();
-  
+
   useEffect(() => {
-    const handlers: Record<string, () => void> = {};
-    const unsubscribers: (() => void)[] = [];
-    
-    // Set up handlers for each event type
-    Object.entries(queryKeys).forEach(([eventType, keys]) => {
-      handlers[eventType] = () => {
-        keys.forEach(key => {
-          queryClient.invalidateQueries({ queryKey: [key] });
-        });
-      };
-      
-      unsubscribers.push(realtimeService.on(eventType, handlers[eventType]));
-    });
-    
+    const unsubscribers = setupQueryInvalidationHandlers(queryKeys, queryClient);
+
     // Cleanup on unmount
     return () => {
       unsubscribers.forEach(unsubscribe => unsubscribe());
     };
   }, [queryClient, queryKeys]);
 }
+
+/**
+ * Helper function to create notification handler
+ */
+const createNotificationHandler = (config: {
+  title: string;
+  description?: string;
+  variant?: 'default' | 'destructive';
+}) => {
+  return () => {
+    toast({
+      title: config.title,
+      description: config.description,
+      variant: config.variant ?? 'default'
+    });
+  };
+};
+
+/**
+ * Helper function to setup notification handlers
+ */
+const setupNotificationHandlers = (
+  notifications: Record<string, {
+    title: string;
+    description?: string;
+    variant?: 'default' | 'destructive';
+  }>
+): (() => void)[] => {
+  const unsubscribers: (() => void)[] = [];
+
+  Object.entries(notifications).forEach(([eventType, config]) => {
+    const handler = createNotificationHandler(config);
+    unsubscribers.push(realtimeService.on(eventType, handler));
+  });
+
+  return unsubscribers;
+};
 
 /**
  * Hook for showing toast notifications when socket events are received
@@ -97,21 +153,8 @@ export function useSocketNotifications(notifications: Record<string, {
   variant?: 'default' | 'destructive';
 }>) {
   useEffect(() => {
-    const unsubscribers: (() => void)[] = [];
-    
-    // Set up handlers for each event type
-    Object.entries(notifications).forEach(([eventType, config]) => {
-      const handler = () => {
-        toast({
-          title: config.title,
-          description: config.description,
-          variant: config.variant ?? 'default'
-        });
-      };
-      
-      unsubscribers.push(realtimeService.on(eventType, handler));
-    });
-    
+    const unsubscribers = setupNotificationHandlers(notifications);
+
     // Cleanup on unmount
     return () => {
       unsubscribers.forEach(unsubscribe => unsubscribe());

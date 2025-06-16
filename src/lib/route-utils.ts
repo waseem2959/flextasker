@@ -6,7 +6,7 @@
  * hardcoding paths throughout the app.
  */
 
-import { UserRole } from '../../shared/types/enums';
+import { UserRole } from '../../shared/types/common/enums';
 
 // Route configuration type
 export interface RouteConfig {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { TaskPriority, TaskStatus } from '../../../shared/types/enums';
+import { TaskPriority, TaskStatus } from '../../../shared/types/common/enums';
 // Removed unused admin layout
 
 // Import our components

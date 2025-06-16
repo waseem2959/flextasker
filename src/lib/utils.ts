@@ -146,17 +146,55 @@ export function formatDate(
 function formatRelativeTime(date: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
-  const diffSec = Math.round(diffMs / 1000);
-  const diffMin = Math.round(diffSec / 60);
-  const diffHr = Math.round(diffMin / 60);
-  const diffDays = Math.round(diffHr / 24);
 
-  if (Math.abs(diffSec) < 60) return 'just now';
-  if (Math.abs(diffMin) < 60) return `${Math.abs(diffMin)} minute${Math.abs(diffMin) !== 1 ? 's' : ''} ${diffMin < 0 ? 'from now' : 'ago'}`;
-  if (Math.abs(diffHr) < 24) return `${Math.abs(diffHr)} hour${Math.abs(diffHr) !== 1 ? 's' : ''} ${diffHr < 0 ? 'from now' : 'ago'}`;
-  if (Math.abs(diffDays) < 7) return `${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? 's' : ''} ${diffDays < 0 ? 'from now' : 'ago'}`;
+  // Calculate time differences
+  const timeDiffs = {
+    seconds: Math.round(diffMs / 1000),
+    minutes: Math.round(diffMs / (1000 * 60)),
+    hours: Math.round(diffMs / (1000 * 60 * 60)),
+    days: Math.round(diffMs / (1000 * 60 * 60 * 24))
+  };
 
+  // Check for immediate time
+  if (Math.abs(timeDiffs.seconds) < 60) {
+    return 'just now';
+  }
+
+  // Handle different time units
+  const timeUnit = getTimeUnit(timeDiffs);
+  if (timeUnit) {
+    return formatTimeUnit(timeUnit.value, timeUnit.unit, timeUnit.value < 0);
+  }
+
+  // Fallback to formatted date for longer periods
   return formatDate(date, 'MMM dd, yyyy');
+}
+
+/**
+ * Helper function to determine the appropriate time unit
+ */
+function getTimeUnit(timeDiffs: { seconds: number; minutes: number; hours: number; days: number }) {
+  if (Math.abs(timeDiffs.minutes) < 60) {
+    return { value: timeDiffs.minutes, unit: 'minute' };
+  }
+  if (Math.abs(timeDiffs.hours) < 24) {
+    return { value: timeDiffs.hours, unit: 'hour' };
+  }
+  if (Math.abs(timeDiffs.days) < 7) {
+    return { value: timeDiffs.days, unit: 'day' };
+  }
+  return null;
+}
+
+/**
+ * Helper function to format time unit with proper pluralization
+ */
+function formatTimeUnit(value: number, unit: string, isFuture: boolean): string {
+  const absValue = Math.abs(value);
+  const pluralSuffix = absValue !== 1 ? 's' : '';
+  const timeDirection = isFuture ? 'from now' : 'ago';
+
+  return `${absValue} ${unit}${pluralSuffix} ${timeDirection}`;
 }
 
 /**

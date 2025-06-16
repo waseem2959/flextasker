@@ -13,7 +13,7 @@ import { QuickLinks } from '../components/dashboard/quick-links';
 import { RecentActivity } from '../components/dashboard/recent-activity';
 import { TasksAndBidsList } from '../components/dashboard/tasks-and-bids-list';
 
-// Helper function to transform API response to Task type
+// Simple transformation function for dashboard tasks
 const transformToTask = (data: any): Task => ({
   ...data,
   category: data.category ?? { id: 'default', name: 'General', icon: 'default', subcategories: [] },

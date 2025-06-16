@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { EmptyState } from '@/components/ui/empty-state';
+import { EmptyState } from '@/components/ui/error-states';
 import { Input } from '@/components/ui/input';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Separator } from '@/components/ui/separator';
@@ -33,12 +33,15 @@ interface RenderSearchResultsProps {
 const RenderSearchResults = ({ results, onClearFilters }: RenderSearchResultsProps) => {
   if (results.length === 0) {
     return (
-      <EmptyState 
-        icon={<Search size={24} />}
+      <EmptyState
+        icon={Search}
         title="No results found"
         description="Try adjusting your search or filter criteria to find what you're looking for."
-        actionLabel="Clear Filters"
-        onAction={onClearFilters}
+        action={
+          <Button onClick={onClearFilters} variant="outline">
+            Clear Filters
+          </Button>
+        }
       />
     );
   }

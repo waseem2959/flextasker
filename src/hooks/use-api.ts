@@ -6,8 +6,8 @@
  */
 
 import { apiClient } from '@/services/api/api-client';
-import { AppError } from '@/services/error';
 import { ApiResponse, PaginatedApiResponse } from '@/types';
+import { AppError } from '@/types/errors';
 import {
     QueryKey,
     useMutation,

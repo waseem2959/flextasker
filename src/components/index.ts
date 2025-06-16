@@ -66,5 +66,5 @@ export { IdentityVerification } from './trust/identity-verification';
 export { ReviewDisplay, ReviewForm } from './trust/review-system';
 
 // Integration Examples
-export { Phase3IntegrationExample } from '../examples/phase-3-integration-example';
+// export { Phase3IntegrationExample } from '../examples/phase-3-integration-example'; // Commented out - file not found
 

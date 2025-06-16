@@ -10,9 +10,9 @@
  * Standardized to exactly three roles for FlexTasker marketplace
  */
 export enum UserRole {
-  USER = 'USER',      // Can post tasks and receive services (task posters)
-  TASKER = 'TASKER',  // Can complete tasks for others (service providers)
-  ADMIN = 'ADMIN'     // Can manage the platform (platform management)
+  USER = 'user',      // Can post tasks and receive services (task posters)
+  TASKER = 'tasker',  // Can complete tasks for others (service providers)
+  ADMIN = 'admin'     // Can manage the platform (platform management)
 }
 
 /**

@@ -5,9 +5,9 @@
  * and automated release mechanisms for secure marketplace transactions.
  */
 
-import { apiClient } from '../api/api-client';
-import { errorService } from '../error/error-service';
+import errorService from '@/services/error-service';
 import { ApiResponse } from '@/types';
+import { apiClient } from '../api/api-client';
 
 export type EscrowStatus = 
   | 'pending_funding'

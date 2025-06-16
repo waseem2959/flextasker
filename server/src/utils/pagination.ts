@@ -379,10 +379,7 @@ export function encodeCursor(cursorData: any): string {
 
 /**
  * Type-safe function to retrieve paginated data
- * 
- * @param modelName Prisma model name
- * @param options Query options
- * @returns Paginated result
+ * @deprecated Use DatabaseQueryBuilder.findManyWithCount instead
  */
 export async function getPaginatedData<T>(
   modelName: keyof typeof prisma,
@@ -395,39 +392,28 @@ export async function getPaginatedData<T>(
     select?: any;
   }
 ): Promise<PaginationResult<T>> {
+  // Import and use the centralized implementation
+  const { DatabaseQueryBuilder } = await import('./database-query-builder');
+
   const model = prisma[modelName] as unknown as PrismaModel;
-  
+
   if (!model || typeof model.count !== 'function' || typeof model.findMany !== 'function') {
     throw new Error(`Invalid model name: ${String(modelName)}`);
   }
-  
-  const { page, limit, where, orderBy, include, select } = options;
-  const skip = (page - 1) * limit;
-  
-  try {
-    // Execute count and find queries in parallel
-    const [totalItems, items] = await Promise.all([
-      model.count({ where }),
-      model.findMany({
-        where,
-        orderBy,
-        include,
-        select,
-        skip,
-        take: limit
-      })
-    ]);
-    
-    return createPaginatedResult<T>(
-      items as T[],
-      totalItems,
-      page,
-      limit
-    );
-  } catch (error) {
-    logger.error(`Error executing paginated query on ${String(modelName)}`, { error });
-    throw error;
-  }
+
+  const result = await DatabaseQueryBuilder.findManyWithCount(model, {
+    where: options.where,
+    select: options.select,
+    orderBy: options.orderBy,
+    pagination: { skip: (options.page - 1) * options.limit, limit: options.limit }
+  }, String(modelName));
+
+  return createPaginatedResult<T>(
+    result.items as T[],
+    result.total,
+    options.page,
+    options.limit
+  );
 }
 
 export default {

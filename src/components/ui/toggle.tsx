@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 interface ToggleProps extends React.ComponentPropsWithoutRef<typeof TogglePrimitive.Root> {
   variant?: 'default' | 'outline';
-  size?: 'default' | 'sm' | 'lg';
+  size?: 'sm' | 'md' | 'lg';
 }
 
 const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(

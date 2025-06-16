@@ -1,14 +1,16 @@
 import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group"
-import { type VariantProps } from "class-variance-authority"
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
 import { toggleVariants } from "@/utils/ui-utils"
 
-type ToggleGroupContextValue = VariantProps<typeof toggleVariants>
+type ToggleGroupContextValue = {
+  size?: "sm" | "md" | "lg";
+  variant?: "default" | "outline";
+}
 
 const ToggleGroupContext = React.createContext<ToggleGroupContextValue>({
-  size: "default",
+  size: "md",
   variant: "default",
 })
 
@@ -21,7 +23,7 @@ const ToggleGroupItem = React.forwardRef<
   const contextValue = React.useMemo(
     () => ({
       variant: context.variant ?? "default",
-      size: context.size ?? "default",
+      size: (context.size ?? "md") as "sm" | "md" | "lg",
     }),
     [context.variant, context.size]
   )
@@ -29,7 +31,11 @@ const ToggleGroupItem = React.forwardRef<
   return (
     <ToggleGroupPrimitive.Item
       ref={ref}
-      className={cn(toggleVariants(contextValue), className)}
+      className={cn(toggleVariants({
+        variant: contextValue.variant,
+        size: contextValue.size,
+        className
+      }))}
       {...props}
     >
       {children}
@@ -41,8 +47,9 @@ ToggleGroupItem.displayName = ToggleGroupPrimitive.Item.displayName
 // Type-safe single selection toggle group
 type ToggleGroupSingleProps = React.ComponentPropsWithoutRef<
   typeof ToggleGroupPrimitive.Root
-> & 
-  VariantProps<typeof toggleVariants> & {
+> & {
+    variant?: "default" | "outline";
+    size?: "sm" | "md" | "lg";
     type: "single"
     value?: string
     onValueChange?: (value: string) => void
@@ -55,7 +62,7 @@ const ToggleGroupSingle = React.forwardRef<
   const contextValue = React.useMemo(
     () => ({
       variant: variant ?? "default",
-      size: size ?? "default",
+      size: (size ?? "md") as "sm" | "md" | "lg",
     }),
     [variant, size]
   )
@@ -77,8 +84,9 @@ ToggleGroupSingle.displayName = "ToggleGroupSingle"
 // Type-safe multiple selection toggle group
 type ToggleGroupMultipleProps = React.ComponentPropsWithoutRef<
   typeof ToggleGroupPrimitive.Root
-> & 
-  VariantProps<typeof toggleVariants> & {
+> & {
+    variant?: "default" | "outline";
+    size?: "sm" | "md" | "lg";
     type: "multiple"
     value?: string[]
     onValueChange?: (value: string[]) => void
@@ -91,7 +99,7 @@ const ToggleGroupMultiple = React.forwardRef<
   const contextValue = React.useMemo(
     () => ({
       variant: variant ?? "default",
-      size: size ?? "default",
+      size: (size ?? "md") as "sm" | "md" | "lg",
     }),
     [variant, size]
   )

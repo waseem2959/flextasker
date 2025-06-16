@@ -193,7 +193,7 @@ export const TasksAndBidsList: React.FC<TasksAndBidsListProps> = ({ user, myTask
     // Extract the variant determination logic into a clear, readable helper function
     // This replaces the nested ternary with explicit conditional logic for better maintainability
     const determineVariant = (): BadgeVariant => {
-      return status === 'OPEN' ? 'default' : 'secondary';
+      return status === TaskStatus.OPEN ? 'default' : 'secondary';
     };
 
     return {

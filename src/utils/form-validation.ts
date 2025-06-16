@@ -1,14 +1,15 @@
 /**
  * Form Validation Utilities
- * 
- * Centralized utilities for form validation that integrate with our error handling system.
- * This module provides standardized validation functions, error formatting, and integration
- * with the application's error system.
+ *
+ * @deprecated Most validation utilities have been moved to @/lib/validation-utils
+ * This file now re-exports from the centralized validation utilities.
  */
+
+// Re-export validation utilities from centralized location
+export * from '@/lib/validation-utils';
 
 import { ValidationError } from '@/types/errors';
 import { useCallback, useState } from 'react';
-// Error logging removed for simplicity
 
 /**
  * Result of a validation operation

@@ -7,14 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { StarRating } from '@/components/ui/star-rating';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
 import { useAuth, useCreateBid, useTask } from '@/hooks';
+import { useToast } from '@/hooks/use-toast';
 import { TaskStatus } from '@/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { AlertCircle, ArrowLeft, Calendar, CheckCircle, Clock, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { v4 as uuidv4 } from 'uuid';
 
 
 // Add missing type for Bid
@@ -292,7 +291,6 @@ const TaskDetail = () => {
   // Show error toast with consistent formatting
   const showErrorToast = (title: string, description: string) => {
     toast({
-      id: uuidv4(),
       title,
       description,
       variant: 'destructive',
@@ -353,14 +351,12 @@ const TaskDetail = () => {
       setBidMessage('');
       
       toast({
-        id: uuidv4(),
         title: "Bid Submitted",
         description: "Your bid has been submitted successfully.",
       });
     } catch (error) {
       console.error('Error submitting bid:', error);
       toast({
-        id: uuidv4(),
         title: "Error",
         description: error instanceof Error ? error.message : "There was an error submitting your bid.",
         variant: "destructive",

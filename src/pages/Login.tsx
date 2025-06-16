@@ -100,47 +100,12 @@ const Login = () => {
                   {loading ? 'Signing In...' : 'Sign In'}
                 </Button>
               </form>
-
-              {/* For demo purposes, add quick login buttons */}
-              <div className="space-y-2">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-neutral-200"></span>
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-neutral-500 font-body">Demo Accounts</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    className="border-2 border-primary-200 text-primary-700 hover:bg-primary-50 hover:border-primary-300 transition-all duration-200"
-                    onClick={() => {
-                      setEmail('pawan@example.com');
-                      setPassword('password');
-                    }}
-                  >
-                    Client Demo
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-2 border-primary-200 text-primary-700 hover:bg-primary-50 hover:border-primary-300 transition-all duration-200"
-                    onClick={() => {
-                      setEmail('samudragupta@example.com');
-                      setPassword('password');
-                    }}
-                  >
-                    Worker Demo
-                  </Button>
-                </div>
-              </div>
             </CardContent>
             <CardFooter className="flex flex-col bg-neutral-50">
               <div className="text-sm text-neutral-600 text-center mt-2 font-body">
                 Don't have an account?{' '}
                 <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200">
-                  Sign up
+                  Join
                 </Link>
               </div>
             </CardFooter>

@@ -5,9 +5,9 @@
  * including message sending, typing indicators, and history management.
  */
 
+import errorService from '@/services/error-service';
 import { ApiResponse, PaginatedApiResponse, User } from '@/types';
 import { apiClient } from '../api/api-client';
-import { errorService } from '../error/error-service';
 import { socketService } from '../realtime/socket-service';
 
 /**

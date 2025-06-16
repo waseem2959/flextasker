@@ -441,6 +441,13 @@ export function setupSecurityEventListeners(): void {
   });
 }
 
+// Export individual functions for backward compatibility
+export const sanitizeHtml = Sanitizer.sanitizeHTML;
+export const validateCSRFToken = (token: string): boolean => {
+  const storedToken = CSRFProtection.getToken();
+  return token === storedToken;
+};
+
 /**
  * Export all security utilities
  */
@@ -453,5 +460,7 @@ export default {
   SessionSecurity,
   AuthSecurity,
   RECOMMENDED_SECURITY_HEADERS,
-  setupSecurityEventListeners
+  setupSecurityEventListeners,
+  sanitizeHtml,
+  validateCSRFToken
 };

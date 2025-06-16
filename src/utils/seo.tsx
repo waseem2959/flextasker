@@ -188,10 +188,122 @@ export const defaultSeoConfig: MetaTagProps = {
 };
 
 /**
+ * Helper function to add basic robots directives
+ */
+const addBasicRobotsDirectives = (config: MetaTagProps): string[] => {
+  const directives: string[] = [];
+
+  if (config.noindex) directives.push('noindex');
+  if (config.nofollow) directives.push('nofollow');
+
+  return directives;
+};
+
+/**
+ * Helper function to add advanced robots directives
+ */
+const addAdvancedRobotsDirectives = (robotsProps: NonNullable<MetaTagProps['robotsProps']>): string[] => {
+  const directives: string[] = [];
+
+  if (robotsProps.nosnippet) directives.push('nosnippet');
+  if (robotsProps.noimageindex) directives.push('noimageindex');
+  if (robotsProps.noarchive) directives.push('noarchive');
+  if (robotsProps.notranslate) directives.push('notranslate');
+
+  return directives;
+};
+
+/**
+ * Helper function to add parameterized robots directives
+ */
+const addParameterizedRobotsDirectives = (robotsProps: NonNullable<MetaTagProps['robotsProps']>): string[] => {
+  const directives: string[] = [];
+
+  if (robotsProps.maxSnippet !== undefined) {
+    directives.push(`max-snippet:${robotsProps.maxSnippet}`);
+  }
+
+  if (robotsProps.maxImagePreview !== undefined) {
+    directives.push(`max-image-preview:${robotsProps.maxImagePreview}`);
+  }
+
+  if (robotsProps.maxVideoPreview !== undefined) {
+    directives.push(`max-video-preview:${robotsProps.maxVideoPreview}`);
+  }
+
+  return directives;
+};
+
+/**
+ * Helper function to build robots meta content
+ */
+const buildRobotsContent = (config: MetaTagProps): string => {
+  const directives: string[] = [];
+
+  // Add basic directives
+  directives.push(...addBasicRobotsDirectives(config));
+
+  // Add advanced directives if robotsProps exists
+  if (config.robotsProps) {
+    directives.push(...addAdvancedRobotsDirectives(config.robotsProps));
+    directives.push(...addParameterizedRobotsDirectives(config.robotsProps));
+  }
+
+  return directives.join(', ');
+};
+
+/**
+ * Helper component for rendering article meta tags
+ */
+const ArticleMetaTags: React.FC<{ config: MetaTagProps }> = ({ config }) => {
+  if (config.ogType !== 'article') return null;
+
+  return (
+    <>
+      {config.articlePublishedTime && (
+        <meta property="article:published_time" content={config.articlePublishedTime} />
+      )}
+      {config.articleModifiedTime && (
+        <meta property="article:modified_time" content={config.articleModifiedTime} />
+      )}
+      {config.articleAuthor && (
+        <meta property="article:author" content={config.articleAuthor} />
+      )}
+      {config.articleSection && (
+        <meta property="article:section" content={config.articleSection} />
+      )}
+      {config.articleTags?.map((tag) => (
+        <meta key={`article-tag-${tag}`} property="article:tag" content={tag} />
+      ))}
+    </>
+  );
+};
+
+/**
+ * Helper component for rendering additional meta tags
+ */
+const AdditionalMetaTags: React.FC<{ tags: MetaTagProps['additionalMetaTags'] }> = ({ tags }) => {
+  if (!tags) return null;
+
+  return (
+    <>
+      {tags.map((tag) => (
+        <meta
+          key={tag.key ?? `meta-${tag.name ?? tag.property}-${tag.content}`}
+          {...(tag.name ? { name: tag.name } : {})}
+          {...(tag.property ? { property: tag.property } : {})}
+          content={tag.content}
+        />
+      ))}
+    </>
+  );
+};
+
+/**
  * SEO Component for managing meta tags
- * 
+ *
  * @example
- * <SEO 
+ * <SEO
  *   title="Task Details | Flextasker"
  *   description="View task details and make an offer"
  *   ogImage={task.imageUrl}
@@ -200,37 +312,14 @@ export const defaultSeoConfig: MetaTagProps = {
 export const SEO: React.FC<MetaTagProps> = (props) => {
   // Merge with default configuration
   const config = { ...defaultSeoConfig, ...props };
-  
+
   // Set defaults for Open Graph if not provided
   const ogTitle = config.ogTitle ?? config.title;
   const ogDescription = config.ogDescription ?? config.description;
-  
+
   // Build robots meta content
-  let robotsContent = '';
-  if (config.noindex) robotsContent += 'noindex, ';
-  if (config.nofollow) robotsContent += 'nofollow, ';
-  
-  if (config.robotsProps) {
-    if (config.robotsProps.nosnippet) robotsContent += 'nosnippet, ';
-    if (config.robotsProps.noimageindex) robotsContent += 'noimageindex, ';
-    if (config.robotsProps.noarchive) robotsContent += 'noarchive, ';
-    if (config.robotsProps.notranslate) robotsContent += 'notranslate, ';
-    
-    if (config.robotsProps.maxSnippet !== undefined) {
-      robotsContent += `max-snippet:${config.robotsProps.maxSnippet}, `;
-    }
-    
-    if (config.robotsProps.maxImagePreview !== undefined) {
-      robotsContent += `max-image-preview:${config.robotsProps.maxImagePreview}, `;
-    }
-    
-    if (config.robotsProps.maxVideoPreview !== undefined) {
-      robotsContent += `max-video-preview:${config.robotsProps.maxVideoPreview}, `;
-    }
-  }
-  
-  robotsContent = robotsContent ? robotsContent.slice(0, -2) : '';
-  
+  const robotsContent = buildRobotsContent(config);
+
   return (
     <Helmet>
       {/* Standard meta tags */}
@@ -239,14 +328,14 @@ export const SEO: React.FC<MetaTagProps> = (props) => {
       {config.canonicalUrl && <link rel="canonical" href={config.canonicalUrl} />}
       {robotsContent && <meta name="robots" content={robotsContent} />}
       {config.language && <html lang={config.language} />}
-      
+
       {/* Open Graph meta tags */}
       {ogTitle && <meta property="og:title" content={ogTitle} />}
       {ogDescription && <meta property="og:description" content={ogDescription} />}
       {config.ogImage && <meta property="og:image" content={config.ogImage} />}
       {config.ogType && <meta property="og:type" content={config.ogType} />}
       {config.canonicalUrl && <meta property="og:url" content={config.canonicalUrl} />}
-      
+
       {/* Twitter card meta tags */}
       {config.twitterCard && <meta name="twitter:card" content={config.twitterCard} />}
       {config.twitterSite && <meta name="twitter:site" content={config.twitterSite} />}
@@ -254,38 +343,13 @@ export const SEO: React.FC<MetaTagProps> = (props) => {
       {ogTitle && <meta name="twitter:title" content={ogTitle} />}
       {ogDescription && <meta name="twitter:description" content={ogDescription} />}
       {config.ogImage && <meta name="twitter:image" content={config.ogImage} />}
-      
+
       {/* Article meta tags */}
-      {config.ogType === 'article' && (
-        <>
-          {config.articlePublishedTime && (
-            <meta property="article:published_time" content={config.articlePublishedTime} />
-          )}
-          {config.articleModifiedTime && (
-            <meta property="article:modified_time" content={config.articleModifiedTime} />
-          )}
-          {config.articleAuthor && (
-            <meta property="article:author" content={config.articleAuthor} />
-          )}
-          {config.articleSection && (
-            <meta property="article:section" content={config.articleSection} />
-          )}
-          {config.articleTags && config.articleTags.map((tag, index) => (
-            <meta key={`tag-${index}`} property="article:tag" content={tag} />
-          ))}
-        </>
-      )}
-      
+      <ArticleMetaTags config={config} />
+
       {/* Additional meta tags */}
-      {config.additionalMetaTags && config.additionalMetaTags.map((tag, index) => (
-        <meta
-          key={tag.key ?? `meta-${index}`}
-          {...(tag.name ? { name: tag.name } : {})}
-          {...(tag.property ? { property: tag.property } : {})}
-          content={tag.content}
-        />
-      ))}
-      
+      <AdditionalMetaTags tags={config.additionalMetaTags} />
+
       {/* Structured data (JSON-LD) */}
       {config.structuredData && (
         <script type="application/ld+json">

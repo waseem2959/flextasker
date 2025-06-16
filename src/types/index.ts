@@ -15,11 +15,9 @@ import {
     BudgetType,
     NotificationType,
     TaskPriority,
-    TaskStatus
-} from '../../shared/types/enums';
-
-// Import UserRole from common/enums to match user-types.ts
-import { UserRole } from '../../shared/types/common/enums';
+    TaskStatus,
+    UserRole
+} from '../../shared/types/common/enums';
 
 // Import additional app-specific enums that don't conflict with shared enums
 import {

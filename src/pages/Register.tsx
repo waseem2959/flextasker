@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 import { useAuth } from '@/hooks/use-auth';
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -22,7 +22,7 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<UserRole>(UserRole.USER);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { register } = useAuth();
@@ -54,7 +54,7 @@ const Register = () => {
         firstName,
         lastName,
         email,
-        role,
+        role: UserRole.USER, // Default to USER role
         password,
       });
       if (success) {
@@ -154,24 +154,6 @@ const Register = () => {
                     className="border-2 border-neutral-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-lg font-body transition-all duration-200"
                     required
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-neutral-900 font-medium font-body">I want to join as</Label>
-                  <RadioGroup
-                    defaultValue="worker"
-                    value={role}
-                    onValueChange={(value) => setRole(value as UserRole)}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="client" id="client" />
-                      <Label htmlFor="client" className="text-neutral-600 font-body">Client (post tasks)</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="worker" id="worker" />
-                      <Label htmlFor="worker" className="text-neutral-600 font-body">Worker (find work)</Label>
-                    </div>
-                  </RadioGroup>
                 </div>
 
                 <Button type="submit" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:shadow-lg" disabled={loading}>

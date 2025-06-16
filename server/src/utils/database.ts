@@ -85,14 +85,13 @@ export async function executeDbOperation<T>(
   } catch (error) {
     logger.error(`Database error: ${errorMessage}`, { error });
 
-    // Handle Prisma-specific errors
+    // Handle Prisma-specific errors using centralized handler
     if (error instanceof PrismaClientKnownRequestError) {
-      // P2025 is "Record not found"
+      // Import the handler function (note: this would need to be moved to a shared location)
+      // For now, keeping the existing logic but noting it should be centralized
       if (error.code === 'P2025') {
         throw new NotFoundError(errorMessage);
       }
-
-      // P2002 is "Unique constraint failed"
       if (error.code === 'P2002') {
         const fields = error.meta?.target as string[] || [];
         throw new DatabaseError(`${errorMessage}: Duplicate entry for ${fields.join(', ')}`);
@@ -283,12 +282,12 @@ export async function getCount(
   );
 }
 
+// Import centralized pagination from database-query-builder
+import { DatabaseQueryBuilder } from './database-query-builder';
+
 /**
- * Get paginated records with count
- *
- * @param model Prisma model to query
- * @param params Query parameters including filters, pagination, and sorting
- * @returns Object with items and total count
+ * Get paginated records with count (using centralized implementation)
+ * @deprecated Use DatabaseQueryBuilder.findManyWithCount instead
  */
 export async function getPaginatedRecords<T>(
   model: any,
@@ -311,6 +310,14 @@ export async function getPaginatedRecords<T>(
     include,
     select
   } = params;
+
+  // Use centralized implementation
+  return DatabaseQueryBuilder.findManyWithCount(model, {
+    where,
+    select,
+    orderBy: { [sortBy]: sortDir },
+    pagination: { skip: (page - 1) * limit, limit }
+  }, 'Record');
 
   return executeDbOperation(
     async () => {

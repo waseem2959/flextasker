@@ -17,7 +17,7 @@ import { useParams } from 'react-router-dom';
 // Removed unused main layout
 
 import { Progress } from '@/components/ui/progress';
-import { UserRole } from '../../shared/types/enums';
+import { UserRole } from '../../shared/types/common/enums';
 
 // Mock data - would be fetched from API in a real app
 interface User {

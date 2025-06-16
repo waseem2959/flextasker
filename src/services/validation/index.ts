@@ -5,6 +5,7 @@
  */
 
 // Re-export validation functions from centralized location
+import { validatePassword as validatePasswordUtil } from '@/lib/validation-utils';
 import { BudgetType, TaskPriority, TaskStatus, UserRole } from '@/types';
 import { isValidEmail, validatePassword } from '@/utils/validation';
 import { z } from 'zod';
@@ -25,7 +26,7 @@ export const emailSchema = z.string().refine(isValidEmail, {
 });
 
 export const passwordSchema = z.string().refine(
-  (password) => validatePassword(password).isValid,
+  (password) => validatePasswordUtil(password).isValid,
   { message: 'Password does not meet security requirements' }
 );
 

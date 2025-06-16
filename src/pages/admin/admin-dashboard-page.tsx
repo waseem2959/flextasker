@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect } from 'react';
-import { UserRole } from '../../../shared/types/enums';
+import { UserRole } from '../../../shared/types/common/enums';
 
 const AdminDashboardPage = () => {
   const { user } = useAuth();

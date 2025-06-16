@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { UserRole } from '../../../shared/types/enums';
+import { UserRole } from '../../../shared/types/common/enums';
 // Removed unused admin layout
 
 // Import our components

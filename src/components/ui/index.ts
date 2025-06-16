@@ -66,7 +66,7 @@ export * from './progress-indicator';
 
 // === ERROR HANDLING ===
 export * from './error-boundary';
-export * from './error-message';
+export * from './error-states';
 
 // === LOADING STATES ===
 export * from './loading-states';

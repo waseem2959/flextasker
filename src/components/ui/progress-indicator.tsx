@@ -5,9 +5,9 @@
  * Features enhanced visual feedback and accessibility support.
  */
 
-import React from 'react';
-import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Check } from 'lucide-react';
+import React from 'react';
 
 export interface ProgressStep {
   id: string;
@@ -39,54 +39,109 @@ const ProgressStepComponent: React.FC<{
   onStepClick?: (stepIndex: number) => void;
 }> = ({ step, index, isLast, variant, showLabels, onStepClick }) => {
   const isClickable = onStepClick && !step.isDisabled;
-  
+
+  // Extract step circle styling logic
+  const getStepCircleClasses = () => {
+    const baseClasses = "relative z-10 flex items-center justify-center rounded-full border-2 font-semibold transition-all duration-300";
+    const sizeClasses = variant === 'compact' ? "w-8 h-8 text-sm" : "w-10 h-10 text-base";
+
+    let stateClasses = "";
+    if (step.isCompleted) {
+      stateClasses = "bg-primary-300 border-primary-300 text-neutral-900";
+    } else if (step.isActive) {
+      stateClasses = "bg-primary-500 border-primary-500 text-white scale-110 shadow-lg shadow-primary-500/25";
+    } else {
+      stateClasses = "bg-neutral-200 border-neutral-300 text-neutral-600";
+    }
+
+    let interactionClasses = "";
+    if (step.isDisabled) {
+      interactionClasses = "opacity-50 cursor-not-allowed";
+    } else if (isClickable && !step.isActive) {
+      interactionClasses = "cursor-pointer hover:scale-105";
+    }
+
+    return cn(baseClasses, sizeClasses, stateClasses, interactionClasses);
+  };
+
+  // Extract label styling logic
+  const getLabelClasses = () => {
+    const baseClasses = "font-medium transition-colors duration-200";
+    const sizeClasses = variant === 'compact' ? "text-sm" : "text-base";
+
+    let colorClasses = "";
+    if (step.isActive) {
+      colorClasses = "text-primary-700";
+    } else if (step.isCompleted) {
+      colorClasses = "text-neutral-900";
+    } else {
+      colorClasses = "text-neutral-600";
+    }
+
+    return cn(baseClasses, sizeClasses, colorClasses);
+  };
+
+  // Extract connecting line styling
+  const getConnectingLineStyle = () => {
+    const leftOffset = variant === 'compact' ? '32px' : '40px';
+    const rightOffset = variant === 'compact' ? '-32px' : '-40px';
+
+    return {
+      left: leftOffset,
+      right: showLabels ? 'auto' : rightOffset,
+      width: showLabels ? 'calc(100% - 40px)' : undefined,
+    };
+  };
+
+  // Handle click events with keyboard support
+  const handleClick = () => {
+    if (isClickable) {
+      onStepClick(index);
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (isClickable && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      onStepClick(index);
+    }
+  };
+
   return (
     <div className="flex items-center relative">
-      {/* Step circle */}
-      <div
-        className={cn(
-          "relative z-10 flex items-center justify-center rounded-full border-2 font-semibold transition-all duration-300",
-          variant === 'compact' ? "w-8 h-8 text-sm" : "w-10 h-10 text-base",
-          {
-            // Completed state - using project-map mint green
-            "bg-primary-300 border-primary-300 text-neutral-900": step.isCompleted,
-            // Active state - using project-map bright cyan
-            "bg-primary-500 border-primary-500 text-white scale-110 shadow-lg shadow-primary-500/25": step.isActive,
-            // Default state
-            "bg-neutral-200 border-neutral-300 text-neutral-600": !step.isCompleted && !step.isActive,
-            // Disabled state
-            "opacity-50 cursor-not-allowed": step.isDisabled,
-            // Clickable state
-            "cursor-pointer hover:scale-105": isClickable && !step.isActive,
-          }
-        )}
-        onClick={() => isClickable && onStepClick(index)}
-        role={isClickable ? "button" : undefined}
-        tabIndex={isClickable ? 0 : undefined}
-        aria-label={`Step ${index + 1}: ${step.title}`}
-      >
-        {step.isCompleted ? (
-          <Check className={cn("text-current", variant === 'compact' ? "w-4 h-4" : "w-5 h-5")} />
-        ) : (
-          <span>{index + 1}</span>
-        )}
-      </div>
-      
+      {/* Step circle - using proper button element for accessibility */}
+      {isClickable ? (
+        <button
+          type="button"
+          className={getStepCircleClasses()}
+          onClick={handleClick}
+          onKeyDown={handleKeyDown}
+          aria-label={`Step ${index + 1}: ${step.title}`}
+          disabled={step.isDisabled}
+        >
+          {step.isCompleted ? (
+            <Check className={cn("text-current", variant === 'compact' ? "w-4 h-4" : "w-5 h-5")} />
+          ) : (
+            <span>{index + 1}</span>
+          )}
+        </button>
+      ) : (
+        <div
+          className={getStepCircleClasses()}
+          aria-label={`Step ${index + 1}: ${step.title}`}
+        >
+          {step.isCompleted ? (
+            <Check className={cn("text-current", variant === 'compact' ? "w-4 h-4" : "w-5 h-5")} />
+          ) : (
+            <span>{index + 1}</span>
+          )}
+        </div>
+      )}
+
       {/* Step labels */}
       {showLabels && (
-        <div className={cn(
-          "ml-3 flex-1",
-          variant === 'compact' ? "min-w-0" : "min-w-0"
-        )}>
-          <div className={cn(
-            "font-medium transition-colors duration-200",
-            variant === 'compact' ? "text-sm" : "text-base",
-            {
-              "text-primary-700": step.isActive,
-              "text-neutral-900": step.isCompleted,
-              "text-neutral-600": !step.isCompleted && !step.isActive,
-            }
-          )}>
+        <div className="ml-3 flex-1 min-w-0">
+          <div className={getLabelClasses()}>
             {step.title}
           </div>
           {step.description && variant !== 'compact' && (
@@ -96,22 +151,16 @@ const ProgressStepComponent: React.FC<{
           )}
         </div>
       )}
-      
+
       {/* Connecting line */}
       {!isLast && (
         <div
           className={cn(
             "absolute top-1/2 -translate-y-1/2 h-0.5 bg-neutral-300 transition-colors duration-300",
             variant === 'compact' ? "left-8 right-0" : "left-10 right-0",
-            {
-              "bg-primary-300": step.isCompleted,
-            }
+            step.isCompleted && "bg-primary-300"
           )}
-          style={{
-            left: variant === 'compact' ? '32px' : '40px',
-            right: showLabels ? 'auto' : (variant === 'compact' ? '-32px' : '-40px'),
-            width: showLabels ? 'calc(100% - 40px)' : undefined,
-          }}
+          style={getConnectingLineStyle()}
         />
       )}
     </div>
@@ -137,29 +186,37 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   }));
 
   return (
-    <div
-      className={cn(
-        "w-full",
-        showLabels ? "space-y-4" : "flex items-center justify-between",
-        className
-      )}
-      role="progressbar"
-      aria-valuenow={currentStep + 1}
-      aria-valuemin={1}
-      aria-valuemax={steps.length}
-      aria-label={`Progress: Step ${currentStep + 1} of ${steps.length}`}
-    >
-      {enhancedSteps.map((step, index) => (
-        <ProgressStepComponent
-          key={step.id}
-          step={step}
-          index={index}
-          isLast={index === steps.length - 1}
-          variant={variant}
-          showLabels={showLabels}
-          onStepClick={onStepClick}
-        />
-      ))}
+    <div className={cn("w-full", className)}>
+      {/* Hidden progress element for screen readers */}
+      <progress
+        className="sr-only"
+        value={currentStep + 1}
+        max={steps.length}
+        aria-label={`Progress: Step ${currentStep + 1} of ${steps.length}`}
+      >
+        {Math.round(((currentStep + 1) / steps.length) * 100)}%
+      </progress>
+
+      {/* Visual progress indicator */}
+      <div
+        className={cn(
+          "w-full",
+          showLabels ? "space-y-4" : "flex items-center justify-between"
+        )}
+        aria-hidden="true"
+      >
+        {enhancedSteps.map((step, index) => (
+          <ProgressStepComponent
+            key={step.id}
+            step={step}
+            index={index}
+            isLast={index === steps.length - 1}
+            variant={variant}
+            showLabels={showLabels}
+            onStepClick={onStepClick}
+          />
+        ))}
+      </div>
     </div>
   );
 };

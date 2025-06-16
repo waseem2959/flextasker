@@ -125,13 +125,16 @@ export class OptimizedQueries {
 
   /**
    * Optimized user search with full-text search simulation
+   * @deprecated Use DatabaseQueryBuilder with search patterns instead
    */
   async searchUsers(query: string, options: { page: number; limit: number }) {
     const monitor = QueryPerformanceMonitor.getInstance();
-    
+
     return monitor.monitorQuery('searchUsers', async () => {
+      // Use centralized search implementation from DatabaseQueryBuilder
+      const { DatabaseQueryBuilder } = await import('./database-query-builder');
+
       const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
-      
       const where = {
         OR: searchTerms.flatMap(term => [
           { firstName: { contains: term, mode: 'insensitive' as const } },
@@ -140,7 +143,7 @@ export class OptimizedQueries {
         ])
       };
 
-      return this.getPaginatedResults(this.prisma.user, {
+      return DatabaseQueryBuilder.findManyWithCount(this.prisma.user, {
         where,
         orderBy: { createdAt: 'desc' },
         select: {
@@ -151,8 +154,8 @@ export class OptimizedQueries {
           profilePictureUrl: true,
           createdAt: true
         },
-        ...options
-      });
+        pagination: { skip: (options.page - 1) * options.limit, limit: options.limit }
+      }, 'User');
     });
   }
 

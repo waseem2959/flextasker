@@ -9,35 +9,88 @@ import '@testing-library/jest-dom';
 // === POLYFILLS ===
 
 // Mock TextEncoder/TextDecoder for React Router
-global.TextEncoder = class TextEncoder {
-  encode(input?: string): Uint8Array {
-    return new Uint8Array(Buffer.from(input || '', 'utf8'));
-  }
-};
+global.TextEncoder = class MockTextEncoder {
+  readonly encoding = 'utf-8';
 
-global.TextDecoder = class TextDecoder {
+  encode(input?: string): Uint8Array {
+    const buffer = Buffer.from(input || '', 'utf8');
+    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  }
+
+  encodeInto(source: string, destination: Uint8Array): TextEncoderEncodeIntoResult {
+    const encoded = this.encode(source);
+    const length = Math.min(encoded.length, destination.length);
+    destination.set(encoded.subarray(0, length));
+    return { read: source.length, written: length };
+  }
+} as any;
+
+global.TextDecoder = class MockTextDecoder implements TextDecoder {
+  readonly encoding = 'utf-8';
+  readonly fatal = false;
+  readonly ignoreBOM = false;
+
   decode(input?: BufferSource): string {
     return Buffer.from(input as ArrayBuffer).toString('utf8');
   }
-};
+} as any;
 
 // === GLOBAL MOCKS ===
 
 // Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
-  unobserve() {}
-};
+global.IntersectionObserver = class MockIntersectionObserver implements IntersectionObserver {
+  root: Element | Document | null = null;
+  rootMargin: string = '0px';
+  thresholds: ReadonlyArray<number> = [0];
+
+  constructor(
+    private _callback: IntersectionObserverCallback,
+    private _options?: IntersectionObserverInit
+  ) {
+    this.root = _options?.root || null;
+    this.rootMargin = _options?.rootMargin || '0px';
+
+    // Extract threshold logic to avoid nested ternary
+    if (_options?.threshold) {
+      this.thresholds = Array.isArray(_options.threshold) ? _options.threshold : [_options.threshold];
+    } else {
+      this.thresholds = [0];
+    }
+  }
+
+  disconnect(): void {
+    // Mock implementation - no-op for tests
+  }
+
+  observe(_target: Element): void {
+    // Mock implementation - no-op for tests
+  }
+
+  unobserve(_target: Element): void {
+    // Mock implementation - no-op for tests
+  }
+
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+} as any;
 
 // Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
-  unobserve() {}
-};
+global.ResizeObserver = class MockResizeObserver implements ResizeObserver {
+  constructor(private _callback: ResizeObserverCallback) {}
+
+  disconnect(): void {
+    // Mock implementation - no-op for tests
+  }
+
+  observe(_target: Element, _options?: ResizeObserverOptions): void {
+    // Mock implementation - no-op for tests
+  }
+
+  unobserve(_target: Element): void {
+    // Mock implementation - no-op for tests
+  }
+} as any;
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -90,7 +143,9 @@ global.Request = jest.fn().mockImplementation((url, init) => ({
   headers: init?.headers || {},
   body: init?.body,
 }));
-global.Response = jest.fn().mockImplementation((body, init) => ({
+
+// Create a proper Response mock
+const MockResponse: any = jest.fn().mockImplementation((body, init) => ({
   ok: init?.status ? init.status < 400 : true,
   status: init?.status || 200,
   statusText: init?.statusText || 'OK',
@@ -98,6 +153,34 @@ global.Response = jest.fn().mockImplementation((body, init) => ({
   json: () => Promise.resolve(body),
   text: () => Promise.resolve(typeof body === 'string' ? body : JSON.stringify(body)),
 }));
+
+// Add static methods to Response mock
+MockResponse.error = jest.fn(() => ({
+  ok: false,
+  status: 0,
+  statusText: '',
+  headers: {},
+}));
+
+MockResponse.json = jest.fn((data, init) => ({
+  ok: true,
+  status: 200,
+  statusText: 'OK',
+  headers: { 'content-type': 'application/json' },
+  json: () => Promise.resolve(data),
+  text: () => Promise.resolve(JSON.stringify(data)),
+  ...init,
+}));
+
+MockResponse.redirect = jest.fn((url, status = 302) => ({
+  ok: true,
+  status,
+  statusText: 'Found',
+  headers: { location: url },
+  url,
+}));
+
+global.Response = MockResponse;
 
 // Mock URL.createObjectURL
 Object.defineProperty(URL, 'createObjectURL', {
@@ -120,19 +203,38 @@ Object.defineProperty(global.performance, 'now', {
 });
 
 // Mock PerformanceObserver
-global.PerformanceObserver = class PerformanceObserver {
-  constructor(callback: PerformanceObserverCallback) {
-    this.callback = callback;
+const MockPerformanceObserver = class MockPerformanceObserver implements PerformanceObserver {
+  constructor(private _callback: PerformanceObserverCallback) {}
+
+  observe(_options?: PerformanceObserverInit): void {
+    // Mock implementation - no-op for tests
   }
-  
-  callback: PerformanceObserverCallback;
-  
-  observe() {}
-  disconnect() {}
-  takeRecords() {
+
+  disconnect(): void {
+    // Mock implementation - no-op for tests
+  }
+
+  takeRecords(): PerformanceEntryList {
     return [];
   }
 };
+
+// Add static property
+(MockPerformanceObserver as any).supportedEntryTypes = [
+  'element',
+  'event',
+  'first-input',
+  'largest-contentful-paint',
+  'layout-shift',
+  'long-task', // Fixed spelling: longtask -> long-task
+  'mark',
+  'measure',
+  'navigation',
+  'paint',
+  'resource'
+];
+
+global.PerformanceObserver = MockPerformanceObserver as any;
 
 // === CONSOLE MOCKS ===
 
@@ -154,6 +256,7 @@ jest.mock('react-error-boundary', () => ({
     try {
       return children;
     } catch (error) {
+      console.error('Error caught by mock ErrorBoundary:', error);
       return fallback;
     }
   },
@@ -318,66 +421,108 @@ export { customRender as render };
 // Mock crypto.randomUUID for ID generation
 Object.defineProperty(global, 'crypto', {
   value: {
-    randomUUID: () => 'mocked-uuid-' + Math.random().toString(36).substr(2, 9),
+    randomUUID: () => 'mocked-uuid-' + Math.random().toString(36).substring(2, 11),
   },
 });
 
 // Mock File and FileReader for file upload tests
 global.File = class MockFile {
+  name: string;
+  lastModified: number;
+  size: number = 1024;
+  type: string = 'text/plain';
+  webkitRelativePath: string = '';
+
   constructor(
-    public parts: (string | Blob | ArrayBuffer | ArrayBufferView)[],
-    public name: string,
-    public options?: FilePropertyBag
-  ) {}
-  
-  size = 1024;
-  type = 'text/plain';
-  lastModified = Date.now();
-  
+    fileBits: BlobPart[],
+    fileName: string,
+    options?: FilePropertyBag
+  ) {
+    this.name = fileName;
+    this.lastModified = options?.lastModified || Date.now();
+    this.type = options?.type || 'text/plain';
+  }
+
   arrayBuffer(): Promise<ArrayBuffer> {
     return Promise.resolve(new ArrayBuffer(0));
   }
-  
+
   slice(): Blob {
     return new Blob();
   }
-  
+
   stream(): ReadableStream {
     return new ReadableStream();
   }
-  
+
   text(): Promise<string> {
-    return Promise.resolve('');
+    return Promise.resolve('mocked file content');
   }
-};
+
+  bytes(): Promise<Uint8Array> {
+    return Promise.resolve(new Uint8Array(0));
+  }
+} as any;
 
 global.FileReader = class MockFileReader {
+  static readonly EMPTY = 0;
+  static readonly LOADING = 1;
+  static readonly DONE = 2;
+
+  readonly EMPTY = 0;
+  readonly LOADING = 1;
+  readonly DONE = 2;
+
   result: string | ArrayBuffer | null = null;
   error: DOMException | null = null;
-  readyState = 0;
-  
-  onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+  readyState: 0 | 1 | 2 = 0;
+
+  onabort: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
   onerror: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
-  
-  readAsText() {
+  onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+  onloadend: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+  onloadstart: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+  onprogress: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+
+  readAsText(_file: Blob, _encoding?: string): void {
     this.result = 'mocked file content';
+    this.readyState = 2; // DONE
     if (this.onload) {
-      this.onload({} as ProgressEvent<FileReader>);
+      this.onload.call(this as any, {} as ProgressEvent<FileReader>);
     }
   }
-  
-  readAsDataURL() {
+
+  readAsDataURL(_file: Blob): void {
     this.result = 'data:text/plain;base64,bW9ja2VkIGZpbGUgY29udGVudA==';
+    this.readyState = 2; // DONE
     if (this.onload) {
-      this.onload({} as ProgressEvent<FileReader>);
+      this.onload.call(this as any, {} as ProgressEvent<FileReader>);
     }
   }
-  
-  abort() {}
-  readAsArrayBuffer() {}
-  readAsBinaryString() {}
-  
-  addEventListener() {}
-  removeEventListener() {}
-  dispatchEvent() { return true; }
-};
+
+  abort(): void {
+    this.readyState = 0; // EMPTY
+  }
+
+  readAsArrayBuffer(_file: Blob): void {
+    this.result = new ArrayBuffer(0);
+    this.readyState = 2; // DONE
+  }
+
+  readAsBinaryString(_file: Blob): void {
+    this.result = '';
+    this.readyState = 2; // DONE
+  }
+
+  addEventListener(_type: string, _listener: EventListenerOrEventListenerObject): void {
+    // Mock implementation - no-op for tests
+  }
+
+  removeEventListener(_type: string, _listener: EventListenerOrEventListenerObject): void {
+    // Mock implementation - no-op for tests
+  }
+
+  dispatchEvent(_event: Event): boolean {
+    return true;
+  }
+} as any;

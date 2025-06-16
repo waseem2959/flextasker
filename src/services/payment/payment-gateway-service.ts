@@ -5,9 +5,9 @@
  * Implements advanced features like marketplace payments, escrow, and fraud detection.
  */
 
+import errorService from '@/services/error-service';
 import { ApiResponse } from '@/types';
 import { apiClient } from '../api/api-client';
-import { errorService } from '../error/error-service';
 
 export type PaymentGateway = 'stripe';
 

@@ -5,7 +5,7 @@
  * It provides a clean, simplified interface for real-time features.
  */
 
-import { showErrorNotification } from '@/services/error/error-service';
+import { showErrorNotification } from '@/services/error-service';
 import { SocketEventType } from '@/services/realtime/socket-events';
 import { realtimeService } from '@/services/realtime/socket-service';
 import { ConnectionState } from '@/services/realtime/socket-types';

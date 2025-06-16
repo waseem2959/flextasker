@@ -81,6 +81,53 @@ export function focusLastElement(container: HTMLElement): void {
 }
 
 /**
+ * Focus any element (alias for backward compatibility)
+ */
+export function focusElement(element: HTMLElement): void {
+  element.focus();
+}
+
+/**
+ * Announce to screen reader (alias for backward compatibility)
+ */
+export function announceToScreenReader(message: string, politeness: 'polite' | 'assertive' = 'polite'): void {
+  announce(message, politeness);
+}
+
+/**
+ * Trap focus within container (simplified version for backward compatibility)
+ */
+export function trapFocus(container: HTMLElement): () => void {
+  const focusableElements = getFocusableElements(container);
+
+  if (focusableElements.length === 0) {
+    return () => {};
+  }
+
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Tab') {
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+  };
+
+  container.addEventListener('keydown', handleKeyDown);
+  firstElement.focus();
+
+  return () => {
+    container.removeEventListener('keydown', handleKeyDown);
+  };
+}
+
+/**
  * Check if an element is focused
  */
 export function isElementFocused(element: Element): boolean {
@@ -201,7 +248,7 @@ export function hasAccessibleName(element: HTMLElement): boolean {
  * Hook to trap focus within a container
  */
 export function useFocusTrap(options: FocusTrapOptions = {}): {
-  ref: React.MutableRefObject<HTMLElement | null>;
+  ref: React.RefObject<HTMLElement | null>;
 } {
   const {
     active = true,
@@ -235,43 +282,51 @@ export function useFocusTrap(options: FocusTrapOptions = {}): {
     }
   }, [active, initialFocus, returnFocusTo]);
   
-  // Handle keydown events for tab key navigation
+  // Helper function to handle tab navigation within focus trap
+  const handleTabNavigation = useCallback(
+    (event: KeyboardEvent, focusableElements: HTMLElement[]) => {
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        // If shift+tab from first element, move focus to last element
+        event.preventDefault();
+        lastElement.focus();
+        if (onFocusRetained) onFocusRetained();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        // If tab from last element, move focus to first element
+        event.preventDefault();
+        firstElement.focus();
+        if (onFocusRetained) onFocusRetained();
+      }
+    },
+    [onFocusRetained]
+  );
+
+  // Handle keydown events for focus trap
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (!active || !containerRef.current) return;
-      
+
       // Call provided keydown handler if it exists
       if (onKeyDown) {
         onKeyDown(event);
       }
-      
+
       // Handle Tab key navigation
       if (event.key === 'Tab') {
         const focusableElements = getFocusableElements(containerRef.current);
-        if (focusableElements.length === 0) return;
-        
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-        
-        if (event.shiftKey && document.activeElement === firstElement) {
-          // If shift+tab from first element, move focus to last element
-          event.preventDefault();
-          lastElement.focus();
-          if (onFocusRetained) onFocusRetained();
-        } else if (!event.shiftKey && document.activeElement === lastElement) {
-          // If tab from last element, move focus to first element
-          event.preventDefault();
-          firstElement.focus();
-          if (onFocusRetained) onFocusRetained();
-        }
+        handleTabNavigation(event, focusableElements);
       }
-      
+
       // Handle Escape key to close modal/dialog
       if (event.key === 'Escape') {
         // Can be handled by the component
       }
     },
-    [active, onKeyDown, onFocusRetained]
+    [active, onKeyDown, handleTabNavigation]
   );
   
   // Add event listeners

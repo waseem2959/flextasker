@@ -7,7 +7,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { BadgeVariant } from '@/types/ui-types';
-import { TaskStatus } from '../../../shared/types/enums';
+import { TaskStatus } from '../../../shared/types/common/enums';
 
 // Utility functions for enum display (replacing deprecated EnumUtils)
 const EnumUtils = {

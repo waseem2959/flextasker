@@ -75,6 +75,41 @@ export function isValidationError(error: any): boolean {
 }
 
 /**
+ * Create an error boundary component (simplified version)
+ */
+export function createErrorBoundary(): any {
+  // This is a placeholder - in a real implementation, you'd create a React error boundary
+  return null;
+}
+
+/**
+ * Handle async errors
+ */
+export function handleAsyncError(error: Error, context?: string): void {
+  console.error(`Async error in ${context || 'unknown context'}:`, error);
+
+  // In a real implementation, you might send this to an error tracking service
+  if (typeof window !== 'undefined') {
+    const errorEvent = new CustomEvent('asyncError', {
+      detail: { error, context }
+    });
+    window.dispatchEvent(errorEvent);
+  }
+}
+
+/**
+ * Log error to console and external services
+ */
+export function logError(error: Error, context?: string): void {
+  console.error(`Error in ${context || 'unknown context'}:`, error);
+
+  // In production, you might want to send to an error tracking service
+  if (process.env.NODE_ENV === 'production') {
+    // Example: errorTrackingService.captureException(error, { context });
+  }
+}
+
+/**
  * Default export
  */
 export default {
@@ -82,5 +117,8 @@ export default {
   extractErrorDetails,
   isNetworkError,
   isAuthError,
-  isValidationError
+  isValidationError,
+  createErrorBoundary,
+  handleAsyncError,
+  logError
 };

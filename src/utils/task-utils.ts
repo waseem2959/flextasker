@@ -5,7 +5,7 @@
  * especially handling complex types like budget and location.
  */
 
-import { BudgetType } from '../types';
+import { BudgetType, TaskStatus } from '../types';
 
 /**
  * Location interface with flexible typing to handle different formats
@@ -123,4 +123,75 @@ export function formatBudget(budget: BudgetParam, currencySymbol = '$'): string 
   }
   
   return result;
+}
+
+/**
+ * Format task status for display
+ */
+export function formatTaskStatus(status: TaskStatus): string {
+  return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase());
+}
+
+/**
+ * Get status color for UI display
+ */
+export function getStatusColor(status: TaskStatus): string {
+  switch (status) {
+    case TaskStatus.OPEN:
+      return 'blue';
+    case TaskStatus.IN_PROGRESS:
+      return 'yellow';
+    case TaskStatus.COMPLETED:
+      return 'green';
+    case TaskStatus.CANCELLED:
+      return 'red';
+    default:
+      return 'gray';
+  }
+}
+
+/**
+ * Get status icon for UI display
+ */
+export function getStatusIcon(status: TaskStatus): string {
+  switch (status) {
+    case TaskStatus.OPEN:
+      return '📋';
+    case TaskStatus.IN_PROGRESS:
+      return '⏳';
+    case TaskStatus.COMPLETED:
+      return '✅';
+    case TaskStatus.CANCELLED:
+      return '❌';
+    default:
+      return '❓';
+  }
+}
+
+/**
+ * Get task status display text
+ */
+export function getTaskStatusDisplayText(status: TaskStatus): string {
+  return formatTaskStatus(status);
+}
+
+/**
+ * Check if task is completed
+ */
+export function isTaskCompleted(status: TaskStatus): boolean {
+  return status === TaskStatus.COMPLETED;
+}
+
+/**
+ * Check if task is in progress
+ */
+export function isTaskInProgress(status: TaskStatus): boolean {
+  return status === TaskStatus.IN_PROGRESS;
+}
+
+/**
+ * Check if task is open
+ */
+export function isTaskOpen(status: TaskStatus): boolean {
+  return status === TaskStatus.OPEN;
 }

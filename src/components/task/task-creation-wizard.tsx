@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ProgressIndicator } from '@/components/ui/progress-indicator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -109,12 +108,14 @@ const TaskDetailsStep: React.FC<StepProps> = ({ data, onUpdate, onNext }) => {
         </div>
 
         <div className="flex justify-end">
-          <Button 
+          <Button
             onClick={handleNext}
             disabled={!data.title || !data.description || !data.category}
             size="lg"
+            className="bg-primary-600 hover:bg-primary-700 text-white"
           >
             Next: Location & Schedule
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
       </CardContent>
@@ -206,11 +207,13 @@ const LocationStep: React.FC<StepProps> = ({ data, onUpdate, onNext, onBack }) =
         </div>
 
         <div className="flex justify-between">
-          <Button variant="secondary" onClick={onBack}>
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button onClick={handleNext} size="lg">
+          <Button onClick={handleNext} size="lg" className="bg-primary-600 hover:bg-primary-700 text-white">
             Next: Budget & Requirements
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
       </CardContent>
@@ -275,15 +278,18 @@ const BudgetStep: React.FC<StepProps> = ({ data, onUpdate, onNext, onBack }) => 
         </div>
 
         <div className="flex justify-between">
-          <Button variant="secondary" onClick={onBack}>
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button 
+          <Button
             onClick={handleNext}
             disabled={!data.budget?.amount || !data.budget?.type}
             size="lg"
+            className="bg-primary-600 hover:bg-primary-700 text-white"
           >
             Next: Review & Post
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
       </CardContent>
@@ -291,15 +297,23 @@ const BudgetStep: React.FC<StepProps> = ({ data, onUpdate, onNext, onBack }) => 
   );
 };
 
-const ReviewStep: React.FC<StepProps> = ({ data, onBack }) => {
+const ReviewStep: React.FC<StepProps & { onComplete?: (data: TaskData) => void }> = ({ data, onBack, onComplete }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsSubmitting(false);
-    // Handle success/redirect
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call the completion handler with the data
+      if (onComplete) {
+        await onComplete(data);
+      }
+    } catch (error) {
+      console.error('Error submitting task:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -328,16 +342,24 @@ const ReviewStep: React.FC<StepProps> = ({ data, onBack }) => {
         </div>
 
         <div className="flex justify-between">
-          <Button variant="secondary" onClick={onBack}>
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
             size="lg"
-            className="min-w-32"
+            className="min-w-32 bg-green-600 hover:bg-green-700 text-white"
           >
-            {isSubmitting ? 'Posting...' : 'Post Task'}
+            {isSubmitting ? (
+              'Posting...'
+            ) : (
+              <>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Post Task
+              </>
+            )}
           </Button>
         </div>
       </CardContent>
@@ -353,8 +375,8 @@ interface TaskCreationWizardProps {
 }
 
 export const TaskCreationWizard: React.FC<TaskCreationWizardProps> = ({
-  onComplete,
-  onCancel,
+  onComplete = async () => {},
+  onCancel = () => {},
   initialData = {},
   className
 }) => {
@@ -398,93 +420,145 @@ export const TaskCreationWizard: React.FC<TaskCreationWizardProps> = ({
     setCurrentStep(prev => Math.max(prev - 1, 0));
   }, []);
 
-  const handleStepClick = useCallback((stepIndex: number) => {
-    // Allow navigation to any step for now (can add validation later)
-    setCurrentStep(stepIndex);
+  // Validation functions for each step
+  const validateStep = useCallback((stepIndex: number, data: TaskData): boolean => {
+    switch (stepIndex) {
+      case 0: // Task Details
+        return !!(data.title && data.description && data.category);
+      case 1: // Location & Schedule
+        return data.location?.isRemote || !!(data.location?.address && data.location?.city);
+      case 2: // Budget & Requirements
+        return !!(data.budget?.amount && data.budget?.type);
+      case 3: // Review & Post
+        return true; // Always valid if we reached here
+      default:
+        return false;
+    }
   }, []);
 
-  // Progress steps for indicator
-  const progressSteps = steps.map((step, index) => ({
-    id: step.id,
-    title: step.title,
-    description: step.description,
-    isCompleted: index < currentStep,
-    isActive: index === currentStep,
-  }));
+  // Check if a step is accessible (completed or current)
+  const isStepAccessible = useCallback((stepIndex: number): boolean => {
+    if (stepIndex === 0) return true; // First step is always accessible
+
+    // Check if all previous steps are completed
+    for (let i = 0; i < stepIndex; i++) {
+      if (!validateStep(i, taskData)) {
+        return false;
+      }
+    }
+    return true;
+  }, [taskData, validateStep]);
+
+  const handleStepClick = useCallback((stepIndex: number) => {
+    if (isStepAccessible(stepIndex)) {
+      setCurrentStep(stepIndex);
+    }
+  }, [isStepAccessible]);
+
+  // Progress steps for indicator (removed unused variable)
 
   return (
-    <div className={cn("task-creation-wizard max-w-4xl mx-auto p-6", className)}>
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-heading font-bold text-neutral-900 mb-2">
-          Create a New Task
-        </h1>
-        <p className="text-neutral-600 font-body">
-          Follow these steps to post your task and find the right person for the job.
-        </p>
-      </div>
+    <div className={cn("task-creation-wizard min-h-screen bg-neutral-50", className)}>
+      <div className="flex">
+        {/* Sidebar with Steps */}
+        <div className="w-80 bg-white shadow-lg border-r border-neutral-200 min-h-screen">
+          <div className="p-6 border-b border-neutral-200">
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-2xl font-heading font-bold text-neutral-900">
+                Create a New Task
+              </h1>
+              <Button variant="ghost" size="sm" onClick={onCancel}>
+                Cancel
+              </Button>
+            </div>
+            <p className="text-sm text-neutral-600 font-body">
+              Follow these steps to post your task
+            </p>
+          </div>
 
-      {/* Enhanced Progress Indicator */}
-      <div className="mb-8">
-        <ProgressIndicator
-          steps={progressSteps}
-          currentStep={currentStep}
-          onStepClick={handleStepClick}
-          className="mb-6"
-        />
-      </div>
-      
-      {/* Step Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentStep}
-          initial={{ x: 20, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: -20, opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="step-content"
-        >
-          {React.createElement(steps[currentStep].component, {
-            data: taskData,
-            onUpdate: updateTaskData,
-            onNext: nextStep,
-            onBack: prevStep
-          })}
-        </motion.div>
-      </AnimatePresence>
+          {/* Steps Sidebar */}
+          <div className="p-6">
+            <div className="space-y-4">
+              {steps.map((step, index) => {
+                const isCompleted = validateStep(index, taskData) && index < currentStep;
+                const isActive = index === currentStep;
+                const isAccessible = isStepAccessible(index);
 
-      {/* Enhanced Navigation */}
-      <div className="flex items-center justify-between mt-8 pt-6 border-t border-neutral-200">
-        <Button
-          variant="ghost"
-          onClick={currentStep === 0 ? onCancel : prevStep}
-          className="text-neutral-600 hover:text-neutral-800 font-body"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          {currentStep === 0 ? 'Cancel' : 'Previous'}
-        </Button>
+                return (
+                  <div
+                    key={step.id}
+                    className={cn(
+                      "flex items-start space-x-3 p-3 rounded-lg transition-all duration-200 cursor-pointer",
+                      isActive && "bg-primary-50 border border-primary-200",
+                      isCompleted && !isActive && "bg-green-50 border border-green-200 hover:bg-green-100",
+                      !isActive && !isCompleted && !isAccessible && "opacity-50 cursor-not-allowed",
+                      !isActive && !isCompleted && isAccessible && "hover:bg-neutral-50"
+                    )}
+                    onClick={() => isAccessible && handleStepClick(index)}
+                  >
+                    {/* Step Number/Icon */}
+                    <div className={cn(
+                      "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold",
+                      isCompleted && "bg-green-500 text-white",
+                      isActive && "bg-primary-600 text-white",
+                      !isActive && !isCompleted && "bg-neutral-200 text-neutral-600"
+                    )}>
+                      {isCompleted ? (
+                        <CheckCircle className="w-4 h-4" />
+                      ) : (
+                        index + 1
+                      )}
+                    </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-neutral-500 font-body">
-            Step {currentStep + 1} of {steps.length}
-          </span>
+                    {/* Step Content */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className={cn(
+                        "text-sm font-semibold font-heading",
+                        isActive && "text-primary-900",
+                        isCompleted && "text-green-900",
+                        !isActive && !isCompleted && "text-neutral-600"
+                      )}>
+                        {step.title}
+                      </h3>
+                      <p className={cn(
+                        "text-xs font-body mt-1",
+                        isActive && "text-primary-700",
+                        isCompleted && "text-green-700",
+                        !isActive && !isCompleted && "text-neutral-500"
+                      )}>
+                        {step.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
 
-          <Button
-            onClick={currentStep === steps.length - 1 ? () => onComplete?.(taskData) : nextStep}
-            className="bg-primary-900 hover:bg-primary-800 text-white font-heading font-semibold"
-          >
-            {currentStep === steps.length - 1 ? (
-              <>
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Post Task
-              </>
-            ) : (
-              <>
-                Next
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </>
-            )}
-          </Button>
+        {/* Main Content Area */}
+        <div className="flex-1 p-8">
+          <div className="max-w-2xl mx-auto">
+            {/* Step Content */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep}
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="step-content"
+              >
+                {React.createElement(steps[currentStep].component, {
+                  data: taskData,
+                  onUpdate: updateTaskData,
+                  onNext: nextStep,
+                  onBack: prevStep,
+                  ...(currentStep === 3 && { onComplete })
+                })}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>

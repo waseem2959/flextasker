@@ -1,13 +1,19 @@
 /**
  * Utility Functions Index with TypeScript Improvements
- * 
+ *
  * This file provides a central export point for all utility functions
  * with improved TypeScript typing and organization.
+ *
+ * @deprecated Most utilities have been moved to @/lib/utils for better organization.
+ * Use specific imports from @/lib/utils, @/lib/validation-utils, etc.
  */
 
+// Re-export commonly used utilities from centralized locations
+export * from '@/lib/utils';
+export * from '@/lib/validation-utils';
+
 // Export authentication utilities from consolidated auth module
-// Note: We're being explicit about exports to avoid naming conflicts
-import {
+export {
     cleanupAuth,
     createLoginCredentials,
     createRegisterData,
@@ -21,26 +27,7 @@ import {
     setupTokenRefresh
 } from '@/services/auth';
 
-export {
-    cleanupAuth,
-    createLoginCredentials,
-    createRegisterData, hasAnyRole, hasRole, initializeAuth, isAdmin, isRegularUser, isTasker, parseJwt,
-    setupTokenRefresh
-};
-
 // Export type utilities from consolidated type adapters file
-    import {
-        ensureDiscriminatedTask,
-        ensureRegularTask,
-        isBidStatus,
-        isDiscriminatedTask,
-        isRegularTask,
-        isUserRole,
-        // Type adapters
-        toDiscriminatedTask,
-        toRegularTask
-    } from './type-adapters';
-
 export {
     ensureDiscriminatedTask,
     ensureRegularTask,
@@ -48,26 +35,53 @@ export {
     isDiscriminatedTask,
     isRegularTask,
     isUserRole,
-    // Type adapters
     toDiscriminatedTask,
     toRegularTask
-};
+} from './type-adapters';
 
-// Export user-related utilities from consolidated module
-    export * from '@/services/user';
+// Export task utilities
+export {
+    formatBudget,
+    formatTaskStatus,
+    getBudgetDisplayText,
+    getStatusColor,
+    getStatusIcon,
+    getTaskStatusDisplayText,
+    isTaskCompleted,
+    isTaskInProgress,
+    isTaskOpen
+} from './task-utils';
+
+// Export UI utilities
+export {
+    getResponsiveImageSrc,
+    getResponsiveImageSrcSet
+} from './ui-utils';
+
+// Export security utilities
+export {
+    sanitizeHtml,
+    validateCSRFToken
+} from './security';
+
+// Export SEO utilities
+export {
+    generateMetaTags,
+    generateStructuredData
+} from './seo';
+
+// Export accessibility utilities
+export {
+    announceToScreenReader,
+    focusElement,
+    getAccessibleName,
+    trapFocus
+} from './accessibility';
 
 // Export error handling utilities
-// Error utils removed for simplicity
-
-// Export validation utilities
-export * from '@/services/validation';
-
-// Export date and time utilities
-export * from '@/services/date';
-
-// Export offline queue module
-export * from '@/services/offline';
-
-// Export UI utilities from lib
-export { cn, formatCurrency, truncateText, uiUtils } from '@/lib';
+export {
+    createErrorBoundary,
+    handleAsyncError,
+    logError
+} from './error-handler';
 

@@ -1,7 +1,8 @@
-import React from 'react';
-import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import React from 'react';
+import { Skeleton } from './skeleton';
 
 // Basic spinner component
 interface SpinnerProps {
@@ -27,24 +28,7 @@ export const Spinner: React.FC<SpinnerProps> = ({ size = 'md', className }) => {
   );
 };
 
-// Skeleton component for content placeholders
-interface SkeletonProps {
-  className?: string;
-  children?: React.ReactNode;
-}
 
-export const Skeleton: React.FC<SkeletonProps> = ({ className, children }) => {
-  return (
-    <div
-      className={cn(
-        'animate-pulse rounded-md bg-surface',
-        className
-      )}
-    >
-      {children}
-    </div>
-  );
-};
 
 // Page loading component
 interface PageLoadingProps {

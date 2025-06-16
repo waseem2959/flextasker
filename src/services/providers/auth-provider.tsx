@@ -8,13 +8,13 @@
  * typically inside the QueryClientProvider.
  */
 
+import { showErrorNotification } from '@/services/error-service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/context-instance';
 import { AuthContextType, LoginCredentials, RegisterData, User, UserRole } from '../../types';
 import { userService } from '../api/user-service';
-import { showErrorNotification } from '../error/error-service';
 import { logger } from '../logging';
 
 /**

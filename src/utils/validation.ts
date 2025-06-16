@@ -6,43 +6,16 @@
 import { BudgetType, TaskPriority, UserRole } from '@/types';
 import { z } from 'zod';
 
-// Email validation regex
-const emailRegex = /^[\w._%+-]+@[\w.-]+\.[a-zA-Z]{2,}$/;
-
-// Password validation - at least 8 chars, 1 uppercase, 1 lowercase, 1 number
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+// Re-export validation functions from centralized validation utils
+export { validateEmail, validatePassword } from '@/lib/validation-utils';
 
 /**
- * Validate if email format is correct
- * @param email - Email to validate
- * @returns Boolean indicating if email is valid
+ * Legacy compatibility function
+ * @deprecated Use validateEmail from @/lib/validation-utils instead
  */
 export const isValidEmail = (email: string): boolean => {
-  return emailRegex.test(email);
-};
-
-/**
- * Validate password strength
- * @param password - Password to validate
- * @returns Object with validation result and message
- */
-export const validatePassword = (password: string): { isValid: boolean; message?: string } => {
-  if (!password) {
-    return { isValid: false, message: 'Password is required' };
-  }
-  
-  if (password.length < 8) {
-    return { isValid: false, message: 'Password must be at least 8 characters' };
-  }
-  
-  if (!passwordRegex.test(password)) {
-    return { 
-      isValid: false, 
-      message: 'Password must include at least one uppercase letter, one lowercase letter, and one number' 
-    };
-  }
-  
-  return { isValid: true };
+  const { validateEmail } = require('@/lib/validation-utils');
+  return validateEmail(email).isValid;
 };
 
 /**
@@ -162,8 +135,10 @@ export const createTaskSchema = z.object({
     amount: z.number()
       .min(5, { message: 'Budget must be at least $5' })
       .max(10000, { message: 'Budget cannot exceed $10,000' }),
-    type: z.nativeEnum(BudgetType)
-  }),
+    type: z.nativeEnum(BudgetType),
+    negotiable: z.boolean().optional()
+  }).optional(),
+
   location: z.object({
     isRemote: z.boolean(),
     address: z.string().optional(),
@@ -176,9 +151,9 @@ export const createTaskSchema = z.object({
       lng: z.number().optional(),
     }).optional(),
   }).optional(),
-      dueDate: z.date().optional(),
-    
-  startDate: z.date().optional(),
+
+  dueDate: z.string().optional().or(z.date().optional()),
+  startDate: z.string().optional().or(z.date().optional()),
     
   tags: z.array(z.string()).optional(),
     

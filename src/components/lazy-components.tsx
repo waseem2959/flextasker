@@ -33,7 +33,6 @@ export const LazySettings = lazy(() => import('../pages/settings'));
 
 // === TASK MANAGEMENT (Medium Priority) ===
 export const LazyTaskDetail = lazy(() => import('../pages/task-detail'));
-export const LazyTaskCreate = lazy(() => import('../pages/task-create'));
 export const LazyTaskCreateWizard = lazy(() => import('../pages/task-create-wizard'));
 
 // === MESSAGING & CHAT (Low Priority) ===
@@ -96,12 +95,6 @@ export const ProfilePage = () => (
 export const TaskDetailPage = () => (
   <LazyWrapper>
     <LazyTaskDetail />
-  </LazyWrapper>
-);
-
-export const TaskCreatePage = () => (
-  <LazyWrapper>
-    <LazyTaskCreate />
   </LazyWrapper>
 );
 

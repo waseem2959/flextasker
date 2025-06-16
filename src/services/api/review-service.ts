@@ -5,8 +5,8 @@
  * including creation, retrieval, and analytics.
  */
 
+import errorService from '@/services/error-service';
 import { ApiResponse, PaginatedApiResponse, Review } from '@/types';
-import { errorService } from '../error/error-service';
 import { apiClient } from './api-client';
 
 /**

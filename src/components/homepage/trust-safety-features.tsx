@@ -34,31 +34,43 @@ const trustFeatures: TrustFeature[] = [
   }
 ];
 
+const commonStyles = {
+  section: "py-12 bg-gray-50 sm:py-16 lg:py-20 xl:py-24",
+  container: "px-4 mx-auto sm:px-6 lg:px-8 max-w-7xl",
+  heading: "text-3xl font-normal text-gray-900 sm:text-4xl lg:text-5xl xl:text-6xl",
+  subHeading: "mt-8 text-xl font-normal text-gray-900",
+  paragraph: "mt-8 text-lg font-normal text-gray-600",
+  gradientText: "bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-purple-500",
+  button: "inline-flex items-center px-8 py-4 text-base font-semibold bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200",
+  buttonText: "text-white",
+};
+
 export const TrustSafetyFeatures: React.FC = () => {
   return (
-    <section className="py-20 bg-neutral-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className={commonStyles.section}>
+      <div className={commonStyles.container}>
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-neutral-900 font-heading mb-4">
-            Trust and safety features for your protection
+          <h2 className={`${commonStyles.heading} font-heading`}>
+            Trust and safety features for your{' '}
+            <span className={commonStyles.gradientText}>protection</span>
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
           {trustFeatures.map((feature) => (
-            <div key={feature.title} className="text-center p-6">
-              <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <feature.icon className="w-10 h-10 text-primary-600" />
+            <div key={feature.title} className="text-center p-6 rounded-lg bg-white shadow-lg hover:shadow-xl border border-gray-200 hover:border-cyan-500/50 transition-all duration-300">
+              <div className="w-20 h-20 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md border border-cyan-500/20">
+                <feature.icon className="w-10 h-10 text-cyan-600" />
               </div>
-              <h3 className="text-xl font-bold text-neutral-900 font-heading mb-4">
+              <h3 className="text-xl font-bold text-gray-900 font-heading mb-4">
                 {feature.title}
               </h3>
-              <p className="text-neutral-700 font-body leading-relaxed mb-6">
+              <p className="text-gray-600 font-body leading-relaxed mb-6">
                 {feature.description}
               </p>
               <Link
                 to={feature.linkUrl}
-                className="text-primary-600 hover:text-primary-700 font-medium text-sm underline transition-colors"
+                className={`${commonStyles.gradientText} hover:opacity-80 font-medium text-sm underline transition-opacity`}
               >
                 {feature.linkText}
               </Link>
@@ -68,8 +80,8 @@ export const TrustSafetyFeatures: React.FC = () => {
         
         <div className="text-center">
           <Link to="/post-task">
-            <button className="bg-primary-600 hover:bg-primary-700 text-white font-heading font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
-              Post your task for free
+            <button className={commonStyles.button}>
+              <span className={commonStyles.buttonText}>Post your task for free</span>
             </button>
           </Link>
         </div>
