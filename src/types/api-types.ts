@@ -30,8 +30,8 @@ export interface PaginatedApiResponse<T = any> extends BaseApiResponse<T[]> {
 // Re-export enums
 export { BidStatus, BudgetType, TaskPriority, TaskStatus } from '../../shared/types/common/enums';
 
-// Import enums for use in this file
-import { BidStatus, BudgetType, TaskPriority, TaskStatus } from '../../shared/types/common/enums';
+// Import enums for local usage
+import { BidStatus } from '../../shared/types/common/enums';
 
 // All types are now re-exported from shared types above
 
@@ -43,39 +43,10 @@ export interface PaginationParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-// Task-related types - keeping essential ones for backward compatibility
-export interface TaskSearchParams extends PaginationParams {
-  query?: string;
-  category?: string | string[];
-  status?: TaskStatus | TaskStatus[];
-  priority?: TaskPriority;
-  minBudget?: number;
-  maxBudget?: number;
-  location?: string;
-  clientId?: string;
-  taskerId?: string;
-}
+// Task-related types removed - use unified types from @shared/types/task instead
+// Import from '../../../shared/types/task/unified-task-types' for TaskSearchParams, CreateTaskRequest, etc.
 
-// Essential request types for backward compatibility
-export interface CreateTaskRequest {
-  title: string;
-  description: string;
-  category?: string;
-  budget: number;
-  budgetType: BudgetType;
-  location?: string;
-  dueDate?: Date | string;
-}
-
-export interface UpdateTaskRequest {
-  title?: string;
-  description?: string;
-  category?: string;
-  budget?: number;
-  budgetType?: BudgetType;
-  location?: string;
-  status?: TaskStatus;
-}
+// UpdateTaskRequest removed - use TaskUpdateRequest from unified types
 
 // Essential auth types for backward compatibility
 export interface LoginCredentials {

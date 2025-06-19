@@ -48,6 +48,7 @@ export * from './tooltip';
 
 // === DATA DISPLAY COMPONENTS ===
 export * from './avatar';
+export * from './user-avatar';
 export * from './badge';
 export * from './calendar';
 export * from './command';

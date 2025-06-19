@@ -15,7 +15,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 export function useBid(id: string) {
   return useQuery({
     queryKey: ['bid', id],
-    queryFn: () => bidService.getBidById(id),
+    queryFn: () => bidService.getById(id),
     enabled: !!id,
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
@@ -51,7 +51,7 @@ export function useTaskBidStatistics(taskId: string) {
 export function useMyBids(params?: { status?: BidStatus, page?: number, limit?: number }) {
   return useQuery({
     queryKey: ['myBids', params],
-    queryFn: () => bidService.getMyBids(params),
+    queryFn: () => bidService.search(params),
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 }
@@ -63,7 +63,7 @@ export function useMyBids(params?: { status?: BidStatus, page?: number, limit?: 
 export function useSearchBids(params?: BidSearchParams) {
   return useQuery({
     queryKey: ['bids', params],
-    queryFn: () => bidService.getMyBids(params || {}),
+    queryFn: () => bidService.search(params || {}),
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -75,19 +75,20 @@ export function useCreateBid() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (data: CreateBidRequest) => bidService.createBid(data),
+    mutationFn: (data: CreateBidRequest) => bidService.create(data),
     onSuccess: (response) => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['bids'] });
       queryClient.invalidateQueries({ queryKey: ['myBids'] });
       
       // If we know the task ID, also invalidate task bids
-      if (response.data?.taskId) {
+      const bidData = response as any;
+      if (bidData.data?.taskId) {
         queryClient.invalidateQueries({ 
-          queryKey: ['taskBids', response.data.taskId] 
+          queryKey: ['taskBids', bidData.data.taskId] 
         });
         queryClient.invalidateQueries({ 
-          queryKey: ['bidStats', response.data.taskId] 
+          queryKey: ['bidStats', bidData.data.taskId] 
         });
       }
     }
@@ -109,7 +110,7 @@ export function useUpdateBid() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, updates }: UpdateBidParams) => bidService.updateBid(id, updates),
+    mutationFn: ({ id, updates }: UpdateBidParams) => bidService.update(id, updates),
     onSuccess: (response, variables) => {
       // Invalidate specific bid
       queryClient.invalidateQueries({ queryKey: ['bid', variables.id] });
@@ -119,12 +120,13 @@ export function useUpdateBid() {
       queryClient.invalidateQueries({ queryKey: ['myBids'] });
       
       // If we know the task ID, also invalidate task bids
-      if (response.data?.taskId) {
+      const bidData = response as any;
+      if (bidData.data?.taskId) {
         queryClient.invalidateQueries({ 
-          queryKey: ['taskBids', response.data.taskId] 
+          queryKey: ['taskBids', bidData.data.taskId] 
         });
         queryClient.invalidateQueries({ 
-          queryKey: ['bidStats', response.data.taskId] 
+          queryKey: ['bidStats', bidData.data.taskId] 
         });
       }
     }

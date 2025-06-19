@@ -254,3 +254,8 @@ export const VALIDATION = {
     LONG_MAX: 5000,
   },
 } as const;
+
+/**
+ * Re-export task configuration
+ */
+export { TASK_CONFIG } from './task-config';

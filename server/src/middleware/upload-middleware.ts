@@ -10,8 +10,8 @@
 
 import { AppError } from '../utils/error-utils';
 import { Request } from 'express';
-import multer from 'multer';
-import path from 'path';
+import * as multer from 'multer';
+import * as path from 'path';
 
 /**
  * Configure storage for uploaded files

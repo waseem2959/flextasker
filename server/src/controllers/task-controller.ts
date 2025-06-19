@@ -5,18 +5,18 @@
  * It serves as an intermediary between routes and services, improving separation of concerns.
  */
 
-import { taskService } from '@/services/task-service';
-import { logger } from '@/utils/logger';
+import { taskService } from '../services/task-service';
+import { logger } from '../utils/logger';
 import { Request, Response } from 'express';
 import { TaskStatus } from '../../../shared/types/enums';
-import { ErrorType } from '../../../shared/types/errors';
+import { ErrorType } from '../utils/error-utils';
 import { BaseController } from './base-controller';
 
 export class TaskController extends BaseController {
   /**
    * Get all tasks with filtering, pagination, and sorting
    */
-  getTasks = this.asyncHandler(async (req: Request, res: Response) => {
+  getTasks = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { 
       status, 
       categoryId, 
@@ -77,25 +77,25 @@ export class TaskController extends BaseController {
     logger.info('Fetching tasks with filters', { options });
     const tasks = await taskService.getTasks(options);
     
-    return this.sendSuccess(res, tasks, 'Tasks retrieved successfully');
+    this.sendSuccess(res, tasks, 'Tasks retrieved successfully');
   });
 
   /**
    * Get a task by ID
    */
-  getTaskById = this.asyncHandler(async (req: Request, res: Response) => {
+  getTaskById = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const taskId = req.params.id;
     
     logger.info('Fetching task by ID', { taskId });
     const task = await taskService.getTaskById(taskId);
     
-    return this.sendSuccess(res, task, 'Task retrieved successfully');
+    this.sendSuccess(res, task, 'Task retrieved successfully');
   });
 
   /**
    * Create a new task
    */
-  createTask = this.asyncHandler(async (req: Request, res: Response) => {
+  createTask = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const taskData = {
       ...req.body,
@@ -105,13 +105,13 @@ export class TaskController extends BaseController {
     logger.info('Creating new task', { userId });
     const task = await taskService.createTask(taskData);
     
-    return this.sendSuccess(res, task, 'Task created successfully', 201);
+    this.sendSuccess(res, task, 'Task created successfully', 201);
   });
 
   /**
    * Update a task
    */
-  updateTask = this.asyncHandler(async (req: Request, res: Response) => {
+  updateTask = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const taskId = req.params.id;
     const userId = req.user!.id;
     const updateData = req.body;
@@ -119,52 +119,52 @@ export class TaskController extends BaseController {
     logger.info('Updating task', { taskId, userId });
     const task = await taskService.updateTask(taskId, userId, updateData);
     
-    return this.sendSuccess(res, task, 'Task updated successfully');
+    this.sendSuccess(res, task, 'Task updated successfully');
   });
 
   /**
    * Delete a task
    */
-  deleteTask = this.asyncHandler(async (req: Request, res: Response) => {
+  deleteTask = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const taskId = req.params.id;
     const userId = req.user!.id;
     
     logger.info('Deleting task', { taskId, userId });
     const result = await taskService.deleteTask(taskId, userId);
     
-    return this.sendSuccess(res, result, 'Task deleted successfully');
+    this.sendSuccess(res, result, 'Task deleted successfully');
   });
 
   /**
    * Complete a task
    */
-  completeTask = this.asyncHandler(async (req: Request, res: Response) => {
+  completeTask = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const taskId = req.params.id;
     const userId = req.user!.id;
     
     logger.info('Completing task', { taskId, userId });
     const task = await taskService.completeTask(taskId, userId);
     
-    return this.sendSuccess(res, task, 'Task marked as completed');
+    this.sendSuccess(res, task, 'Task marked as completed');
   });
 
   /**
    * Cancel a task
    */
-  cancelTask = this.asyncHandler(async (req: Request, res: Response) => {
+  cancelTask = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const taskId = req.params.id;
     const userId = req.user!.id;
     
     logger.info('Cancelling task', { taskId, userId });
     const task = await taskService.cancelTask(taskId, userId);
     
-    return this.sendSuccess(res, task, 'Task cancelled successfully');
+    this.sendSuccess(res, task, 'Task cancelled successfully');
   });
 
   /**
    * Assign a task to a user
    */
-  assignTask = this.asyncHandler(async (req: Request, res: Response) => {
+  assignTask = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const taskId = req.params.id;
     const userId = req.user!.id;
     const { assignedUserId } = req.body;
@@ -181,12 +181,12 @@ export class TaskController extends BaseController {
     logger.info('Assigning task', { taskId, userId, assignedUserId });
     const task = await taskService.assignTask(taskId, assignedUserId, userId);
     
-    return this.sendSuccess(res, task, 'Task assigned successfully');
+    this.sendSuccess(res, task, 'Task assigned successfully');
   });
   /**
    * Search for tasks
    */
-  searchTasks = this.asyncHandler(async (req: Request, res: Response) => {
+  searchTasks = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const {
       query,
       category,
@@ -234,13 +234,13 @@ export class TaskController extends BaseController {
     logger.info('Searching tasks', { searchParams });
     const tasks = await taskService.searchTasks(searchParams);
     
-    return this.sendSuccess(res, tasks, 'Search results retrieved successfully');
+    this.sendSuccess(res, tasks, 'Search results retrieved successfully');
   });
 
   /**
    * Update task status
    */
-  updateTaskStatus = this.asyncHandler(async (req: Request, res: Response) => {
+  updateTaskStatus = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const taskId = req.params.id;
     const userId = req.user!.id;
     const { status, notes } = req.body;
@@ -248,13 +248,13 @@ export class TaskController extends BaseController {
     logger.info('Updating task status', { taskId, userId, status });
     const task = await taskService.updateTaskStatus(taskId, userId, status, notes);
     
-    return this.sendSuccess(res, task, 'Task status updated successfully');
+    this.sendSuccess(res, task, 'Task status updated successfully');
   });
 
   /**
    * Get my tasks (client view)
    */
-  getMyTasks = this.asyncHandler(async (req: Request, res: Response) => {
+  getMyTasks = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const {
       status,
@@ -288,13 +288,13 @@ export class TaskController extends BaseController {
     logger.info('Fetching user tasks', { userId, options });
     const result = await taskService.getMyTasks(userId, options);
     
-    return this.sendSuccess(res, result, 'Tasks retrieved successfully');
+    this.sendSuccess(res, result, 'Tasks retrieved successfully');
   });
 
   /**
    * Get tasks I'm working on (tasker view)
    */
-  getTasksImWorkingOn = this.asyncHandler(async (req: Request, res: Response) => {
+  getTasksImWorkingOn = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const {
       status,
@@ -328,13 +328,13 @@ export class TaskController extends BaseController {
     logger.info('Fetching assigned tasks', { userId, options });
     const result = await taskService.getTasksImWorkingOn(userId, options);
     
-    return this.sendSuccess(res, result, 'Assigned tasks retrieved successfully');
+    this.sendSuccess(res, result, 'Assigned tasks retrieved successfully');
   });
 
   /**
    * Add task attachment
    */
-  addTaskAttachment = this.asyncHandler(async (req: Request, res: Response) => {
+  addTaskAttachment = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const taskId = req.params.id;
     const userId = req.user!.id;
     const attachmentData = req.body;
@@ -352,13 +352,13 @@ export class TaskController extends BaseController {
     logger.info('Adding task attachment', { taskId, userId, filename: attachmentData.filename });
     const attachment = await taskService.addTaskAttachment(taskId, userId, attachmentData);
     
-    return this.sendSuccess(res, attachment, 'Attachment added successfully', 201);
+    this.sendSuccess(res, attachment, 'Attachment added successfully', 201);
   });
 
   /**
    * Remove task attachment
    */
-  removeTaskAttachment = this.asyncHandler(async (req: Request, res: Response) => {
+  removeTaskAttachment = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const taskId = req.params.id;
     const attachmentId = req.params.attachmentId;
     const userId = req.user!.id;
@@ -366,13 +366,13 @@ export class TaskController extends BaseController {
     logger.info('Removing task attachment', { taskId, attachmentId, userId });
     const result = await taskService.removeTaskAttachment(taskId, attachmentId, userId);
     
-    return this.sendSuccess(res, result, 'Attachment removed successfully');
+    this.sendSuccess(res, result, 'Attachment removed successfully');
   });
 
   /**
    * Get featured tasks
    */
-  getFeaturedTasks = this.asyncHandler(async (req: Request, res: Response) => {
+  getFeaturedTasks = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { limit = '5' } = req.query;
     
     const parsedLimit = parseInt(limit as string, 10);
@@ -390,7 +390,7 @@ export class TaskController extends BaseController {
     logger.info('Fetching featured tasks', { options });
     const tasks = await taskService.getFeaturedTasks(options);
     
-    return this.sendSuccess(res, tasks, 'Featured tasks retrieved successfully');
+    this.sendSuccess(res, tasks, 'Featured tasks retrieved successfully');
   });
 }
 

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TaskPriority, TaskStatus } from '@/shared/types/common/enums';
+import { TaskPriority, TaskStatus } from '../../../shared/types/common/enums';
 import { Task } from '@/types';
 import { Search } from 'lucide-react';
 import { useState } from 'react';

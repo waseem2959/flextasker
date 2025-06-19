@@ -24,6 +24,10 @@ import {
     TimeoutError,
     ValidationError
 } from '../../../shared/types/common/error-types';
+import { CSRFProtection, AuthSecurity } from '../../utils/security';
+import { rateLimiter } from '../security/rate-limiter';
+import { securityMonitor, SecurityEventType } from '../security/security-monitor';
+import { performanceMonitor } from '../monitoring/performance-monitor';
 
 /**
  * Enhanced fetch options that extends the standard RequestInit
@@ -117,6 +121,31 @@ export class ApiClient {
   private createRequest(endpoint: string, options: EnhancedRequestInit = {}): Request {
     const url = new URL(endpoint, this.baseUrl);
     
+    // Check rate limiting before creating request
+    const method = options.method || 'GET';
+    const rateLimitCheck = rateLimiter.isAllowed('api_requests');
+    
+    if (!rateLimitCheck.allowed) {
+      securityMonitor.reportSecurityEvent({
+        type: SecurityEventType.RATE_LIMIT_EXCEEDED,
+        severity: 'medium',
+        details: {
+          endpoint,
+          method,
+          remaining: rateLimitCheck.remaining,
+          retryAfter: rateLimitCheck.retryAfter,
+          message: 'API rate limit exceeded'
+        }
+      });
+      
+      throw new AppError(
+        'Rate limit exceeded. Please try again later.',
+        ErrorType.RATE_LIMIT,
+        'RATE_LIMIT_EXCEEDED',
+        HttpStatusCode.TOO_MANY_REQUESTS
+      );
+    }
+    
     // Merge headers
     const headers = new Headers(this.defaultOptions.headers as HeadersInit);
     
@@ -128,9 +157,40 @@ export class ApiClient {
       });
     }
     
-    // Add auth token if available
-    if (this.authToken) {
-      headers.set('Authorization', `Bearer ${this.authToken}`);
+    // Add auth token if available (prefer current instance token over stored)
+    const currentToken = this.authToken || AuthSecurity.getAuthData()?.token;
+    if (currentToken && !AuthSecurity.isTokenExpired(currentToken)) {
+      headers.set('Authorization', `Bearer ${currentToken}`);
+    } else if (currentToken && AuthSecurity.isTokenExpired(currentToken)) {
+      // Report expired token
+      securityMonitor.reportSecurityEvent({
+        type: SecurityEventType.INVALID_AUTH_TOKEN,
+        severity: 'medium',
+        details: {
+          endpoint,
+          message: 'Expired authentication token detected'
+        }
+      });
+      
+      // Clear expired token
+      AuthSecurity.clearAuthData();
+    }
+    
+    // Add CSRF protection for non-GET requests
+    if (options.method && !['GET', 'HEAD', 'OPTIONS'].includes(options.method.toUpperCase())) {
+      Object.entries(CSRFProtection.getHeaders()).forEach(([key, value]) => {
+        headers.set(key, value);
+      });
+    }
+    
+    // Add security headers
+    headers.set('X-Requested-With', 'XMLHttpRequest');
+    headers.set('X-Client-Version', config.version || '1.0.0');
+    headers.set('X-Timestamp', Date.now().toString());
+    
+    // Validate request body for security threats
+    if (options.body && typeof options.body === 'string') {
+      this.validateRequestSecurity(options.body, endpoint);
     }
     
     // Create request init without our custom properties
@@ -142,6 +202,50 @@ export class ApiClient {
     
     // Create the request
     return new Request(url.toString(), requestInit);
+  }
+
+  /**
+   * Validate request for security threats
+   */
+  private validateRequestSecurity(body: string, endpoint: string): void {
+    // Check for suspicious patterns in request body
+    const suspiciousPatterns = [
+      /<script[^>]*>/i,
+      /javascript:/i,
+      /on\w+\s*=/i,
+      /union\s+select/i,
+      /'\s*or\s*'?\d*'?\s*=\s*'?\d*/i,
+      /\.\.\//,
+      /\$\{.*\}/
+    ];
+
+    suspiciousPatterns.forEach(pattern => {
+      if (pattern.test(body)) {
+        securityMonitor.reportSecurityEvent({
+          type: SecurityEventType.MALICIOUS_PAYLOAD,
+          severity: 'high',
+          details: {
+            endpoint,
+            pattern: pattern.toString(),
+            bodySnippet: body.substring(0, 100),
+            message: 'Suspicious pattern detected in request body'
+          }
+        });
+      }
+    });
+
+    // Check for excessively large payloads
+    if (body.length > 1024 * 1024) { // 1MB
+      securityMonitor.reportSecurityEvent({
+        type: SecurityEventType.SUSPICIOUS_REQUEST,
+        severity: 'medium',
+        details: {
+          endpoint,
+          bodySize: body.length,
+          message: 'Unusually large request payload detected'
+        }
+      });
+    }
   }
   
   /**
@@ -234,8 +338,8 @@ export class ApiClient {
     options: EnhancedRequestInit
   ): Promise<ApiResponse<T>> {
     const endpoint = new URL(request.url).pathname;
-    
-    // Performance monitoring removed for simplicity
+    const method = request.method;
+    const startTime = performance.now();
     
     try {
       // Set up timeout
@@ -252,10 +356,26 @@ export class ApiClient {
         timeoutPromise,
       ]);
       
+      const endTime = performance.now();
+      const responseTime = endTime - startTime;
+      
+      // Track API performance
+      performanceMonitor.trackAPICall(
+        endpoint,
+        method,
+        startTime,
+        endTime,
+        response.status
+      );
+      
+      // Record rate limit request
+      rateLimiter.recordRequest('api_requests', undefined, response.ok);
+      
+      // Validate response security
+      this.validateResponseSecurity(response, endpoint);
+      
       // Parse response data
       const data = await this.parseResponse(response);
-      
-      // Performance tracking removed for simplicity
       
       // Handle successful response
       if (response.ok) {
@@ -272,7 +392,38 @@ export class ApiClient {
       // Handle error response
       const error = this.handleApiError(response, data);
       
-      // Error tracking removed for simplicity
+      // Track failed request
+      performanceMonitor.trackAPICall(
+        endpoint,
+        method,
+        startTime,
+        endTime,
+        response.status,
+        error.message
+      );
+      
+      // Report security events for certain error types
+      if (response.status === HttpStatusCode.UNAUTHORIZED) {
+        securityMonitor.reportSecurityEvent({
+          type: SecurityEventType.INVALID_AUTH_TOKEN,
+          severity: 'medium',
+          details: {
+            endpoint,
+            status: response.status,
+            message: 'Authentication failed'
+          }
+        });
+      } else if (response.status === HttpStatusCode.FORBIDDEN) {
+        securityMonitor.reportSecurityEvent({
+          type: SecurityEventType.PRIVILEGE_ESCALATION,
+          severity: 'high',
+          details: {
+            endpoint,
+            status: response.status,
+            message: 'Access forbidden - possible privilege escalation attempt'
+          }
+        });
+      }
       
       // Return error response
       return {
@@ -284,7 +435,7 @@ export class ApiClient {
         },
       };
     } catch (error) {
-      // Performance tracking removed for simplicity
+      const endTime = performance.now();
       
       // Create appropriate error type
       let apiError: AppError;
@@ -306,7 +457,28 @@ export class ApiClient {
         );
       }
       
-      // Error tracking removed for simplicity
+      // Track failed request
+      performanceMonitor.trackAPICall(
+        endpoint,
+        method,
+        startTime,
+        endTime,
+        0,
+        apiError.message
+      );
+      
+      // Report network security events
+      if (apiError instanceof NetworkError) {
+        securityMonitor.reportSecurityEvent({
+          type: SecurityEventType.SUSPICIOUS_REQUEST,
+          severity: 'medium',
+          details: {
+            endpoint,
+            error: apiError.message,
+            message: 'Network error during API request'
+          }
+        });
+      }
       
       // Return error response
       return {
@@ -316,6 +488,64 @@ export class ApiClient {
           timestamp: new Date().toISOString(),
         },
       };
+    }
+  }
+
+  /**
+   * Validate response for security issues
+   */
+  private validateResponseSecurity(response: Response, endpoint: string): void {
+    // Check for missing security headers
+    const requiredHeaders = [
+      'x-frame-options',
+      'x-content-type-options',
+      'x-xss-protection'
+    ];
+
+    const missingHeaders = requiredHeaders.filter(header => 
+      !response.headers.has(header)
+    );
+
+    if (missingHeaders.length > 0) {
+      securityMonitor.reportSecurityEvent({
+        type: SecurityEventType.SUSPICIOUS_REQUEST,
+        severity: 'low',
+        details: {
+          endpoint,
+          missingHeaders,
+          message: 'Response missing security headers'
+        }
+      });
+    }
+
+    // Check for suspicious redirects
+    if (response.redirected) {
+      const redirectUrl = response.url;
+      if (!redirectUrl.startsWith(this.baseUrl)) {
+        securityMonitor.reportSecurityEvent({
+          type: SecurityEventType.SUSPICIOUS_REQUEST,
+          severity: 'high',
+          details: {
+            endpoint,
+            redirectUrl,
+            message: 'Response redirected to external domain'
+          }
+        });
+      }
+    }
+
+    // Check response time for timing attacks
+    const responseTime = response.headers.get('x-response-time');
+    if (responseTime && parseInt(responseTime) > 10000) { // > 10 seconds
+      securityMonitor.reportSecurityEvent({
+        type: SecurityEventType.SUSPICIOUS_REQUEST,
+        severity: 'medium',
+        details: {
+          endpoint,
+          responseTime,
+          message: 'Unusually slow response time detected'
+        }
+      });
     }
   }
   

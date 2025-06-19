@@ -1,5 +1,5 @@
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 
 /**
  * Encryption utilities for handling passwords and generating secure tokens.

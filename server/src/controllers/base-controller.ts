@@ -8,7 +8,7 @@
  */
 
 import { NextFunction, Request, Response } from 'express';
-import { ErrorType } from '../../../shared/types/errors';
+import { ErrorType } from '../utils/error-utils';
 import {
     extractPaginationParams,
     PaginationParams
@@ -25,8 +25,8 @@ export abstract class BaseController {
    * Handle async route handlers with proper error catching
    * @param fn The async route handler function
    */
-  protected asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) {
-    return async (req: Request, res: Response, next: NextFunction) => {
+  protected asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) {
+    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       try {
         await fn(req, res, next);
       } catch (error) {
@@ -125,8 +125,8 @@ export abstract class BaseController {
     data: any = null, 
     message: string = 'Success', 
     statusCode: number = 200
-  ) {
-    return sendSuccess(res, data, message, statusCode);
+  ): void {
+    sendSuccess(res, data, message, statusCode);
   }
 
   /**
@@ -143,8 +143,8 @@ export abstract class BaseController {
     statusCode: number = 500,
     errorType: ErrorType = ErrorType.SERVER,
     errors?: any
-  ) {
-    return sendError(res, message, statusCode, errorType, errors);
+  ): void {
+    sendError(res, message, statusCode, errorType, errors);
   }
 
   /**

@@ -5,8 +5,9 @@
  * Components are grouped by feature and loading priority.
  */
 
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { Spinner } from './ui/loading-states';
+import { lazyWithRetry } from '../utils/lazy-loading';
 
 // === LOADING WRAPPER ===
 interface LazyWrapperProps {
@@ -21,39 +22,39 @@ const LazyWrapper = ({ children, fallback }: LazyWrapperProps) => (
 );
 
 // === PAGE COMPONENTS (High Priority - Load First) ===
-export const LazyIndex = lazy(() => import('../pages/Index'));
-export const LazyLogin = lazy(() => import('../pages/login'));
-export const LazyRegister = lazy(() => import('../pages/register'));
-export const LazyTasks = lazy(() => import('../pages/tasks'));
+export const LazyIndex = lazyWithRetry(() => import('../pages/Index'), { retries: 3 });
+export const LazyLogin = lazyWithRetry(() => import('../pages/Login'), { retries: 3 });
+export const LazyRegister = lazyWithRetry(() => import('../pages/Register'), { retries: 3 });
+export const LazyTasks = lazyWithRetry(() => import('../pages/Tasks'), { retries: 2 });
 
 // === DASHBOARD COMPONENTS (Medium Priority) ===
-export const LazyDashboard = lazy(() => import('../pages/dashboard'));
-export const LazyProfile = lazy(() => import('../pages/profile'));
-export const LazySettings = lazy(() => import('../pages/settings'));
+export const LazyDashboard = lazyWithRetry(() => import('../pages/Dashboard'), { retries: 2 });
+export const LazyProfile = lazyWithRetry(() => import('../pages/Profile'), { retries: 2 });
+export const LazySettings = lazyWithRetry(() => import('../pages/settings'), { retries: 1 });
 
 // === TASK MANAGEMENT (Medium Priority) ===
-export const LazyTaskDetail = lazy(() => import('../pages/task-detail'));
-export const LazyTaskCreateWizard = lazy(() => import('../pages/task-create-wizard'));
+export const LazyTaskDetail = lazyWithRetry(() => import('../pages/task-detail'), { retries: 2 });
+export const LazyTaskCreateWizard = lazyWithRetry(() => import('../pages/task-create-wizard'), { retries: 2 });
 
 // === MESSAGING & CHAT (Low Priority) ===
-export const LazyChatInterface = lazy(() =>
-  import('../components/chat/chat-interface')
+export const LazyChatInterface = lazyWithRetry(() =>
+  import('../components/chat/chat-interface'), { retries: 1 }
 );
-export const LazyNotifications = lazy(() => import('../pages/notifications'));
+export const LazyNotifications = lazyWithRetry(() => import('../pages/notifications'), { retries: 1 });
 
 // === UTILITY PAGES (Low Priority) ===
-export const LazyAboutUs = lazy(() => import('../pages/about-us'));
-export const LazyContact = lazy(() => import('../pages/contact'));
-export const LazyFAQ = lazy(() => import('../pages/faq'));
-export const LazyHowItWorks = lazy(() => import('../pages/how-it-works'));
-export const LazyPricing = lazy(() => import('../pages/pricing'));
+export const LazyAboutUs = lazyWithRetry(() => import('../pages/about-us'), { retries: 1 });
+export const LazyContact = lazyWithRetry(() => import('../pages/contact'), { retries: 1 });
+export const LazyFAQ = lazyWithRetry(() => import('../pages/faq'), { retries: 1 });
+export const LazyHowItWorks = lazyWithRetry(() => import('../pages/how-it-works'), { retries: 1 });
+export const LazyPricing = lazyWithRetry(() => import('../pages/pricing'), { retries: 1 });
 
 // === ERROR PAGES (Load on Demand) ===
-export const LazyNotFound = lazy(() => import('../pages/not-found'));
+export const LazyNotFound = lazyWithRetry(() => import('../pages/not-found'), { retries: 1 });
 
 // === SPECIALIZED COMPONENTS ===
-export const LazySearchResults = lazy(() => import('../pages/search-results'));
-export const LazyProfilePublic = lazy(() => import('../pages/profile-public'));
+export const LazySearchResults = lazyWithRetry(() => import('../pages/search-results'), { retries: 1 });
+export const LazyProfilePublic = lazyWithRetry(() => import('../pages/profile-public'), { retries: 1 });
 
 // === WRAPPER COMPONENTS WITH CUSTOM LOADING ===
 export const IndexPage = () => (

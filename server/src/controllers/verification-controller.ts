@@ -14,7 +14,7 @@ class VerificationController extends BaseController {
   /**
    * Send email verification to the user's email address
    */
-  sendEmailVerification = this.asyncHandler(async (req: Request, res: Response) => {
+  sendEmailVerification = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
 
     logger.info('Sending email verification', { userId });
@@ -26,7 +26,7 @@ class VerificationController extends BaseController {
   /**
    * Verify user's email with the provided token
    */
-  verifyEmail = this.asyncHandler(async (req: Request, res: Response) => {
+  verifyEmail = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { token } = req.body;
 
     logger.info('Verifying email address with token');
@@ -38,7 +38,7 @@ class VerificationController extends BaseController {
   /**
    * Send verification code to the user's phone number
    */
-  sendPhoneVerificationCode = this.asyncHandler(async (req: Request, res: Response) => {
+  sendPhoneVerificationCode = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const { phone } = req.body;
 
@@ -55,7 +55,7 @@ class VerificationController extends BaseController {
   /**
    * Verify user's phone number with the provided code
    */
-  verifyPhoneCode = this.asyncHandler(async (req: Request, res: Response) => {
+  verifyPhoneCode = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const { code } = req.body;
 
@@ -72,7 +72,7 @@ class VerificationController extends BaseController {
   /**
    * Get the user's current verification status
    */
-  getVerificationStatus = this.asyncHandler(async (req: Request, res: Response) => {
+  getVerificationStatus = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
 
     logger.info('Retrieving verification status', { userId });
@@ -84,7 +84,7 @@ class VerificationController extends BaseController {
   /**
    * Upload identity document for verification
    */
-  uploadIdentityDocument = this.asyncHandler(async (req: Request, res: Response) => {
+  uploadIdentityDocument = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const { documentType = 'ID_DOCUMENT', notes } = req.body;
 
@@ -113,7 +113,7 @@ class VerificationController extends BaseController {
   /**
    * Request manual verification review
    */
-  requestManualVerification = this.asyncHandler(async (req: Request, res: Response) => {
+  requestManualVerification = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const { reason } = req.body;
 

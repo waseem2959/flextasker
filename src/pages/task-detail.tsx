@@ -1,4 +1,4 @@
-import { Layout } from '@/components/layout/Layout';
+import { Layout } from '../components/layout/layout';
 import { BidList } from '@/components/task/bid-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +9,12 @@ import { StarRating } from '@/components/ui/star-rating';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth, useCreateBid, useTask } from '@/hooks';
 import { useToast } from '@/hooks/use-toast';
-import { TaskStatus } from '@/types';
+import { TaskStatus, User } from '@/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import { AlertCircle, ArrowLeft, Calendar, CheckCircle, Clock, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { SEO } from '../utils/seo';
 
 
 // Add missing type for Bid
@@ -278,15 +279,17 @@ const TaskDetail = () => {
   
   // Format task data for display
   const taskBudget = typeof budget === 'number' ? `$${budget}` : 'Negotiable';
-  const taskLocation = location ?? 'Not specified';
+  const taskLocation = location || 'Not specified';
   
   // Format deadline for display if it exists
   const formattedDeadline = deadline ? format(new Date(deadline), 'MMM d, yyyy') : 'No deadline';
   
   // Check task and user related statuses
-  const isTaskOwner = (user as any)?.id === (owner as any).id;
-  const userBid = taskBids.find((bid) => (bid.worker as any)?.id === (user as any)?.id);
-  const isOpenForBidding = status === TaskStatus.OPEN && (user as any)?.id !== (owner as any).id;
+  const userWithId = user as User & { id: string };
+  const ownerWithId = owner as typeof owner & { id: string };
+  const isTaskOwner = userWithId?.id === ownerWithId.id;
+  const userBid = taskBids.find((bid) => bid.worker?.id === userWithId?.id);
+  const isOpenForBidding = status === TaskStatus.OPEN && userWithId?.id !== ownerWithId.id;
 
   // Show error toast with consistent formatting
   const showErrorToast = (title: string, description: string) => {
@@ -368,6 +371,27 @@ const TaskDetail = () => {
 
   return (
     <Layout>
+      <SEO
+        title={task ? `${task.title} | Task Details | Flextasker` : 'Task Details | Flextasker'}
+        description={task ? `${task.description?.slice(0, 160)}...` : 'View task details and submit your bid on Flextasker'}
+        canonicalUrl={`https://flextasker.com/tasks/${id}`}
+        structuredData={task ? {
+          '@context': 'https://schema.org',
+          '@type': 'JobPosting',
+          title: task.title,
+          description: task.description,
+          identifier: task.id,
+          datePosted: task.createdAt,
+          hiringOrganization: {
+            '@type': 'Organization',
+            name: 'Flextasker'
+          },
+          jobLocation: task.location ? {
+            '@type': 'Place',
+            address: location || 'Location not specified'
+          } : undefined
+        } : undefined}
+      />
       <div className="py-8 bg-white min-h-screen font-primary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6">
@@ -472,14 +496,14 @@ const TaskDetail = () => {
                     <Avatar className="h-16 w-16">
                       <AvatarImage 
                         src={owner.avatar ?? undefined} 
-                        alt={`${(owner as any).firstName} ${(owner as any).lastName}`}
+                        alt={`${ownerWithId.firstName || ''} ${ownerWithId.lastName || ''}`}
                       />
                       <AvatarFallback>
-                        {(owner as any).firstName?.[0]}{(owner as any).lastName?.[0]}
+                        {ownerWithId.firstName?.[0] || ''}{ownerWithId.lastName?.[0] || ''}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h4 className="font-medium">{(owner as any).firstName} {(owner as any).lastName}</h4>
+                      <h4 className="font-medium">{ownerWithId.firstName || ''} {ownerWithId.lastName || ''}</h4>
                       <div className="flex items-center mt-1">
                         <StarRating rating={4.8} />
                         <span className="ml-2 text-sm text-gray-500">4.8 (24 reviews)</span>

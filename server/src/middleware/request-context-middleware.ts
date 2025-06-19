@@ -39,7 +39,7 @@ export function requestContext(req: Request, res: Response, next: NextFunction):
     'unknown';
   
   // Add context data to the request object for use in other middleware and route handlers
-  req.context = {
+  (req as any).context = {
     requestId,
     startTime,
     ipAddress,
@@ -50,7 +50,7 @@ export function requestContext(req: Request, res: Response, next: NextFunction):
   
   // Add the request ID as a response header for client-side debugging
   res.setHeader('X-Request-Id', requestId);
-  res.setHeader('X-Correlation-Id', req.context.correlationId);
+  res.setHeader('X-Correlation-Id', (req as any).context.correlationId);
   
   // Continue to the next middleware
   next();
@@ -60,25 +60,25 @@ export function requestContext(req: Request, res: Response, next: NextFunction):
  * Get the request ID from the current request context
  */
 export function getRequestId(req: Request): string {
-  return req.context?.requestId || 'unknown';
+  return (req as any).context?.requestId || 'unknown';
 }
 
 /**
  * Get the full request context object
  */
 export function getRequestContext(req: Request): Record<string, any> {
-  return req.context || {};
+  return (req as any).context || {};
 }
 
 /**
  * Calculate the elapsed time since the request started
  */
 export function getElapsedTime(req: Request): number {
-  if (!req.context?.startTime) {
+  if (!(req as any).context?.startTime) {
     return 0;
   }
   
-  return Date.now() - req.context.startTime;
+  return Date.now() - (req as any).context.startTime;
 }
 
 /**
@@ -89,8 +89,8 @@ export function addToRequestContext(
   key: string, 
   value: any
 ): void {
-  if (req.context) {
-    (req.context as any)[key] = value;
+  if ((req as any).context) {
+    ((req as any).context as any)[key] = value;
   }
 }
 

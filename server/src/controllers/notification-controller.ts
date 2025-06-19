@@ -16,7 +16,7 @@ class NotificationController extends BaseController {
   /**
    * Get user notifications with pagination and filtering
    */
-  getUserNotifications = this.asyncHandler(async (req: Request, res: Response) => {
+  getUserNotifications = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -35,7 +35,7 @@ class NotificationController extends BaseController {
   /**
    * Mark a notification as read
    */
-  markAsRead = this.asyncHandler(async (req: Request, res: Response) => {
+  markAsRead = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const notificationId = req.params.id;
     const userId = req.user!.id;
 
@@ -48,7 +48,7 @@ class NotificationController extends BaseController {
   /**
    * Mark all notifications as read for the current user
    */
-  markAllAsRead = this.asyncHandler(async (req: Request, res: Response) => {
+  markAllAsRead = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
 
     logger.info('Marking all notifications as read', { userId });
@@ -60,7 +60,7 @@ class NotificationController extends BaseController {
   /**
    * Update notification preferences
    */
-  updatePreferences = this.asyncHandler(async (req: Request, res: Response) => {
+  updatePreferences = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const preferences = req.body;
 
@@ -73,7 +73,7 @@ class NotificationController extends BaseController {
   /**
    * Get unread notification count
    */
-  getUnreadCount = this.asyncHandler(async (req: Request, res: Response) => {
+  getUnreadCount = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
 
     logger.info('Getting unread notification count', { userId });
@@ -90,7 +90,7 @@ class NotificationController extends BaseController {
   /**
    * Delete a notification
    */
-  deleteNotification = this.asyncHandler(async (req: Request, res: Response) => {
+  deleteNotification = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const notificationId = req.params.id;
     const userId = req.user!.id;
 

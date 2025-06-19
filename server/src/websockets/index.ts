@@ -18,7 +18,7 @@ export { registerTaskHandlers } from './handlers/task-handlers';
 
 // Export utility to create WebSocket events in other parts of the application
 import { getSocketManager } from './init';
-import { NotificationType, BidStatus } from '../../../shared/types/enums';
+import { NotificationType, BidStatus } from '../../../shared/types/common/enums';
 
 /**
  * Utility functions to emit WebSocket events from anywhere in the application

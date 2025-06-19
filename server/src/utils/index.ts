@@ -53,7 +53,7 @@ export * from './api-versioning';
 export { ApiErrorResponse, ApiResponse, ApiSuccessResponse, ErrorDetail, PaginationInfo, createPagination, sendConflictError, sendError, sendForbiddenError, sendNotFoundError, sendPaginatedSuccess, sendSuccess, sendUnauthorizedError, sendValidationError } from './response-utils';
 
 // Validation utilities
-export { AuthSchemas, BidSchemas, CategorySchemas, HealthCheckSchemas, MessageSchemas, NotificationSchemas, PaymentSchemas, ReviewSchemas, TaskSchemas, UserSchemas, ValidationSchemas, composeValidators, formatZodErrors, initializeValidation, isValidEmail, sanitizeObject, validatePasswordStrength, validateWithZod } from './validation-utils';
+export { AuthSchemas, BidSchemas, CategorySchemas, HealthCheckSchemas, MessageSchemas, NotificationSchemas, PaymentSchemas, ReviewSchemas, TaskSchemas, UserSchemas, ValidationSchemas, composeValidators, formatZodErrors, initializeValidation, sanitizeObject, validatePasswordStrength, validateWithZod } from './validation-utils';
 
 // Audit trail utilities
 export {

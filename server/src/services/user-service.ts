@@ -6,7 +6,7 @@
 
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { TaskStatus, UserRole } from '../../../shared/types/enums';
+import { TaskStatus, UserRole } from '../../../shared/types/common/enums';
 import { DatabaseQueryBuilder, models } from '../utils/database-query-builder';
 import { AuthenticationError, NotFoundError, ValidationError } from '../utils/error-utils';
 import { logger } from '../utils/logger';

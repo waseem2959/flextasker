@@ -8,7 +8,7 @@
  * - Marketing messages
  */
 
-import { logger } from '@/utils/logger';
+import { logger } from '../utils/logger';
 import { Twilio } from 'twilio';
 
 // Type definitions for better type safety and code documentation

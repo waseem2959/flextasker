@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from '@/hooks/use-auth';
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Layout } from "../components/layout/Layout";
+import { Layout } from "../components/layout/layout";
 import { UserRole } from "../types";
 
 const Register = () => {

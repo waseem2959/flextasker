@@ -33,6 +33,7 @@ export interface BaseUser {
   isActive: boolean;
   isSuspended: boolean;
   profilePictureUrl?: string;
+  avatar?: string;
 }
 
 /**

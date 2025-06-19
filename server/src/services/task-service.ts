@@ -5,16 +5,16 @@
  */
 
 import { TaskPriority, TaskStatus } from '../../../shared/types/enums';
-import { DatabaseQueryBuilder, models } from '../utils/database-query-builder';
-import { AuthorizationError, NotFoundError, ValidationError } from '../utils/error-utils';
-import { logger } from '../utils/logger';
+import { models } from '../utils/database-query-builder';
+import { AuthorizationError } from '../utils/error-utils';
+import { BaseService, BaseServiceError } from './base-service';
 
 /**
  * Error class for task-specific errors
  */
-export class TaskError extends Error {
-  constructor(message: string, public code?: string) {
-    super(message);
+export class TaskError extends BaseServiceError {
+  constructor(message: string, code?: string) {
+    super(message, code, 'TaskService');
     this.name = 'TaskError';
   }
 }
@@ -22,44 +22,88 @@ export class TaskError extends Error {
 /**
  * Task Service class that provides all task-related functionality
  */
-export class TaskService {
+export class TaskService extends BaseService {
+  constructor() {
+    super('TaskService');
+  }
   /**
    * Create a new task
    */
   async createTask(taskData: any): Promise<any> {
-    // Validate required fields
-    if (!taskData.title || !taskData.description || !taskData.userId) {
-      throw new ValidationError('Title, description, and userId are required');
-    }
+    // Use BaseService validation
+    this.validateRequired(taskData, ['title', 'description', 'userId']);
+    
+    // Additional task-specific validation
+    this.validateFields(taskData, {
+      title: BaseService.validators.nonEmptyString,
+      description: BaseService.validators.nonEmptyString,
+      budget: (value) => value === undefined || BaseService.validators.positiveNumber(value)
+    }, {
+      title: 'Task title must be a non-empty string',
+      description: 'Task description must be a non-empty string',
+      budget: 'Budget must be a positive number'
+    });
 
-    try {
-      // DatabaseQueryBuilder is now imported at the top
+    const taskCreateData = {
+      title: taskData.title,
+      description: taskData.description,
+      ownerId: taskData.userId,
+      priority: taskData.priority ?? TaskPriority.MEDIUM,
+      location: taskData.location,
+      budget: taskData.budget,
+      budgetType: taskData.budgetType,
+      categoryId: taskData.category,
+      deadline: taskData.dueDate ? new Date(taskData.dueDate) : null,
+      status: TaskStatus.OPEN
+    };
 
-      const task = await DatabaseQueryBuilder.create(
-        models.task,
-        {
-          title: taskData.title,
-          description: taskData.description,
-          ownerId: taskData.userId,
-          priority: taskData.priority ?? 'NORMAL',
-          location: taskData.location,
-          budget: taskData.budget,
-          budgetType: taskData.budgetType,
-          categoryId: taskData.category,
-          deadline: taskData.dueDate ? new Date(taskData.dueDate) : null,
-          status: TaskStatus.OPEN
-        },
-        'Task',
-        {
+    return await this.create(models.task, taskCreateData, ['title', 'description', 'ownerId']);
+  }
+
+  /**
+   * Get a task by its ID
+   */
+  async getTaskById(taskId: string): Promise<any> {
+    this.validateFields({ taskId }, {
+      taskId: BaseService.validators.uuid
+    }, {
+      taskId: 'Task ID must be a valid UUID'
+    });
+
+    const taskSelect = {
+      id: true,
+      title: true,
+      description: true,
+      budget: true,
+      budgetType: true,
+      status: true,
+      priority: true,
+      location: true,
+      deadline: true,
+      createdAt: true,
+      owner: {
+        select: {
           id: true,
-          title: true,
-          description: true,
-          budget: true,
-          status: true,
-          location: true,
-          createdAt: true,
-          deadline: true,
-          owner: {
+          firstName: true,
+          lastName: true,
+          email: true,
+          profileImage: true,
+          averageRating: true
+        }
+      },
+      assignee: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          profileImage: true,
+          averageRating: true
+        }
+      },
+      bids: {
+        include: {
+          bidder: {
             select: {
               id: true,
               firstName: true,
@@ -69,78 +113,16 @@ export class TaskService {
             }
           }
         }
-      );
-
-      logger.info('Task created', { taskId: (task as any).id });
-      return task;
-    } catch (error) {
-      logger.error('Error creating task', { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Get a task by its ID
-   */
-  async getTaskById(taskId: string): Promise<any> {
-    // DatabaseQueryBuilder is now imported at the top
-
-    return await DatabaseQueryBuilder.findById(
-      models.task,
-      taskId,
-      'Task',
-      {
-        id: true,
-        title: true,
-        description: true,
-        budget: true,
-        budgetType: true,
-        status: true,
-        priority: true,
-        location: true,
-        deadline: true,
-        createdAt: true,
-        owner: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            profileImage: true,
-            averageRating: true
-          }
-        },
-        assignee: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            profileImage: true,
-            averageRating: true
-          }
-        },
-        bids: {
-          include: {
-            bidder: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                profileImage: true,
-                averageRating: true
-              }
-            }
-          }
-        }
       }
-    );
+    };
+
+    return await this.findById(models.task, taskId, taskSelect);
   }
 
   /**
    * Get all tasks with filtering options
    */
-  async getTasks(options: any = {}): Promise<any[]> {
+  async getTasks(options: any = {}): Promise<any> {
     const {
       status,
       userId,
@@ -157,9 +139,9 @@ export class TaskService {
     const where: any = {};
     
     if (status) where.status = status;
-    if (userId) where.userId = userId;
-    if (assignedUserId) where.assignedUserId = assignedUserId;
-    if (category) where.category = category;
+    if (userId) where.ownerId = userId;
+    if (assignedUserId) where.assigneeId = assignedUserId;
+    if (category) where.categoryId = category;
     
     // Add search functionality
     if (search) {
@@ -169,122 +151,109 @@ export class TaskService {
       ];
     }
 
-    // Execute the query with pagination
-    const { items: tasks } = await DatabaseQueryBuilder.findMany(
-      models.task,
-      {
-        where,
+    const select = {
+      id: true,
+      title: true,
+      description: true,
+      budget: true,
+      status: true,
+      location: true,
+      createdAt: true,
+      owner: {
         select: {
           id: true,
-          title: true,
-          description: true,
-          budget: true,
-          status: true,
-          location: true,
-          createdAt: true,
-          owner: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              profileImage: true,
-              averageRating: true
-            }
-          },
-          assignee: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              profileImage: true,
-              averageRating: true
-            }
-          },
-          _count: {
-            select: { bids: true }
-          }
-        },
-        orderBy: { [sortBy]: sortOrder },
-        pagination: { page, skip: (page - 1) * limit, limit }
+          firstName: true,
+          lastName: true,
+          profileImage: true,
+          averageRating: true
+        }
       },
-      'Task'
-    );
+      assignee: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          profileImage: true,
+          averageRating: true
+        }
+      },
+      _count: {
+        select: { bids: true }
+      }
+    };
 
-    return tasks;
+    const orderBy = { [sortBy]: sortOrder };
+    const pagination = { page, limit };
+
+    return await this.findMany(models.task, {
+      where,
+      select,
+      orderBy,
+      pagination
+    });
   }
 
   /**
    * Update a task
    */
   async updateTask(taskId: string, userId: string, updateData: any): Promise<any> {
-    // Get the current task
-    const task = await DatabaseQueryBuilder.findById(
-      models.task,
-      taskId,
-      'Task',
-      { id: true, ownerId: true, status: true }
-    );
+    // Validate inputs
+    this.validateFields({ taskId, userId }, {
+      taskId: BaseService.validators.uuid,
+      userId: BaseService.validators.uuid
+    });
 
-    if (!task) {
-      throw new NotFoundError('Task not found');
-    }
+    // Get the current task
+    const task = await this.findById(models.task, taskId, { id: true, ownerId: true, status: true });
 
     // Check if user is authorized to update the task
-    if ((task as any).ownerId !== userId) {
+    if (task.ownerId !== userId) {
       throw new AuthorizationError('Only the task owner can update the task');
     }
 
     // Check if task can be updated
-    if ((task as any).status !== TaskStatus.OPEN) {
-      throw new ValidationError('Only open tasks can be updated');
+    if (task.status !== TaskStatus.OPEN) {
+      throw this.createError('Only open tasks can be updated', 'TASK_NOT_EDITABLE');
     }
 
-    // Update the task
-    const updatedTask = await DatabaseQueryBuilder.update(
-      models.task,
-      taskId,
-      {
-        title: updateData.title,
-        description: updateData.description,
-        budget: updateData.budget,
-        budgetType: updateData.budgetType,
-        category: updateData.category,
-        location: updateData.location,
-        deadline: updateData.dueDate ? new Date(updateData.dueDate) : undefined
-      },
-      'Task'
-    );
+    // Prepare update data
+    const taskUpdateData: any = {};
+    if (updateData.title) taskUpdateData.title = updateData.title;
+    if (updateData.description) taskUpdateData.description = updateData.description;
+    if (updateData.budget !== undefined) taskUpdateData.budget = updateData.budget;
+    if (updateData.budgetType) taskUpdateData.budgetType = updateData.budgetType;
+    if (updateData.category) taskUpdateData.categoryId = updateData.category;
+    if (updateData.location) taskUpdateData.location = updateData.location;
+    if (updateData.dueDate) taskUpdateData.deadline = new Date(updateData.dueDate);
 
-    logger.info('Task updated', { taskId });
-    return updatedTask;
+    return await this.updateById(models.task, taskId, taskUpdateData);
   }
 
   /**
    * Delete a task
    */
   async deleteTask(taskId: string, userId: string): Promise<any> {
-    // DatabaseQueryBuilder is now imported at the top
+    // Validate inputs
+    this.validateFields({ taskId, userId }, {
+      taskId: BaseService.validators.uuid,
+      userId: BaseService.validators.uuid
+    });
 
     // Get the current task to check authorization
-    const task = await DatabaseQueryBuilder.findById(
-      models.task,
-      taskId,
-      'Task',
-      { id: true, ownerId: true, status: true }
-    );
+    const task = await this.findById(models.task, taskId, { id: true, ownerId: true, status: true });
 
     // Check if user is authorized to delete the task
-    if ((task as any).ownerId !== userId) {
+    if (task.ownerId !== userId) {
       throw new AuthorizationError('Only the task owner can delete the task');
     }
 
     // Check if task can be deleted
-    if ((task as any).status !== TaskStatus.OPEN) {
-      throw new ValidationError('Only open tasks can be deleted');
+    if (task.status !== TaskStatus.OPEN) {
+      throw this.createError('Only open tasks can be deleted', 'TASK_NOT_DELETABLE');
     }
 
     // Delete the task
-    await DatabaseQueryBuilder.delete(models.task, taskId, 'Task');
+    await this.deleteById(models.task, taskId);
 
     return { success: true, message: 'Task deleted successfully' };
   }
@@ -293,86 +262,64 @@ export class TaskService {
    * Complete a task
    */
   async completeTask(taskId: string, userId: string): Promise<any> {
-    // Get the current task
-    const task = await DatabaseQueryBuilder.findById(
-      models.task,
-      taskId,
-      'Task',
-      { id: true, ownerId: true, status: true, assigneeId: true }
-    );
+    // Validate inputs
+    this.validateFields({ taskId, userId }, {
+      taskId: BaseService.validators.uuid,
+      userId: BaseService.validators.uuid
+    });
 
-    if (!task) {
-      throw new NotFoundError('Task not found');
-    }
+    // Get the current task
+    const task = await this.findById(models.task, taskId, { id: true, ownerId: true, status: true, assigneeId: true });
 
     // Check if user is authorized to complete the task
-    if ((task as any).ownerId !== userId) {
+    if (task.ownerId !== userId) {
       throw new AuthorizationError('Only the task owner can mark a task as completed');
     }
 
     // Check if task can be completed
-    if ((task as any).status !== TaskStatus.IN_PROGRESS) {
-      throw new ValidationError('Only in-progress tasks can be marked as completed');
+    if (task.status !== TaskStatus.IN_PROGRESS) {
+      throw this.createError('Only in-progress tasks can be marked as completed', 'INVALID_TASK_STATUS');
     }
 
-    if (!(task as any).assigneeId) {
-      throw new ValidationError('Task must be assigned to a user before it can be completed');
+    if (!task.assigneeId) {
+      throw this.createError('Task must be assigned to a user before it can be completed', 'TASK_NOT_ASSIGNED');
     }
 
     // Update the task
-    const updatedTask = await DatabaseQueryBuilder.update(
-      models.task,
-      taskId,
-      {
-        status: TaskStatus.COMPLETED,
-        completedAt: new Date()
-      },
-      'Task'
-    );
-
-    logger.info('Task completed', { taskId });
-    return updatedTask;
+    return await this.updateById(models.task, taskId, {
+      status: TaskStatus.COMPLETED,
+      completedAt: new Date()
+    });
   }
 
   /**
    * Cancel a task
    */
   async cancelTask(taskId: string, userId: string): Promise<any> {
-    // Get the current task
-    const task = await DatabaseQueryBuilder.findById(
-      models.task,
-      taskId,
-      'Task',
-      { id: true, ownerId: true, status: true }
-    );
+    // Validate inputs
+    this.validateFields({ taskId, userId }, {
+      taskId: BaseService.validators.uuid,
+      userId: BaseService.validators.uuid
+    });
 
-    if (!task) {
-      throw new NotFoundError('Task not found');
-    }
+    // Get the current task
+    const task = await this.findById(models.task, taskId, { id: true, ownerId: true, status: true });
 
     // Check if user is authorized to cancel the task
-    if ((task as any).ownerId !== userId) {
+    if (task.ownerId !== userId) {
       throw new AuthorizationError('Only the task owner can cancel a task');
     }
 
     // Check if task can be cancelled
-    if (![TaskStatus.OPEN, TaskStatus.IN_PROGRESS].includes((task as any).status as TaskStatus)) {
-      throw new ValidationError('Only open or in-progress tasks can be cancelled');
+    if (![TaskStatus.OPEN, TaskStatus.IN_PROGRESS].includes(task.status as TaskStatus)) {
+      throw this.createError('Only open or in-progress tasks can be cancelled', 'INVALID_TASK_STATUS');
     }
 
     // Update the task
-    const updatedTask = await DatabaseQueryBuilder.update(
-      models.task,
-      taskId,
-      {
-        status: TaskStatus.CANCELLED,
-        cancelledAt: new Date()
-      },
-      'Task'
-    );
-
-    logger.info('Task cancelled', { taskId });
-    return updatedTask;
+    return await this.updateById(models.task, taskId, {
+      status: TaskStatus.CANCELLED,
+      cancelledAt: new Date()
+    });
   }
 
   /**

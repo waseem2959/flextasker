@@ -22,24 +22,20 @@
     "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "baseUrl": "./src",
+    "baseUrl": "./",
     "paths": {
-      "@/*": ["*"],
-      "@/controllers/*": ["controllers/*"],
-      "@/middleware/*": ["middleware/*"],
-      "@/services/*": ["services/*"],
-      "@/utils/*": ["utils/*"],
-      "@/types/*": ["types/*"],
-      "@/routes/*": ["routes/*"]
+      "@/*": ["src/*"],
+      "@/controllers/*": ["src/controllers/*"],
+      "@/middleware/*": ["src/middleware/*"],
+      "@/services/*": ["src/services/*"],
+      "@/utils/*": ["src/utils/*"],
+      "@/types/*": ["src/types/*"],
+      "@/routes/*": ["src/routes/*"],
+      "@shared/*": ["../shared/*"]
     },
     "typeRoots": [
       "./node_modules/@types",
       "./src/types"
-    ],
-    "types": [
-      "node",
-      "express",
-      "jest"
     ]
   },
   "include": [
@@ -52,7 +48,8 @@
     "node_modules",
     "dist",
     "**/*.test.ts",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "src/__tests__/**/*"
   ],
   
   "ts-node": {

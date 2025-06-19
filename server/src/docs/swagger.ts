@@ -6,7 +6,7 @@
  * and authentication requirements.
  */
 
-import swaggerJSDoc from 'swagger-jsdoc';
+import * as swaggerJSDoc from 'swagger-jsdoc';
 import { version } from '../../package.json';
 
 // Swagger definition
@@ -355,6 +355,6 @@ const options = {
 };
 
 // Initialize swagger-jsdoc
-const swaggerSpec = swaggerJSDoc(options);
+const swaggerSpec = swaggerJSDoc.default(options);
 
 export default swaggerSpec;

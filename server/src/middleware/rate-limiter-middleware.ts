@@ -6,7 +6,7 @@
  * can make within a specific time window.
  */
 
-import rateLimit from 'express-rate-limit';
+import * as rateLimit from 'express-rate-limit';
 
 /**
  * General rate limiter for most endpoints
@@ -15,7 +15,7 @@ import rateLimit from 'express-rate-limit';
  * within a specified time window. Configuration is loaded from environment
  * variables with sensible defaults.
  */
-export const rateLimiter = rateLimit({
+export const rateLimiter = rateLimit.default({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? '900000'), // 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? '100'), // 100 requests per window
   
@@ -40,7 +40,7 @@ export const rateLimiter = rateLimit({
   // Custom key generator (by default uses IP address)
   keyGenerator: (req) => {
     // If user is authenticated, use their user ID, otherwise use IP
-    const key = req.user?.id ?? req.ip;
+    const key = (req.user as any)?.id ?? req.ip;
     if (!key) {
       throw new Error('Unable to generate key');
     }
@@ -54,7 +54,7 @@ export const rateLimiter = rateLimit({
  * This provides enhanced protection for sensitive endpoints like login,
  * registration, and password reset to prevent brute force attacks.
  */
-export const authRateLimiter = rateLimit({
+export const authRateLimiter = rateLimit.default({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // Only 5 attempts per window
   
@@ -82,7 +82,7 @@ export const authRateLimiter = rateLimit({
  * This provides a balanced approach for API endpoints that need
  * more requests than auth endpoints but still require protection.
  */
-export const apiRateLimiter = rateLimit({
+export const apiRateLimiter = rateLimit.default({
   windowMs: 60 * 1000, // 1 minute
   max: 30, // 30 requests per minute
   

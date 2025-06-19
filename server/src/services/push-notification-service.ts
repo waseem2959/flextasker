@@ -404,8 +404,8 @@ export class PushNotificationService {
     
     const errorMessage = error.message ?? error.toString();
     return (
-      errorMessage.includes('registration-token-not-registered') ??
-      errorMessage.includes('invalid-registration-token') ??
+      errorMessage.includes('registration-token-not-registered') ||
+      errorMessage.includes('invalid-registration-token') ||
       errorMessage.includes('invalid-argument')
     );
   }

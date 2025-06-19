@@ -5,7 +5,7 @@
  * needed for the enhanced API client implementation.
  */
 
-import { ErrorType, HttpStatusCode } from './enums';
+import { ErrorType, HttpStatusCode } from '../errors';
 
 /**
  * Standard API response interface

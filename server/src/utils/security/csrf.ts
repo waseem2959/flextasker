@@ -6,7 +6,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { randomBytes } from 'crypto';
+import { generateToken } from '../crypto';
 import { logger } from '../logger';
 import { monitorError } from '../monitoring';
 
@@ -27,10 +27,10 @@ const EXEMPT_ROUTES = [
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 
 /**
- * Generates a random CSRF token
+ * Generates a random CSRF token using centralized crypto utils
  */
 function generateCsrfToken(): string {
-  return randomBytes(CSRF_TOKEN_LENGTH).toString('hex');
+  return generateToken(CSRF_TOKEN_LENGTH);
 }
 
 /**

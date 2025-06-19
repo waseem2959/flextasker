@@ -6,11 +6,11 @@
  * parameter parsing, and response formatting.
  */
 
-import { userService } from '@/services/user-service';
-import { logger } from '@/utils/logger';
+import { userService } from '../services/user-service';
+import { logger } from '../utils/logger';
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { ErrorType } from '../utils';
+import { ErrorType } from '../utils/error-utils';
 import { BaseController } from './base-controller';
 
 // Validation schemas
@@ -39,32 +39,32 @@ export class UserController extends BaseController {
   /**
    * Get a user profile by ID
    */
-  getUserById = this.asyncHandler(async (req: Request, res: Response) => {
+  getUserById = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.params.id;
     
     logger.info('Fetching user profile', { userId });
     const user = await userService.getUserById(userId);
     
-    return this.sendSuccess(res, user, 'User profile retrieved successfully');
+    this.sendSuccess(res, user, 'User profile retrieved successfully');
   });
 
   /**
    * Get current user's profile
    */
-  getMyProfile = this.asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user!.id;
+  getMyProfile = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = (req.user as any)!.id;
     
     logger.info('Fetching own profile', { userId });
     const user = await userService.getUserById(userId);
     
-    return this.sendSuccess(res, user, 'User profile retrieved successfully');
+    this.sendSuccess(res, user, 'User profile retrieved successfully');
   });
 
   /**
    * Update user profile
    */
-  updateUser = this.asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user!.id;
+  updateUser = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = (req.user as any)!.id;
     
     // Validate request body
     const result = updateProfileSchema.safeParse(req.body);
@@ -85,14 +85,14 @@ export class UserController extends BaseController {
     logger.info('Updating user profile', { userId });
     const updatedUser = await userService.updateUser(userId, result.data);
     
-    return this.sendSuccess(res, updatedUser, 'Profile updated successfully');
+    this.sendSuccess(res, updatedUser, 'Profile updated successfully');
   });
 
   /**
    * Update user avatar
    */
-  updateAvatar = this.asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user!.id;
+  updateAvatar = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = (req.user as any)!.id;
     
     // Check if file was uploaded
     if (!req.file) {
@@ -110,14 +110,14 @@ export class UserController extends BaseController {
     logger.info('Updating user avatar', { userId, filename: req.file.filename });
     const updatedUser = await userService.updateAvatar(userId, avatarPath);
     
-    return this.sendSuccess(res, updatedUser, 'Avatar updated successfully');
+    this.sendSuccess(res, updatedUser, 'Avatar updated successfully');
   });
 
   /**
    * Update user password
    */
-  updatePassword = this.asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user!.id;
+  updatePassword = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = (req.user as any)!.id;
     
     // Validate request body
     const result = changePasswordSchema.safeParse(req.body);
@@ -138,25 +138,25 @@ export class UserController extends BaseController {
     logger.info('Changing user password', { userId });
     const updateResult = await userService.updatePassword(userId, result.data.currentPassword, result.data.newPassword);
     
-    return this.sendSuccess(res, updateResult, 'Password changed successfully');
+    this.sendSuccess(res, updateResult, 'Password changed successfully');
   });
 
   /**
    * Delete user account
    */
-  deleteUser = this.asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user!.id;
+  deleteUser = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = (req.user as any)!.id;
     
     logger.info('Deleting user account', { userId });
     const result = await userService.deleteUser(userId);
     
-    return this.sendSuccess(res, result, 'Account deleted successfully');
+    this.sendSuccess(res, result, 'Account deleted successfully');
   });
 
   /**
    * Verify user email
    */
-  verifyEmail = this.asyncHandler(async (req: Request, res: Response) => {
+  verifyEmail = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { token } = req.params;
     
     if (!token) {
@@ -171,13 +171,13 @@ export class UserController extends BaseController {
     logger.info('Verifying user email');
     const result = await userService.verifyEmail(token);
     
-    return this.sendSuccess(res, result, 'Email verified successfully');
+    this.sendSuccess(res, result, 'Email verified successfully');
   });
 
   /**
    * Request password reset
    */
-  requestPasswordReset = this.asyncHandler(async (req: Request, res: Response) => {
+  requestPasswordReset = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { email } = req.body;
     
     if (!email) {
@@ -192,13 +192,13 @@ export class UserController extends BaseController {
     logger.info('Requesting password reset', { email });
     const result = await userService.requestPasswordReset(email);
     
-    return this.sendSuccess(res, result, 'Password reset email sent');
+    this.sendSuccess(res, result, 'Password reset email sent');
   });
 
   /**
    * Reset password with token
    */
-  resetPassword = this.asyncHandler(async (req: Request, res: Response) => {
+  resetPassword = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { token, newPassword } = req.body;
     
     if (!token || !newPassword) {
@@ -213,37 +213,37 @@ export class UserController extends BaseController {
     logger.info('Resetting password with token');
     const result = await userService.resetPassword(token, newPassword);
     
-    return this.sendSuccess(res, result, 'Password has been reset successfully');
+    this.sendSuccess(res, result, 'Password has been reset successfully');
   });
 
   /**
    * Get current user's statistics
    */
-  getMyStats = this.asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user!.id;
+  getMyStats = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = (req.user as any)!.id;
 
     logger.info('Fetching own statistics', { userId });
     const stats = await userService.getUserStats(userId);
 
-    return this.sendSuccess(res, stats, 'User statistics retrieved successfully');
+    this.sendSuccess(res, stats, 'User statistics retrieved successfully');
   });
 
   /**
    * Get user statistics by ID
    */
-  getUserStats = this.asyncHandler(async (req: Request, res: Response) => {
+  getUserStats = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.params.id;
 
     logger.info('Fetching user statistics', { userId });
     const stats = await userService.getUserStats(userId);
 
-    return this.sendSuccess(res, stats, 'User statistics retrieved successfully');
+    this.sendSuccess(res, stats, 'User statistics retrieved successfully');
   });
 
   /**
    * Search users
    */
-  searchUsers = this.asyncHandler(async (req: Request, res: Response) => {
+  searchUsers = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const params = {
       query: req.query.query as string,
       role: req.query.role as string,
@@ -256,7 +256,7 @@ export class UserController extends BaseController {
     logger.info('Searching users', { params });
     const result = await userService.searchUsers(params);
     
-    return this.sendSuccess(res, result, 'Users retrieved successfully');
+    this.sendSuccess(res, result, 'Users retrieved successfully');
   });
 }
 

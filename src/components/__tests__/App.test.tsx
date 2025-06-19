@@ -32,7 +32,7 @@ jest.mock('../../pages/Index', () => {
   };
 });
 
-jest.mock('../../pages/login', () => {
+jest.mock('../../pages/Login', () => {
   return function MockLogin() {
     return <div data-testid="login-page">Login Page</div>;
   };

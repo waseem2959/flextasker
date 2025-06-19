@@ -7,9 +7,6 @@
 
 import { userService } from '@/services/api';
 import {
-  LoginCredentials,
-  RegisterData,
-  // UpdateProfileRequest, // Removed - defined locally in user-service
   UserSearchParams
 } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -38,69 +35,20 @@ export function useUser(id: string) {
 }
 
 /**
- * Hook for user login
- */
-export function useLogin() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (credentials: LoginCredentials) => userService.login(credentials),
-    onSuccess: () => {
-      // Fetch user data after successful login
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-    }
-  });
-}
-
-/**
- * Hook for user registration
- */
-export function useRegister() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (data: RegisterData) => userService.register(data),
-    onSuccess: () => {
-      // Fetch user data after successful registration
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-    }
-  });
-}
-
-/**
- * Hook for user logout
- */
-export function useLogout() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: () => userService.logout(),
-    onSuccess: () => {
-      // Clear user data after logout
-      queryClient.removeQueries({ queryKey: ['currentUser'] });
-      
-      // Clear other user-specific data
-      queryClient.removeQueries({ queryKey: ['myTasks'] });
-      queryClient.removeQueries({ queryKey: ['myBids'] });
-    }
-  });
-}
-
-/**
  * Hook for updating the user profile
  */
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (data: any) => userService.updateProfile(data),
+    mutationFn: (data: Record<string, unknown>) => userService.updateProfile(data),
     onSuccess: (response) => {
       // Update user data after profile update
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       
       // If user ID is available, update specific user queries
-      if ((response.data as any)?.id) {
-        queryClient.invalidateQueries({ queryKey: ['user', (response.data as any).id] });
+      if (response.data && typeof response.data === 'object' && 'id' in response.data) {
+        queryClient.invalidateQueries({ queryKey: ['user', response.data.id] });
       }
     }
   });

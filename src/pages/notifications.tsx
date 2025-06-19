@@ -5,8 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDate } from '@/lib/utils';
 import { AlertCircle, Bell, Briefcase, Clock, MessageCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-// Removed unused main layout
-// Import the formatShortRelativeTime function from the date service
+import { Layout } from '../components/layout/layout';
+import { SEO } from '../utils/seo';
 
 type NotificationType = 'message' | 'task' | 'bid' | 'alert' | 'system';
 
@@ -203,53 +203,61 @@ const Notifications = () => {
   };
   
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-[hsl(206,33%,16%)]">Notifications</h1>
+    <Layout>
+      <SEO
+        title="Notifications | Stay Updated | Flextasker"
+        description="View and manage your notifications for messages, tasks, bids, and system updates on Flextasker."
+        canonicalUrl="https://flextasker.com/notifications"
+      />
+      <div className="min-h-screen bg-neutral-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-[hsl(206,33%,16%)]">Notifications</h1>
+            
+            {unreadCount > 0 && (
+              <Button 
+                variant="outline" 
+                className="border-[hsl(215,16%,80%)]"
+                onClick={markAllAsRead}
+                disabled={false}
+              >
+'Mark all as read'
+              </Button>
+            )}
+          </div>
           
-          {unreadCount > 0 && (
-            <Button 
-              variant="outline" 
-              className="border-[hsl(215,16%,80%)]"
-              onClick={markAllAsRead}
-            >
-              Mark all as read
-            </Button>
-          )}
+          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-6 bg-[hsl(215,16%,95%)]">
+              <TabsTrigger value="all" className="data-[state=active]:bg-[hsl(196,80%,43%)]">
+                All
+                {notifications.length > 0 && (
+                  <Badge className="ml-2 bg-[hsl(220,14%,46%)]">{notifications.length}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="unread" className="data-[state=active]:bg-[hsl(196,80%,43%)]">
+                Unread
+                {unreadCount > 0 && (
+                  <Badge className="ml-2 bg-[hsl(354,70%,54%)]">{unreadCount}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="message" className="data-[state=active]:bg-[hsl(196,80%,43%)]">
+                Messages
+              </TabsTrigger>
+              <TabsTrigger value="task" className="data-[state=active]:bg-[hsl(196,80%,43%)]">
+                Tasks
+              </TabsTrigger>
+              <TabsTrigger value="bid" className="data-[state=active]:bg-[hsl(196,80%,43%)]">
+                Bids
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value={activeTab}>
+              {renderNotificationContent()}
+            </TabsContent>
+          </Tabs>
         </div>
-        
-        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6 bg-[hsl(215,16%,95%)]">
-            <TabsTrigger value="all" className="data-[state=active]:bg-[hsl(196,80%,43%)]">
-              All
-              {notifications.length > 0 && (
-                <Badge className="ml-2 bg-[hsl(220,14%,46%)]">{notifications.length}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="unread" className="data-[state=active]:bg-[hsl(196,80%,43%)]">
-              Unread
-              {unreadCount > 0 && (
-                <Badge className="ml-2 bg-[hsl(354,70%,54%)]">{unreadCount}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="message" className="data-[state=active]:bg-[hsl(196,80%,43%)]">
-              Messages
-            </TabsTrigger>
-            <TabsTrigger value="task" className="data-[state=active]:bg-[hsl(196,80%,43%)]">
-              Tasks
-            </TabsTrigger>
-            <TabsTrigger value="bid" className="data-[state=active]:bg-[hsl(196,80%,43%)]">
-              Bids
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value={activeTab}>
-            {renderNotificationContent()}
-          </TabsContent>
-        </Tabs>
       </div>
-    </div>
+    </Layout>
   );
 };
 

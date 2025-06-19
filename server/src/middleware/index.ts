@@ -14,7 +14,7 @@ import * as rateLimiterMiddlewareModule from './rate-limiter-middleware';
 import * as requestContextMiddlewareModule from './request-context-middleware';
 import * as securityMiddlewareModule from './security-middleware';
 import * as uploadMiddlewareModule from './upload-middleware';
-import * as validationMiddlewareModule from './validation-middleware';
+import * as zodValidationMiddlewareModule from './zod-validation-middleware';
 // Error handling from utils (consolidated)
 import * as auditLogMiddlewareModule from './audit-log-middleware';
 import * as metricsMiddlewareModule from './metrics-middleware';
@@ -25,7 +25,7 @@ import * as performanceProfilerMiddlewareModule from './performance-profiler-mid
 export { authMiddlewareModule as authMiddleware, securityMiddlewareModule as securityMiddleware };
 
 // Request processing middleware
-    export { requestContextMiddlewareModule as requestContextMiddleware, uploadMiddlewareModule as uploadMiddleware, validationMiddlewareModule as validationMiddleware };
+export { requestContextMiddlewareModule as requestContextMiddleware, uploadMiddlewareModule as uploadMiddleware, zodValidationMiddlewareModule as validationMiddleware };
 
 // Rate limiting middleware
     export { rateLimiterMiddlewareModule as rateLimiterMiddleware };
@@ -49,7 +49,7 @@ export * from './rate-limiter-middleware';
 export * from './request-context-middleware';
 export * from './security-middleware';
 export * from './upload-middleware';
-export * from './validation-middleware';
+export * from './zod-validation-middleware';
 
 // Export specific functions from middleware modules
 // Error handling now comes from utils/error-utils

@@ -1,12 +1,25 @@
 
-import { Suspense } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { ReactQueryProvider } from "./lib/query-provider";
+import { ROUTES } from "./lib/route-utils";
+import { useAuth } from "./hooks/use-auth";
+import { UserRole } from "../shared/types/common/enums";
+import { setupSecurityEventListeners } from "./utils/security";
+
+// PWA Components
+import InstallPrompt from "./components/pwa/install-prompt";
+import PWAStatusComponent from "./components/pwa/pwa-status";
+// import pwaManager from "./services/pwa/pwa-manager";
 
 // Auth Provider
 import AuthProvider from "./services/providers/auth-provider";
+
+// Performance Monitor (dev only)
+import { PerformanceMonitor } from "./components/dev/performance-monitor";
 
 // Import centralized lazy components
 import {
@@ -22,6 +35,15 @@ import {
     TasksPage
 } from "./components/lazy-components";
 
+// Lazy load admin components
+const AdminDashboardPage = lazy(() => import('./pages/admin/admin-dashboard-page'));
+const AdminTasksPage = lazy(() => import('./pages/admin/admin-tasks-page'));
+const AdminUsersPage = lazy(() => import('./pages/admin/admin-users-page'));
+const MigrationDashboardPage = lazy(() => import('./pages/admin/migration-dashboard-page'));
+
+// Lazy load PWA offline page
+const OfflinePage = lazy(() => import('./pages/offline'));
+
 // Loading component for lazy-loaded routes
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -29,32 +51,167 @@ const PageLoader = () => (
   </div>
 );
 
-const App = () => (
-    <BrowserRouter>
-      <ReactQueryProvider>
-        <AuthProvider>
-          <TooltipProvider>
+// Protected route component
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRoles?: UserRole[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  requiredRoles = [] 
+}) => {
+  const { user, isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return <PageLoader />;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to={ROUTES.LOGIN} />;
+  }
+  
+  if (requiredRoles.length > 0 && user && !requiredRoles.includes((user as any).role)) {
+    return <Navigate to={ROUTES.HOME} />;
+  }
+  
+  return <>{children}</>;
+};
+
+const App = () => {
+  // Setup security event listeners and PWA on app initialization
+  useEffect(() => {
+    setupSecurityEventListeners();
+    
+    // Initialize PWA manager (already happens in the module, but ensure it's ready)
+    if ('serviceWorker' in navigator) {
+      console.log('PWA features available');
+    }
+  }, []);
+
+  return (
+    <HelmetProvider>
+      <BrowserRouter>
+        <ReactQueryProvider>
+          <AuthProvider>
+            <TooltipProvider>
             <div className="min-h-screen bg-background">
               <Toaster />
+              <PerformanceMonitor />
+              
+              {/* PWA Components */}
+              <InstallPrompt />
+              <PWAStatusComponent 
+                position="bottom-right" 
+                variant="compact" 
+                showWhenOnline={false}
+              />
+              
               <Suspense fallback={<PageLoader />}>
                 <Routes>
-                  <Route path="/" element={<IndexPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/tasks" element={<TasksPage />} />
-                  <Route path="/tasks/:id" element={<TaskDetailPage />} />
-                  <Route path="/post-task" element={<TaskCreateWizardPage />} />
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/how-it-works" element={<HowItWorksPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
+                  {/* Public Routes */}
+                  <Route path={ROUTES.HOME} element={<IndexPage />} />
+                  <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+                  <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
+                  <Route path={ROUTES.HOW_IT_WORKS} element={<HowItWorksPage />} />
+                  
+                  {/* Protected Routes */}
+                  <Route 
+                    path={ROUTES.PROFILE} 
+                    element={
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path={ROUTES.TASKS} 
+                    element={
+                      <ProtectedRoute>
+                        <TasksPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path={ROUTES.TASK_DETAIL()} 
+                    element={
+                      <ProtectedRoute>
+                        <TaskDetailPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path={ROUTES.TASK_CREATE} 
+                    element={
+                      <ProtectedRoute>
+                        <TaskCreateWizardPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path={ROUTES.DASHBOARD} 
+                    element={
+                      <ProtectedRoute>
+                        <DashboardPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  {/* Admin Routes */}
+                  <Route 
+                    path={ROUTES.ADMIN_DASHBOARD} 
+                    element={
+                      <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+                        <AdminDashboardPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path={ROUTES.ADMIN_USERS} 
+                    element={
+                      <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+                        <AdminUsersPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path={ROUTES.ADMIN_TASKS} 
+                    element={
+                      <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+                        <AdminTasksPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path={ROUTES.ADMIN_MIGRATION} 
+                    element={
+                      <ProtectedRoute requiredRoles={[UserRole.ADMIN]}>
+                        <MigrationDashboardPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  {/* PWA Offline Route */}
+                  <Route path="/offline" element={<OfflinePage />} />
+                  
+                  {/* 404 Page */}
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
               </Suspense>
             </div>
-          </TooltipProvider>
-        </AuthProvider>
-      </ReactQueryProvider>
-    </BrowserRouter>
-);
+            </TooltipProvider>
+          </AuthProvider>
+        </ReactQueryProvider>
+      </BrowserRouter>
+    </HelmetProvider>
+  );
+};
 
 export default App;

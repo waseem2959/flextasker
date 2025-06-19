@@ -1,14 +1,14 @@
 /**
  * Bid Service
  * 
- * This module provides API methods for bid management:
+ * This service provides API methods for bid management:
  * - Creating and updating bids
  * - Searching and retrieving bids
  * - Managing bid status (accept/reject/withdraw)
  */
 
-import { ApiResponse, Bid, BidSearchParams, CreateBidRequest, PaginatedApiResponse, UpdateBidRequest } from '@/types';
-import { apiClient } from '../api/api-client';
+import { ApiResponse, Bid, BidSearchParams, CreateBidRequest, UpdateBidRequest } from '@/types';
+import { BaseApiService } from './base-api-service';
 
 /**
  * Task bid statistics
@@ -26,125 +26,62 @@ export interface TaskBidStatistics {
 }
 
 /**
- * Create a new bid for a task
+ * Bid Service Class
  * 
- * @param bidData - The bid data to submit
- * @returns Promise with the created bid
+ * Extends BaseApiService to provide standardized CRUD operations plus bid-specific functionality.
  */
-export function createBid(bidData: CreateBidRequest): Promise<ApiResponse<Bid>> {
-  return apiClient.post('/bids', bidData);
+class BidService extends BaseApiService<Bid, CreateBidRequest, UpdateBidRequest, BidSearchParams> {
+  constructor() {
+    super('/bids');
+  }
+
+  /**
+   * Get all bids for a specific task
+   */
+  async getBidsByTask(taskId: string, params?: BidSearchParams) {
+    return this.customGet(`/tasks/${taskId}/bids`, params);
+  }
+
+  /**
+   * Accept a bid
+   */
+  async acceptBid(id: string): Promise<ApiResponse<Bid>> {
+    return this.customPut(`/${id}/accept`);
+  }
+
+  /**
+   * Reject a bid
+   */
+  async rejectBid(id: string, reason?: string): Promise<ApiResponse<Bid>> {
+    return this.customPut(`/${id}/reject`, { reason });
+  }
+
+  /**
+   * Withdraw a bid
+   */
+  async withdrawBid(id: string): Promise<ApiResponse<Bid>> {
+    return this.customPut(`/${id}/withdraw`);
+  }
+
+  /**
+   * Get bid statistics for a task
+   */
+  async getBidStatistics(taskId: string): Promise<ApiResponse<TaskBidStatistics>> {
+    return this.customGet(`/tasks/${taskId}/bid-statistics`);
+  }
 }
 
-/**
- * Update an existing bid
- * 
- * @param id - The bid ID
- * @param bidData - The updated bid data
- * @returns Promise with the updated bid
- */
-export function updateBid(id: string, bidData: UpdateBidRequest): Promise<ApiResponse<Bid>> {
-  return apiClient.put(`/bids/${id}`, bidData);
-}
+// Create singleton instance
+export const bidService = new BidService();
 
-/**
- * Get a specific bid by ID
- * 
- * @param id - The bid ID
- * @returns Promise with the bid details
- */
-export function getBidById(id: string): Promise<ApiResponse<Bid>> {
-  return apiClient.get(`/bids/${id}`);
-}
-
-/**
- * Get all bids for a specific task
- * 
- * @param taskId - The task ID
- * @param params - Search parameters for filtering bids
- * @returns Promise with array of bids and pagination info
- */
-export function getBidsByTask(
-  taskId: string, 
-  params?: BidSearchParams
-): Promise<PaginatedApiResponse<Bid>> {
-  return apiClient.get(`/tasks/${taskId}/bids`, params) as Promise<PaginatedApiResponse<Bid>>;
-}
-
-/**
- * Get bids submitted by the current user
- * 
- * @param params - Search parameters
- * @returns Promise with array of bids and pagination info
- */
-export function getMyBids(params?: BidSearchParams): Promise<PaginatedApiResponse<Bid>> {
-  return apiClient.get('/bids/my-bids', params) as Promise<PaginatedApiResponse<Bid>>;
-}
-
-/**
- * Get bids submitted by a specific user
- * 
- * @param userId - The user ID (optional, defaults to current user)
- * @param params - Search parameters
- * @returns Promise with array of bids and pagination info
- */
-export function getUserBids(
-  userId: string,
-  params?: BidSearchParams
-): Promise<PaginatedApiResponse<Bid>> {
-  return apiClient.get(`/users/${userId}/bids`, params) as Promise<PaginatedApiResponse<Bid>>;
-}
-
-/**
- * Accept a bid
- * 
- * @param id - The bid ID
- * @returns Promise with the updated bid
- */
-export function acceptBid(id: string): Promise<ApiResponse<Bid>> {
-  return apiClient.put(`/bids/${id}/accept`);
-}
-
-/**
- * Reject a bid
- * 
- * @param id - The bid ID
- * @param reason - Optional rejection reason
- * @returns Promise with the updated bid
- */
-export function rejectBid(id: string, reason?: string): Promise<ApiResponse<Bid>> {
-  return apiClient.put(`/bids/${id}/reject`, { reason });
-}
-
-/**
- * Withdraw a bid
- * 
- * @param id - The bid ID
- * @returns Promise with the updated bid
- */
-export function withdrawBid(id: string): Promise<ApiResponse<Bid>> {
-  return apiClient.put(`/bids/${id}/withdraw`);
-}
-
-/**
- * Get bid statistics for a task
- * 
- * @param taskId - The task ID
- * @returns Promise with bid statistics
- */
-export function getBidStatistics(taskId: string): Promise<ApiResponse<TaskBidStatistics>> {
-  return apiClient.get(`/tasks/${taskId}/bid-statistics`);
-}
-
-// Export all functions individually to support tree shaking
-export const bidService = {
-  createBid,
-  updateBid,
-  getBidById,
-  getBidsByTask,
-  getMyBids,
-  getUserBids,
-  acceptBid,
-  rejectBid,
-  withdrawBid,
-  getBidStatistics
-};
+// Export individual methods for backward compatibility and tree shaking
+export const createBid = (bidData: CreateBidRequest) => bidService.create(bidData);
+export const updateBid = (id: string, bidData: UpdateBidRequest) => bidService.update(id, bidData);
+export const getBidById = (id: string) => bidService.getById(id);
+export const getBidsByTask = (taskId: string, params?: BidSearchParams) => bidService.getBidsByTask(taskId, params);
+export const getMyBids = (params?: BidSearchParams) => bidService.getMy(params);
+export const getUserBids = (userId: string, params?: BidSearchParams) => bidService.getByUserId(userId, params);
+export const acceptBid = (id: string) => bidService.acceptBid(id);
+export const rejectBid = (id: string, reason?: string) => bidService.rejectBid(id, reason);
+export const withdrawBid = (id: string) => bidService.withdrawBid(id);
+export const getBidStatistics = (taskId: string) => bidService.getBidStatistics(taskId);

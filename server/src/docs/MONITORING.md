@@ -135,9 +135,9 @@ await redisCache.exists(key)         // Check if key exists
 ### Rate Limiting
 ```typescript
 // Rate limit configurations
-rateLimiters.api      // 60 requests/minute
-rateLimiters.auth     // 5 attempts/15 minutes
-rateLimiters.general  // 100 requests/15 minutes
+rateLimiter          // 100 requests/15 minutes (general)
+authRateLimiter      // 5 attempts/15 minutes (auth endpoints)
+apiRateLimiter       // 30 requests/minute (API endpoints)
 ```
 
 ### Performance Thresholds

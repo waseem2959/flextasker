@@ -5,7 +5,7 @@
  * It uses the job queue system to schedule and execute recurring tasks.
  */
 
-import { NotificationType, TaskStatus } from '../../../shared/types/enums';
+import { NotificationType, TaskStatus } from '@shared/types/common/enums';
 import { prisma } from './database';
 import {
     addRecurringJob,

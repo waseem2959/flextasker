@@ -46,34 +46,11 @@ export enum TaskComplexity {
   EXPERT = 'expert',
 }
 
-/**
- * Task categories
- */
-export enum TaskCategory {
-  CLEANING = 'cleaning',
-  HANDYMAN = 'handyman',
-  DELIVERY = 'delivery',
-  MOVING = 'moving',
-  ELECTRICAL = 'electrical',
-  PLUMBING = 'plumbing',
-  GARDENING = 'gardening',
-  ASSEMBLY = 'assembly',
-  TECH_SUPPORT = 'tech_support',
-  ADMINISTRATIVE = 'administrative',
-  OTHER = 'other',
-}
+// TaskCategory moved to shared/types/common/enums.ts 
+// Note: The shared version has different categories. Frontend-specific categories
+// can be mapped to shared categories as needed
 
-/**
- * Payment status
- */
-export enum PaymentStatus {
-  PENDING = 'pending',
-  PROCESSING = 'processing',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
-  REFUNDED = 'refunded',
-  DISPUTED = 'disputed',
-}
+// PaymentStatus moved to shared/types/common/enums.ts to avoid duplication
 
 /**
  * Payment methods
@@ -98,15 +75,8 @@ export enum NotificationPriority {
   URGENT = 'urgent',
 }
 
-/**
- * User verification status
- */
-export enum VerificationStatus {
-  UNVERIFIED = 'unverified',
-  PENDING = 'pending',
-  VERIFIED = 'verified',
-  REJECTED = 'rejected',
-}
+// VerificationStatus moved to shared/types/common/enums.ts to avoid duplication
+// Note: Added UNVERIFIED status to shared enum for completeness
 
 /**
  * User profile visibility
@@ -117,16 +87,7 @@ export enum ProfileVisibility {
   CONTACTS_ONLY = 'contacts_only',
 }
 
-/**
- * Review ratings (1-5 stars)
- */
-export enum ReviewRating {
-  ONE = 1,
-  TWO = 2,
-  THREE = 3,
-  FOUR = 4,
-  FIVE = 5,
-}
+// ReviewRating moved to shared/types/common/enums.ts to avoid duplication
 
 /**
  * Supported languages
@@ -204,27 +165,8 @@ export enum ConnectionState {
   FAILED = 'failed',
 }
 
-// ErrorType enum removed - now using shared ErrorType from shared/types/errors.ts
+// ErrorType and HttpStatusCode enums removed - now using shared types from shared/types/errors.ts
 // This ensures consistency between frontend and backend error handling
-
-/**
- * HTTP status codes
- */
-export enum HttpStatusCode {
-  OK = 200,
-  CREATED = 201,
-  ACCEPTED = 202,
-  NO_CONTENT = 204,
-  BAD_REQUEST = 400,
-  UNAUTHORIZED = 401,
-  FORBIDDEN = 403,
-  NOT_FOUND = 404,
-  METHOD_NOT_ALLOWED = 405,
-  CONFLICT = 409,
-  UNPROCESSABLE_ENTITY = 422,
-  INTERNAL_SERVER_ERROR = 500,
-  SERVICE_UNAVAILABLE = 503,
-}
 
 /**
  * API request methods

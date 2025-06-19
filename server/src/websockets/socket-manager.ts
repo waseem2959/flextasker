@@ -7,7 +7,7 @@
 
 import { Server as HttpServer } from 'http';
 import { Socket, Server as SocketServer } from 'socket.io';
-import { UserRole } from '../../../shared/types/enums';
+import { UserRole } from '../../../shared/types/common/enums';
 import { logger } from '../utils/logger';
 import { monitorError } from '../utils/monitoring';
 import metricsService from '../utils/monitoring/metrics-service';

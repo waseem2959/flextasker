@@ -5,7 +5,7 @@
  */
 
 import { Socket } from 'socket.io';
-import { NotificationType } from '../../../../shared/types/enums';
+import { NotificationType } from '../../../../shared/types/common/enums';
 import { prisma } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import { monitorError } from '../../utils/monitoring';
@@ -65,8 +65,7 @@ export function registerChatHandlers(socket: Socket, socketManager: SocketManage
             select: {
               id: true,
               firstName: true,
-              lastName: true,
-              avatar: true
+              lastName: true
             }
           }
         }
@@ -162,8 +161,7 @@ export function registerChatHandlers(socket: Socket, socketManager: SocketManage
             select: {
               id: true,
               firstName: true,
-              lastName: true,
-              avatar: true
+              lastName: true
             }
           }
         }
@@ -238,15 +236,14 @@ export function registerChatHandlers(socket: Socket, socketManager: SocketManage
       ]);
 
       // Get user details and latest message for each conversation
-      const conversations = await Promise.all([...userIds].map(async (userId) => {
+      const conversations = await Promise.all(Array.from(userIds).map(async (userId) => {
         // Get user details
         const conversationPartner = await prisma.user.findUnique({
           where: { id: userId },
           select: {
             id: true,
             firstName: true,
-            lastName: true,
-            avatar: true
+            lastName: true
           }
         });
         

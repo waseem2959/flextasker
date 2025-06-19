@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 import { logger } from './logger';
 
 // Load environment variables
@@ -32,7 +32,7 @@ const configSchema = z.object({
   REDIS_PREFIX: z.string().default('flextasker:'),
   
   // JWT settings
-  JWT_SECRET: z.string().min(16).default('super_secret_key_change_in_production'),
+  JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default('7d'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
   

@@ -8,7 +8,8 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Task } from "@/types";
-import { getBudgetDisplayText, getLocationDisplayText } from "@/utils/task-utils";
+import { getLocationDisplayText } from "@/utils/task-utils";
+import { formatTaskBudget } from "@/utils/budget-utils";
 import {
   ensureDiscriminatedTask,
   isCancelledTask,
@@ -55,17 +56,17 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({
           </h3>
           <p className="text-sm mt-2">
             This task is open and accepting bids until{" "}
-            {task.dueDate ? formatDistanceToNow(task.dueDate, { addSuffix: true }) : "the deadline"}
+            {task.deadline ? formatDistanceToNow(task.deadline, { addSuffix: true }) : "the deadline"}
           </p>
           <div className="mt-4 flex gap-2">
             <Button variant="outline" size="sm">
               Place a Bid
             </Button>
-            {task.bids && task.bids.length > 0 && onAcceptBid && (
+            {task.bidCount && task.bidCount > 0 && onAcceptBid && (
               <Button 
                 variant="secondary" 
                 size="sm" 
-                onClick={() => onAcceptBid(task.bids[0].id)}
+                onClick={() => onAcceptBid('first-bid')}
                 title="Accept the first bid for this task"
               >
                 Accept Bid
@@ -123,7 +124,7 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({
             Completed
           </h3>
           <p className="text-sm mt-2">
-            This task was completed {formatDistanceToNow(task.completedAt, { addSuffix: true })}
+            This task was completed {task.completedAt ? formatDistanceToNow(task.completedAt, { addSuffix: true }) : 'recently'}
           </p>
           <p className="text-sm mt-2">
             Completed by: {task.taskerName}
@@ -140,7 +141,7 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({
             Cancelled
           </h3>
           <p className="text-sm mt-2">
-            This task was cancelled {formatDistanceToNow(task.cancelledAt, { addSuffix: true })}
+            This task was cancelled {task.cancelledAt ? formatDistanceToNow(task.cancelledAt, { addSuffix: true }) : 'recently'}
           </p>
           {task.cancellationReason && (
             <p className="text-sm mt-2">
@@ -207,10 +208,7 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({
             <div className="flex items-center text-sm">
               <span className="font-medium">Budget:</span>
               <span className="ml-2">
-                {(() => {
-                  const budgetInfo = getBudgetDisplayText(task.budget);
-                  return "$" + budgetInfo.amount + (budgetInfo.type ? " (" + budgetInfo.type + ")" : "");
-                })()}
+                {formatTaskBudget(task.budget, task.budgetType)}
               </span>
             </div>
           </div>

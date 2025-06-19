@@ -7,6 +7,7 @@
  */
 
 import { Cluster, Redis } from 'ioredis';
+import { config } from './config';
 import { logger } from './logger';
 import { getRedisClient, redisManager } from './redis-client';
 
@@ -227,7 +228,7 @@ export class RedisCache {
     const now = Date.now();
     let cleanedCount = 0;
 
-    for (const [key, entry] of this.fallbackCache.entries()) {
+    for (const [key, entry] of Array.from(this.fallbackCache.entries())) {
       if (now - entry.timestamp > entry.ttl) {
         this.fallbackCache.delete(key);
         cleanedCount++;
@@ -356,7 +357,7 @@ export class RedisCache {
    * Format cache key with prefix
    */
   private formatKey(key: string): string {
-    const prefix = process.env.REDIS_KEY_PREFIX ?? 'flextasker:';
+    const prefix = config.REDIS_PREFIX;
     return `${prefix}cache:${key}`;
   }
 

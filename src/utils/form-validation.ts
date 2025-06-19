@@ -9,7 +9,9 @@
 export * from '@/lib/validation-utils';
 
 import { ValidationError } from '@/types/errors';
+import { UserRole } from '@/types';
 import { useCallback, useState } from 'react';
+import { z } from 'zod';
 
 /**
  * Result of a validation operation
@@ -721,6 +723,115 @@ export function useFormValidation<T extends Record<string, any>>(initialValues: 
   };
 }
 
+// Zod validation schemas (consolidated from validation.ts)
+
+/**
+ * User registration schema
+ */
+export const registerSchema = z.object({
+  firstName: z.string()
+    .min(2, { message: 'First name must be at least 2 characters long' })
+    .max(50, { message: 'First name cannot exceed 50 characters' }),
+    
+  lastName: z.string()
+    .min(2, { message: 'Last name must be at least 2 characters long' })
+    .max(50, { message: 'Last name cannot exceed 50 characters' }),
+    
+  email: z.string()
+    .email({ message: 'Please enter a valid email address' }),
+    
+  password: z.string()
+    .min(8, { message: 'Password must be at least 8 characters long' })
+    .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
+    .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
+    .regex(/\d/, { message: 'Password must contain at least one number' }),
+    
+  confirmPassword: z.string(),
+  
+  role: z.nativeEnum(UserRole),
+  
+  termsAccepted: z.boolean()
+    .refine(val => val === true, { message: 'You must accept the terms and conditions' })
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+/**
+ * Login schema
+ */
+export const loginSchema = z.object({
+  email: z.string()
+    .email({ message: 'Please enter a valid email address' }),
+    
+  password: z.string()
+    .min(1, { message: 'Password is required' }),
+    
+  rememberMe: z.boolean().optional().default(false),
+});
+
+/**
+ * Profile update schema
+ */
+export const profileUpdateSchema = z.object({
+  firstName: z.string()
+    .min(2, { message: 'First name must be at least 2 characters long' })
+    .max(50, { message: 'First name cannot exceed 50 characters' }),
+    
+  lastName: z.string()
+    .min(2, { message: 'Last name must be at least 2 characters long' })
+    .max(50, { message: 'Last name cannot exceed 50 characters' }),
+    
+  email: z.string()
+    .email({ message: 'Please enter a valid email address' }),
+    
+  phone: z.string().optional(),
+  
+  bio: z.string().max(500, { message: 'Bio cannot exceed 500 characters' }).optional(),
+  
+  location: z.string().optional(),
+  
+  skills: z.array(z.string()).optional(),
+});
+
+/**
+ * Password change schema
+ */
+export const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, { message: 'Current password is required' }),
+  
+  newPassword: z.string()
+    .min(8, { message: 'New password must be at least 8 characters long' })
+    .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
+    .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter' })
+    .regex(/[0-9]/, { message: 'Password must contain at least one number' }),
+    
+  confirmPassword: z.string(),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+/**
+ * Contact form schema
+ */
+export const contactFormSchema = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters long' }),
+  email: z.string().email({ message: 'Please enter a valid email address' }),
+  subject: z.string().min(5, { message: 'Subject must be at least 5 characters long' }),
+  message: z.string().min(20, { message: 'Message must be at least 20 characters long' }),
+});
+
+
+/**
+ * Re-export task validation schemas from shared validation
+ */
+export { 
+  taskCreateSchema as createTaskSchema,
+  taskUpdateSchema,
+  taskSearchSchema
+} from '../../shared/validation/task-validation';
+
 export default {
   required,
   minLength,
@@ -739,5 +850,11 @@ export default {
   createFormValidationResult,
   createValidationResult,
   ValidationRules,
-  useFormValidation
+  useFormValidation,
+  // Zod schemas
+  registerSchema,
+  loginSchema,
+  profileUpdateSchema,
+  passwordChangeSchema,
+  contactFormSchema
 };

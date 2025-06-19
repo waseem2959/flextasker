@@ -13,7 +13,7 @@ import { Profile as FacebookProfile, Strategy as FacebookStrategy } from 'passpo
 import { Profile as GithubProfile, Strategy as GithubStrategy } from 'passport-github2';
 import { Profile as GoogleProfile, Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { v4 as uuidv4 } from 'uuid';
-import { UserRole } from '../../../shared/types/enums';
+import { UserRole } from '@shared/types/common/enums';
 import { config } from './config';
 import { logger } from './logger';
 

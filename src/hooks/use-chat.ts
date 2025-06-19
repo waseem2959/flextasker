@@ -10,7 +10,7 @@ import { apiClient as consolidatedApiClient } from '@/services/api/api-client';
 import { toast } from '@/hooks/use-toast';
 import { realtimeService as socketService } from '@/services/realtime/socket-service';
 import { User } from '@/types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Message interface for chat functionality
@@ -64,7 +64,7 @@ export function useChat(conversationId: string) {
   // Handler for typing start events
   const handleTypingStart = useCallback(({ user }: { user: User }) => {
     setTypingUsers((prevUsers) => {
-      if (!prevUsers.some((u) => (u as any).id === (user as any).id)) {
+      if (!prevUsers.some((u) => u.id === user.id)) {
         return [...prevUsers, user];
       }
       return prevUsers;
@@ -74,7 +74,7 @@ export function useChat(conversationId: string) {
   // Handler for typing stop events
   const handleTypingStop = useCallback(({ user }: { user: User }) => {
     setTypingUsers((prevUsers) => 
-      prevUsers.filter((u) => (u as any).id !== (user as any).id)
+      prevUsers.filter((u) => u.id !== user.id)
     );
   }, []);
   
@@ -156,37 +156,37 @@ export function useChat(conversationId: string) {
     [conversationId, setTyping]
   );
   
-  // Debounced typing function for better UX
-  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  // Debounced typing function for better UX using useRef for stable timeout management
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const handleTyping = useCallback(
     () => {
       // Clear existing timeout
-      if (typingTimeout) {
-        clearTimeout(typingTimeout);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
       
       // Set typing status to true
       setTyping(true);
       
       // Set a new timeout to stop typing after 2 seconds of inactivity
-      const timeout = setTimeout(() => {
+      typingTimeoutRef.current = setTimeout(() => {
         setTyping(false);
+        typingTimeoutRef.current = null;
       }, 2000);
-      
-      setTypingTimeout(timeout as unknown as NodeJS.Timeout);
     },
-    [setTyping, typingTimeout]
+    [setTyping]
   );
   
   // Cleanup typing timeout on unmount
   useEffect(() => {
     return () => {
-      if (typingTimeout) {
-        clearTimeout(typingTimeout);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
       }
     };
-  }, [typingTimeout]);
+  }, []);
   
   return {
     messages,

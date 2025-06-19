@@ -8,11 +8,11 @@
  * - Sending marketing communications
  */
 
-import { logger } from '@/utils/logger';
-import fs from 'fs/promises';
-import handlebars from 'handlebars';
-import nodemailer from 'nodemailer';
-import path from 'path';
+import { logger } from '../utils/logger';
+import * as fs from 'fs/promises';
+import * as handlebars from 'handlebars';
+import * as nodemailer from 'nodemailer';
+import * as path from 'path';
 
 export interface EmailTemplate {
   subject: string;

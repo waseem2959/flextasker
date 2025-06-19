@@ -11,8 +11,7 @@
 import { Router } from 'express';
 import { body, query, param } from 'express-validator';
 import { authenticateToken } from '../middleware/auth-middleware';
-import { validate } from '../middleware/validation-middleware';
-import { notificationController } from '@/controllers/notification-controller';
+import { notificationController } from '../controllers/notification-controller';
 
 const router = Router();
 
@@ -22,7 +21,7 @@ const router = Router();
  */
 router.get('/',
   authenticateToken,
-  validate([
+  
     query('page')
       .optional()
       .isInt({ min: 1 })
@@ -37,7 +36,6 @@ router.get('/',
       .optional()
       .isBoolean()
       .withMessage('unreadOnly must be a boolean'),
-  ]),
   notificationController.getUserNotifications
 );
 
@@ -47,9 +45,8 @@ router.get('/',
  */
 router.patch('/:id/read',
   authenticateToken,
-  validate([
+  
     param('id').isUUID().withMessage('Invalid notification ID')
-  ]),
   notificationController.markAsRead
 );
 
@@ -68,12 +65,11 @@ router.patch('/read-all',
  */
 router.put('/preferences',
   authenticateToken,
-  validate([
+  
     body('email').optional().isBoolean().withMessage('Email must be a boolean'),
     body('push').optional().isBoolean().withMessage('Push must be a boolean'),
     body('inApp').optional().isBoolean().withMessage('InApp must be a boolean'),
     body('types').optional().isObject().withMessage('Types must be an object')
-  ]),
   notificationController.updatePreferences
 );
 
@@ -92,9 +88,8 @@ router.get('/count',
  */
 router.delete('/:id',
   authenticateToken,
-  validate([
+  
     param('id').isUUID().withMessage('Invalid notification ID')
-  ]),
   notificationController.deleteNotification
 );
 

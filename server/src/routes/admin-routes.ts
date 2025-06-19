@@ -12,10 +12,9 @@
 import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { authenticateToken, requireRoles } from '../middleware/auth-middleware';
-import { validate } from '../middleware/validation-middleware';
 import { auditLog } from '../middleware/audit-log-middleware';
-import { adminController } from '@/controllers/admin-controller';
-import { UserRole } from '../../../shared/types/enums';
+import { adminController } from '../controllers/admin-controller';
+import { UserRole } from '../../../shared/types/common/enums';
 
 const router = Router();
 
@@ -37,7 +36,7 @@ router.get('/dashboard',
  * GET /api/v1/admin/users
  */
 router.get('/users',
-  validate([
+  
     query('role')
       .optional()
       .isIn(['USER', 'TASKER', 'ADMIN'])
@@ -62,7 +61,6 @@ router.get('/users',
       .optional()
       .isString()
       .trim()
-  ]),
   adminController.getUsers
 );
 
@@ -71,9 +69,8 @@ router.get('/users',
  * GET /api/v1/admin/users/:id
  */
 router.get('/users/:id',
-  validate([
+  
     param('id').isUUID().withMessage('Invalid user ID format')
-  ]),
   adminController.getUserDetails
 );
 
@@ -82,7 +79,7 @@ router.get('/users/:id',
  * PATCH /api/v1/admin/users/:id/status
  */
 router.patch('/users/:id/status',
-  validate([
+  
     param('id').isUUID().withMessage('Invalid user ID format'),
     body('status')
       .isIn(['ACTIVE', 'INACTIVE', 'SUSPENDED'])
@@ -93,7 +90,6 @@ router.patch('/users/:id/status',
       .trim()
       .isLength({ max: 500 })
       .withMessage('Reason cannot exceed 500 characters')
-  ]),
   auditLog('UPDATE_USER_STATUS', 'ADMIN'),
   adminController.updateUserStatus
 );
@@ -103,7 +99,7 @@ router.patch('/users/:id/status',
  * GET /api/v1/admin/tasks
  */
 router.get('/tasks',
-  validate([
+  
     query('status')
       .optional()
       .isIn(['OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'DISPUTED'])
@@ -128,7 +124,6 @@ router.get('/tasks',
       .optional()
       .isString()
       .trim()
-  ]),
   adminController.getTasks
 );
 
@@ -137,7 +132,7 @@ router.get('/tasks',
  * PATCH /api/v1/admin/tasks/:id/moderate
  */
 router.patch('/tasks/:id/moderate',
-  validate([
+  
     param('id').isUUID().withMessage('Invalid task ID format'),
     body('action')
       .isIn(['APPROVE', 'REJECT', 'HIDE'])
@@ -148,7 +143,6 @@ router.patch('/tasks/:id/moderate',
       .trim()
       .isLength({ max: 500 })
       .withMessage('Reason cannot exceed 500 characters')
-  ]),
   auditLog('MODERATE_TASK', 'ADMIN'),
   adminController.moderateTask
 );
@@ -158,7 +152,7 @@ router.patch('/tasks/:id/moderate',
  * GET /api/v1/admin/reviews/reported
  */
 router.get('/reviews/reported',
-  validate([
+  
     query('page')
       .optional()
       .isInt({ min: 1 })
@@ -168,7 +162,6 @@ router.get('/reviews/reported',
       .optional()
       .isInt({ min: 1, max: 100 })
       .withMessage('Limit must be between 1 and 100')
-  ]),
   adminController.getReportedReviews
 );
 
@@ -177,7 +170,7 @@ router.get('/reviews/reported',
  * PATCH /api/v1/admin/reviews/:id/moderate
  */
 router.patch('/reviews/:id/moderate',
-  validate([
+  
     param('id').isUUID().withMessage('Invalid review ID format'),
     body('action')
       .isIn(['APPROVE', 'REJECT', 'HIDE'])
@@ -188,7 +181,6 @@ router.patch('/reviews/:id/moderate',
       .trim()
       .isLength({ max: 500 })
       .withMessage('Reason cannot exceed 500 characters')
-  ]),
   auditLog('MODERATE_REVIEW', 'ADMIN'),
   adminController.moderateReview
 );
@@ -198,7 +190,7 @@ router.patch('/reviews/:id/moderate',
  * GET /api/v1/admin/verifications
  */
 router.get('/verifications',
-  validate([
+  
     query('type')
       .optional()
       .isIn(['IDENTITY', 'ADDRESS', 'BUSINESS'])
@@ -218,7 +210,6 @@ router.get('/verifications',
       .optional()
       .isInt({ min: 1, max: 100 })
       .withMessage('Limit must be between 1 and 100')
-  ]),
   adminController.getVerifications
 );
 
@@ -227,7 +218,7 @@ router.get('/verifications',
  * POST /api/v1/admin/verifications/:id/process
  */
 router.post('/verifications/:id/process',
-  validate([
+  
     param('id').isUUID().withMessage('Invalid verification ID format'),
     body('action')
       .isIn(['APPROVE', 'REJECT'])
@@ -239,7 +230,6 @@ router.post('/verifications/:id/process',
       .trim()
       .isLength({ max: 500 })
       .withMessage('Notes cannot exceed 500 characters')
-  ]),
   auditLog('PROCESS_VERIFICATION', 'ADMIN'),
   adminController.processVerification
 );
@@ -257,7 +247,7 @@ router.get('/metrics',
  * GET /api/v1/admin/audit-logs
  */
 router.get('/audit-logs',
-  validate([
+  
     query('userId')
       .optional()
       .isUUID()
@@ -287,7 +277,6 @@ router.get('/audit-logs',
       .optional()
       .isInt({ min: 1, max: 100 })
       .withMessage('Limit must be between 1 and 100')
-  ]),
   adminController.getAuditLogs
 );
 

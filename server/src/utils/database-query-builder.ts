@@ -414,6 +414,17 @@ export class DatabaseQueryBuilder {
   }
 
   /**
+   * Find many records with count (alias for findMany for backward compatibility)
+   */
+  static async findManyWithCount<T>(
+    model: any,
+    params: any,
+    entityName: string = 'Record'
+  ): Promise<{ items: T[]; total: number }> {
+    return this.findMany<T>(model, params, entityName);
+  }
+
+  /**
    * Check if a record exists
    */
   static async exists(

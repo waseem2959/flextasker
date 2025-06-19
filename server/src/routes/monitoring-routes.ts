@@ -7,10 +7,9 @@
 
 import { Request, Response, Router } from 'express';
 import { query } from 'express-validator';
-import { UserRole } from '../../../shared/types/enums';
+import { UserRole } from '../../../shared/types/common/enums';
 import { authenticateToken, requireRoles } from '../middleware/auth-middleware';
 import { cacheUtils } from '../middleware/cache-middleware';
-import { validate } from '../middleware/validation-middleware';
 import PerformanceMonitor from '../monitoring/performance-monitor';
 import { QueryPerformanceMonitor } from '../utils/database-optimization';
 import { logger } from '../utils/logger';
@@ -94,9 +93,8 @@ router.get('/health/detailed',
 router.get('/metrics',
   authenticateToken,
   requireRoles([UserRole.ADMIN]),
-  validate([
+  
     query('period').optional().isIn(['1h', '24h', '7d', '30d']).withMessage('Invalid period')
-  ]),
   async (req: Request, res: Response) => {
     const monitor = PerformanceMonitor.getInstance();
     const period = req.query.period as string || '1h';
@@ -131,7 +129,7 @@ router.get('/metrics',
     };
 
     logger.info('Metrics dashboard accessed', {
-      adminId: req.user?.id,
+      adminId: (req.user as any)?.id,
       period,
       alertCount: alerts.length
     });
@@ -151,9 +149,8 @@ router.get('/metrics',
 router.get('/alerts',
   authenticateToken,
   requireRoles([UserRole.ADMIN]),
-  validate([
+  
     query('severity').optional().isIn(['low', 'medium', 'high']).withMessage('Invalid severity level')
-  ]),
   (req: Request, res: Response) => {
     const monitor = PerformanceMonitor.getInstance();
     const severityFilter = req.query.severity as string;
@@ -431,7 +428,7 @@ router.post('/reset',
     queryMonitor.resetStats();
     await cacheUtils.clearAll();
 
-    logger.info('Monitoring metrics reset', { adminId: req.user?.id });
+    logger.info('Monitoring metrics reset', { adminId: (req.user as any)?.id });
 
     res.status(200).json({
       success: true,

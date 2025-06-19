@@ -14,7 +14,7 @@ class ReviewController extends BaseController {
   /**
    * Create a new review
    */
-  createReview = this.asyncHandler(async (req: Request, res: Response) => {
+  createReview = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const reviewData = {
       ...req.body,
       authorId: (req.user as any)!.id
@@ -29,7 +29,7 @@ class ReviewController extends BaseController {
   /**
    * Get a review by ID
    */
-  getReviewById = this.asyncHandler(async (req: Request, res: Response) => {
+  getReviewById = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const reviewId = req.params.id;
 
     logger.info('Retrieving review', { reviewId });
@@ -41,7 +41,7 @@ class ReviewController extends BaseController {
   /**
    * Get reviews for a specific user
    */
-  getReviewsForUser = this.asyncHandler(async (req: Request, res: Response) => {
+  getReviewsForUser = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.params.userId;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -56,7 +56,7 @@ class ReviewController extends BaseController {
   /**
    * Get reviews for a specific task
    */
-  getReviewsForTask = this.asyncHandler(async (req: Request, res: Response) => {
+  getReviewsForTask = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const taskId = req.params.taskId;
 
     logger.info('Retrieving reviews for task', { taskId });
@@ -68,7 +68,7 @@ class ReviewController extends BaseController {
   /**
    * Update an existing review
    */
-  updateReview = this.asyncHandler(async (req: Request, res: Response) => {
+  updateReview = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const reviewId = req.params.id;
     const userId = (req.user as any)!.id;
     const updateData = req.body;
@@ -82,7 +82,7 @@ class ReviewController extends BaseController {
   /**
    * Delete a review
    */
-  deleteReview = this.asyncHandler(async (req: Request, res: Response) => {
+  deleteReview = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const reviewId = req.params.id;
     const userId = (req.user as any)!.id;
 
@@ -95,7 +95,7 @@ class ReviewController extends BaseController {
   /**
    * Respond to a review
    */
-  respondToReview = this.asyncHandler(async (req: Request, res: Response) => {
+  respondToReview = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const reviewId = req.params.id;
     const userId = (req.user as any)!.id;
     const { response } = req.body;
@@ -109,7 +109,7 @@ class ReviewController extends BaseController {
   /**
    * Report a review as inappropriate
    */
-  reportReview = this.asyncHandler(async (req: Request, res: Response) => {
+  reportReview = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const reviewId = req.params.id;
     const userId = (req.user as any)!.id;
     const { reason, details } = req.body;
@@ -123,7 +123,7 @@ class ReviewController extends BaseController {
   /**
    * Flag a review (alias for report - frontend compatibility)
    */
-  flagReview = this.asyncHandler(async (req: Request, res: Response) => {
+  flagReview = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const reviewId = req.params.id;
     const userId = (req.user as any)!.id;
     const { reason } = req.body;
@@ -139,7 +139,7 @@ class ReviewController extends BaseController {
   /**
    * Search reviews with filters
    */
-  searchReviews = this.asyncHandler(async (req: Request, res: Response) => {
+  searchReviews = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const filters = {
       taskId: req.query.taskId as string,
       userId: req.query.userId as string,

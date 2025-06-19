@@ -6,8 +6,8 @@
  */
 
 import { taskService } from '@/services/api';
-import { CreateTaskRequest, UpdateTaskRequest } from '@/services/api/task-service';
-import { ApiResponse, PaginatedApiResponse, Task, TaskSearchParams, TaskStatus } from '@/types';
+import { CreateTaskRequest, UpdateTaskRequest, TaskSearchParams } from '@/services/api/task-service';
+import { ApiResponse, PaginatedApiResponse, Task, TaskStatus } from '@/types';
 import { AppError } from '@/types/errors';
 import { useMutation, UseMutationResult, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 
@@ -17,7 +17,7 @@ import { useMutation, UseMutationResult, useQuery, useQueryClient, UseQueryResul
 export function useTasks(params?: TaskSearchParams): UseQueryResult<PaginatedApiResponse<Task>, AppError> {
   return useQuery<PaginatedApiResponse<Task>, AppError>({
     queryKey: ['tasks', params],
-    queryFn: () => taskService.getTasks(params as any),
+    queryFn: () => taskService.getTasks(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
@@ -43,7 +43,7 @@ export function useTask(id: string): UseQueryResult<ApiResponse<Task>, AppError>
 export function useMyTasks(params?: TaskSearchParams): UseQueryResult<PaginatedApiResponse<Task>, AppError> {
   return useQuery<PaginatedApiResponse<Task>, AppError>({
     queryKey: ['myTasks', params],
-    queryFn: () => taskService.getMyTasks(params as any),
+    queryFn: () => taskService.getMyTasks(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });

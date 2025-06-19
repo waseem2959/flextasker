@@ -21,12 +21,17 @@ export interface CreateConversationData {
   taskId?: string;
   title?: string;
   initialMessage?: string;
+  type?: 'direct' | 'group';
+  createdBy?: string;
 }
 
 export interface SendMessageData {
   conversationId: string;
+  senderId: string;
   content: string;
+  type?: 'text' | 'image' | 'file' | 'system';
   messageType?: 'TEXT' | 'IMAGE' | 'FILE' | 'SYSTEM';
+  attachments?: string[];
   fileUrl?: string;
   fileName?: string;
   fileType?: string;
@@ -91,9 +96,17 @@ export class MessagingService {
 
 
   /**
-   * Create a new conversation
+   * Create a new conversation (updated signature)
    */
-  async createConversation(creatorId: string, data: CreateConversationData): Promise<string> {
+  async createConversation(data: CreateConversationData): Promise<any> {
+    const creatorId = data.createdBy || data.participantIds[0];
+    return this.createConversationLegacy(creatorId, data);
+  }
+
+  /**
+   * Create a new conversation (legacy method)
+   */
+  async createConversationLegacy(creatorId: string, data: CreateConversationData): Promise<string> {
     logger.info('Creating conversation', { creatorId, participantCount: data.participantIds.length });
 
     try {
@@ -508,6 +521,369 @@ export class MessagingService {
       };
     } catch (error) {
       logger.error('Error getting user conversations', { error, userId });
+      throw error;
+    }
+  }
+
+  /**
+   * Get a specific conversation by ID
+   */
+  async getConversation(conversationId: string, userId: string): Promise<any> {
+    try {
+      const conversation = await DatabaseQueryBuilder.findFirst(
+        models.conversation,
+        {
+          where: {
+            id: conversationId,
+            participants: {
+              some: {
+                userId
+              }
+            }
+          },
+          select: {
+            id: true,
+            title: true,
+            taskId: true,
+            isGroup: true,
+            createdAt: true,
+            updatedAt: true,
+            participants: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    avatar: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        'Conversation'
+      );
+
+      return conversation;
+    } catch (error) {
+      logger.error('Error getting conversation', { error, conversationId });
+      throw error;
+    }
+  }
+
+  /**
+   * Get messages for a conversation
+   */
+  async getMessages(
+    conversationId: string, 
+    page: number = 1, 
+    limit: number = 50, 
+    before?: string
+  ): Promise<{ messages: MessageWithSender[]; pagination: PaginationInfo }> {
+    try {
+      const whereClause: any = { conversationId };
+      
+      if (before) {
+        whereClause.createdAt = {
+          lt: new Date(before)
+        };
+      }
+
+      const totalCount = await DatabaseQueryBuilder.count(
+        models.message,
+        whereClause,
+        'Message'
+      );
+
+      const { items: messages } = await DatabaseQueryBuilder.findMany(
+        models.message,
+        {
+          where: whereClause,
+          select: {
+            id: true,
+            conversationId: true,
+            content: true,
+            messageType: true,
+            fileUrl: true,
+            fileName: true,
+            fileType: true,
+            createdAt: true,
+            readAt: true,
+            sender: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatar: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          },
+          pagination: { page, skip: (page - 1) * limit, limit }
+        },
+        'Message'
+      );
+
+      const formattedMessages: MessageWithSender[] = messages.map((msg: any) => ({
+        id: msg.id,
+        conversationId: msg.conversationId,
+        content: msg.content,
+        messageType: msg.messageType,
+        fileUrl: msg.fileUrl,
+        fileName: msg.fileName,
+        fileType: msg.fileType,
+        sentAt: msg.createdAt,
+        readAt: msg.readAt,
+        sender: {
+          id: msg.sender.id,
+          firstName: msg.sender.firstName,
+          lastName: msg.sender.lastName,
+          avatar: msg.sender.avatar
+        }
+      }));
+
+      return {
+        messages: formattedMessages,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalItems: totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          hasNext: page < Math.ceil(totalCount / limit),
+          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasPrev: page > 1,
+          hasPreviousPage: page > 1
+        }
+      };
+    } catch (error) {
+      logger.error('Error getting messages', { error, conversationId });
+      throw error;
+    }
+  }
+
+  /**
+   * Send a message (updated signature)
+   */
+  async sendMessage(data: SendMessageData): Promise<MessageWithSender> {
+    return this.sendMessageLegacy(data.senderId, data);
+  }
+
+  /**
+   * Send a message (legacy method)
+   */
+  async sendMessageLegacy(senderId: string, data: SendMessageData): Promise<MessageWithSender> {
+    // This calls the original sendMessage implementation from line 254
+    logger.info('Sending message', { senderId, conversationId: data.conversationId });
+
+    try {
+      // Validate conversation exists and user is a participant
+      const conversation = await DatabaseQueryBuilder.findFirst(
+        models.conversation,
+        {
+          where: {
+            id: data.conversationId,
+            participants: {
+              some: {
+                userId: senderId
+              }
+            }
+          },
+          select: {
+            id: true,
+            participants: {
+              select: {
+                userId: true
+              }
+            }
+          }
+        },
+        'Conversation'
+      );
+
+      if (!conversation) {
+        throw new NotFoundError('Conversation not found or user is not a participant');
+      }
+
+      // Validate message content
+      if (!data.content && !data.fileUrl) {
+        throw new ValidationError('Message must have content or file attachment');
+      }
+
+      // Create message
+      const message = await DatabaseQueryBuilder.create(
+        models.message,
+        {
+          conversationId: data.conversationId,
+          senderId,
+          content: data.content,
+          messageType: data.messageType ?? 'TEXT',
+          fileUrl: data.fileUrl ?? null,
+          fileName: data.fileName ?? null,
+          fileType: data.fileType ?? null
+        },
+        'Message',
+        {
+          id: true,
+          conversationId: true,
+          senderId: true,
+          content: true,
+          messageType: true,
+          fileUrl: true,
+          fileName: true,
+          fileType: true,
+          createdAt: true,
+          sender: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatar: true
+            }
+          }
+        }
+      );
+
+      // Update conversation's updatedAt timestamp
+      await DatabaseQueryBuilder.update(
+        models.conversation,
+        data.conversationId,
+        { updatedAt: new Date() },
+        'Conversation'
+      );
+
+      // Format the message for response
+      const formattedMessage: MessageWithSender = {
+        id: (message as any).id,
+        conversationId: (message as any).conversationId ?? '',
+        content: (message as any).content ?? '',
+        messageType: (message as any).messageType ?? 'TEXT',
+        fileUrl: (message as any).fileUrl ?? undefined,
+        fileName: (message as any).fileName ?? undefined,
+        fileType: (message as any).fileType ?? undefined,
+        sentAt: (message as any).createdAt,
+        readAt: (message as any).readAt ?? undefined,
+        sender: {
+          id: (message as any).sender.id,
+          firstName: (message as any).sender.firstName,
+          lastName: (message as any).sender.lastName,
+          avatar: (message as any).sender.avatar ?? undefined
+        }
+      };
+
+      logger.info('Message sent successfully', { messageId: (message as any).id });
+      return formattedMessage;
+    } catch (error) {
+      logger.error('Error sending message', { error, senderId, conversationId: data.conversationId });
+      throw error;
+    }
+  }
+
+  /**
+   * Mark all messages in a conversation as read
+   */
+  async markAllMessagesAsRead(conversationId: string, userId: string): Promise<void> {
+    try {
+      await DatabaseQueryBuilder.updateMany(
+        models.message,
+        {
+          conversationId,
+          senderId: { not: userId },
+          readAt: null
+        },
+        {
+          readAt: new Date()
+        },
+        'Message'
+      );
+      
+      logger.info('Messages marked as read', { conversationId, userId });
+    } catch (error) {
+      logger.error('Error marking messages as read', { error, conversationId, userId });
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a conversation (soft delete)
+   */
+  async deleteConversation(conversationId: string, userId: string): Promise<void> {
+    try {
+      // For now, just remove the user as a participant
+      await DatabaseQueryBuilder.deleteMany(
+        models.conversationParticipant,
+        {
+          conversationId,
+          userId
+        },
+        'ConversationParticipant'
+      );
+      
+      logger.info('User removed from conversation', { conversationId, userId });
+    } catch (error) {
+      logger.error('Error deleting conversation', { error, conversationId, userId });
+      throw error;
+    }
+  }
+
+  /**
+   * Add participants to a conversation
+   */
+  async addParticipants(conversationId: string, participantIds: string[], requesterId: string): Promise<any> {
+    try {
+      // Verify requester is a participant
+      const conversation = await this.getConversation(conversationId, requesterId);
+      if (!conversation) {
+        throw new NotFoundError('Conversation not found');
+      }
+
+      // Add new participants
+      const newParticipants = participantIds.map(userId => ({
+        conversationId,
+        userId,
+        joinedAt: new Date()
+      }));
+
+      await DatabaseQueryBuilder.createMany(
+        models.conversationParticipant,
+        newParticipants,
+        'ConversationParticipant'
+      );
+
+      logger.info('Participants added to conversation', { conversationId, participantIds });
+      return { success: true };
+    } catch (error) {
+      logger.error('Error adding participants', { error, conversationId, participantIds });
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a participant from a conversation
+   */
+  async removeParticipant(conversationId: string, participantId: string, requesterId: string): Promise<void> {
+    try {
+      // Verify requester is a participant
+      const conversation = await this.getConversation(conversationId, requesterId);
+      if (!conversation) {
+        throw new NotFoundError('Conversation not found');
+      }
+
+      await DatabaseQueryBuilder.deleteMany(
+        models.conversationParticipant,
+        {
+          conversationId,
+          userId: participantId
+        },
+        'ConversationParticipant'
+      );
+
+      logger.info('Participant removed from conversation', { conversationId, participantId });
+    } catch (error) {
+      logger.error('Error removing participant', { error, conversationId, participantId });
       throw error;
     }
   }

@@ -245,7 +245,6 @@ export class OptimizedQueries {
             firstName: true,
             lastName: true,
             email: true,
-            profilePicture: true,
             createdAt: true,
             isActive: true
           }

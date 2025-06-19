@@ -94,42 +94,106 @@ model Category {
 }
 
 model Task {
-  id           String    @id @default(uuid())
-  title        String
-  description  String
-  ownerId      String
-  categoryId   String
-  assigneeId   String?
-  completedById  String?
-  status       String
-  priority     String
-  budget       Float
-  budgetType   String
-  isRemote     Boolean   @default(false)
-  location     String?
-  city         String?
-  state        String?
-  latitude     Float?
-  longitude    Float?
-  deadline     DateTime?
-  completedAt  DateTime?
-  cancelledAt  DateTime?
+  id            String    @id @default(uuid())
+  title         String
+  description   String
+  ownerId       String
+  categoryId    String
+  assigneeId    String?
+  completedById String?
+  status        String
+  priority      String
+  viewCount     Int       @default(0)
+  applicantCount Int      @default(0)
+  isFeatured    Boolean   @default(false)
+  isUrgent      Boolean   @default(false)
   paymentStatus String?
-  tags         String[]  @default([])
-  requirements String[]  @default([])
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  completedAt   DateTime?
+  cancelledAt   DateTime?
+  cancellationReason String?
+  disputeReason String?
+  tags          String[]  @default([])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Relations
-  owner        User      @relation("TaskOwner", fields: [ownerId], references: [id])
-  assignee     User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  completedBy  User?     @relation("TasksCompleted", fields: [completedById], references: [id])
-  category     Category  @relation(fields: [categoryId], references: [id])
-  bids         Bid[]
-  reviews      Review[]
-  attachments  Attachment[]
-  payments     Payment[]
-  disputes     Dispute[]
+  owner         User         @relation("TaskOwner", fields: [ownerId], references: [id])
+  assignee      User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  completedBy   User?        @relation("TasksCompleted", fields: [completedById], references: [id])
+  category      Category     @relation(fields: [categoryId], references: [id])
+  budget        TaskBudget?
+  location      TaskLocation?
+  timing        TaskTiming?
+  requirements  TaskRequirements?
+  bids          Bid[]
+  reviews       Review[]
+  attachments   Attachment[]
+  payments      Payment[]
+  disputes      Dispute[]
+}
+
+model TaskBudget {
+  id             String  @id @default(uuid())
+  taskId         String  @unique
+  amount         Float
+  type           String  // BudgetType enum
+  currency       String  @default("USD")
+  negotiable     Boolean @default(false)
+  estimatedHours Float?
+  maxAmount      Float?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  task           Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model TaskLocation {
+  id          String  @id @default(uuid())
+  taskId      String  @unique
+  isRemote    Boolean @default(false)
+  address     String?
+  city        String?
+  state       String?
+  country     String?
+  postalCode  String?
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  task        Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model TaskTiming {
+  id                String    @id @default(uuid())
+  taskId            String    @unique
+  startDate         DateTime?
+  dueDate           DateTime?
+  deadline          DateTime?
+  estimatedDuration Int?      // in days
+  isFlexible        Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  task              Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model TaskRequirements {
+  id                String    @id @default(uuid())
+  taskId            String    @unique
+  skills            String[]  @default([])
+  experience        String?
+  certifications    String[]  @default([])
+  equipmentNeeded   String[]  @default([])
+  otherRequirements String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  task              Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
 }
 
 model Bid {

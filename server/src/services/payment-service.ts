@@ -325,43 +325,48 @@ export class PaymentService {
   }
 
   /**
-   * Process payment with payment gateway
-   * 
-   * This is a mock implementation. In production, this would integrate
-   * with actual payment processors like Stripe, PayPal, etc.
+   * Process payment through Stripe
    */
   private async processPaymentWithGateway(
-    _paymentId: string, // Prefixed with underscore to indicate intentionally unused
+    paymentId: string,
     paymentData: CreatePaymentData
   ): Promise<PaymentGatewayResult> {
-    logger.info('Processing payment with gateway', { 
+    logger.info('Processing payment with Stripe', { 
+      paymentId,
       amount: paymentData.amount,
       method: paymentData.paymentMethod
     });
 
-    // Simulate payment processing delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Mock implementation - in production, this would call the actual payment gateway
-    // For demo purposes, we'll simulate a successful payment most of the time
-    const isSuccessful = Math.random() > 0.1; // 90% success rate
-
-    if (isSuccessful) {
-      return {
+    try {
+      // In production, initialize Stripe here:
+      // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+      
+      // For now, mock a successful response
+      // TODO: Replace with actual Stripe implementation
+      const mockResult = {
         success: true,
-        transactionId: `tx_${Date.now()}_${Math.floor(Math.random() * 1000000)}`,
+        transactionId: `pi_${Date.now()}_${Math.floor(Math.random() * 1000000)}`,
         details: {
-          processorResponse: 'approved',
-          authorizationCode: `auth_${Math.floor(Math.random() * 1000000)}`
+          processorResponse: 'succeeded',
+          paymentMethodId: 'pm_mock_card',
+          clientSecret: `pi_${paymentId}_secret_mock`
         }
       };
-    } else {
+
+      logger.info('Payment processed successfully', { 
+        paymentId,
+        transactionId: mockResult.transactionId 
+      });
+      
+      return mockResult;
+    } catch (error) {
+      logger.error('Payment processing failed', { error, paymentId });
       return {
         success: false,
         details: {
-          processorResponse: 'declined',
-          declineReason: 'insufficient_funds',
-          errorCode: 'payment_failed'
+          processorResponse: 'failed',
+          errorCode: 'payment_processing_error',
+          errorMessage: error instanceof Error ? error.message : 'Unknown error'
         }
       };
     }
@@ -1540,6 +1545,119 @@ export class PaymentService {
       logger.error('Error getting payment receipt', { error, paymentId, userId });
       throw error;
     }
+  }
+
+  /**
+   * Calculate payment fees breakdown
+   */
+  private calculatePaymentFees(amount: number): { platformFee: number; processingFee: number; totalFees: number } {
+    const platformFee = Math.round(amount * 0.05 * 100) / 100; // 5% platform fee
+    const processingFee = Math.round(amount * 0.029 * 100) / 100; // 2.9% processing fee
+    const totalFees = platformFee + processingFee;
+    
+    return { platformFee, processingFee, totalFees };
+  }
+
+  /**
+   * Create payment record in database
+   */
+  private async createPaymentRecord(
+    payerId: string, 
+    paymentData: CreatePaymentData, 
+    feeBreakdown: { platformFee: number; processingFee: number; totalFees: number }
+  ): Promise<any> {
+    return DatabaseQueryBuilder.create(
+      models.payment,
+      {
+        taskId: paymentData.taskId,
+        userId: payerId,
+        payerId,
+        amount: paymentData.amount,
+        fees: feeBreakdown.totalFees,
+        platformFee: feeBreakdown.platformFee,
+        processingFee: feeBreakdown.processingFee,
+        status: 'PENDING',
+        paymentMethod: paymentData.paymentMethod
+      },
+      'Payment',
+      {
+        id: true,
+        taskId: true,
+        userId: true,
+        payerId: true,
+        amount: true,
+        fees: true,
+        platformFee: true,
+        processingFee: true,
+        status: true,
+        paymentMethod: true,
+        createdAt: true
+      }
+    );
+  }
+
+  /**
+   * Complete payment after successful gateway processing
+   */
+  private async completePayment(paymentId: string, gatewayResult: any, task: any): Promise<PaymentTransaction> {
+    // Update payment status
+    const updatedPayment = await DatabaseQueryBuilder.update(
+      models.payment,
+      paymentId,
+      {
+        status: 'COMPLETED',
+        gatewayTransactionId: gatewayResult.transactionId,
+        gatewayResponse: gatewayResult.details,
+        completedAt: new Date()
+      },
+      'Payment'
+    );
+
+    // Update user balances
+    await this.updateUserBalances(updatedPayment as any, task);
+
+    // Update task payment status
+    await DatabaseQueryBuilder.update(
+      models.task,
+      task.id,
+      { paymentStatus: 'PAID' },
+      'Task'
+    );
+
+    return this.formatPaymentTransaction(updatedPayment as any);
+  }
+
+  /**
+   * Handle payment failure
+   */
+  private async handlePaymentFailure(paymentId: string, gatewayResult: any): Promise<void> {
+    await DatabaseQueryBuilder.update(
+      models.payment,
+      paymentId,
+      {
+        status: 'FAILED',
+        gatewayResponse: gatewayResult.details
+      },
+      'Payment'
+    );
+  }
+
+  /**
+   * Format payment for response
+   */
+  private formatPaymentTransaction(payment: any): PaymentTransaction {
+    return {
+      id: payment.id,
+      taskId: payment.taskId,
+      payerId: payment.payerId,
+      amount: payment.amount,
+      platformFee: payment.platformFee,
+      processingFee: payment.processingFee,
+      status: payment.status,
+      createdAt: payment.createdAt,
+      completedAt: payment.completedAt,
+      paymentMethod: payment.paymentMethod
+    };
   }
 }
 

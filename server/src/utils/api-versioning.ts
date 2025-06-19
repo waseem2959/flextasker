@@ -6,7 +6,7 @@
  */
 
 import { NextFunction, Request, Response, Router } from 'express';
-import semver from 'semver';
+import * as semver from 'semver';
 import { logger } from './logger';
 import { sendError } from './response-utils';
 
@@ -183,7 +183,7 @@ export function apiVersionMiddleware() {
     }
     
     // Extend request with version info
-    req.apiVersion = {
+    (req as any).apiVersion = {
       requested: requestedVersion,
       effective: effectiveVersion,
       status: versionConfig?.status ?? VersionStatus.CURRENT
@@ -237,7 +237,7 @@ export function createVersionedRouter(
   
   // Add middleware to check version
   const versionCheckMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-    if (req.apiVersion?.effective === version) {
+    if ((req as any).apiVersion?.effective === version) {
       next();
       return;
     }
@@ -253,8 +253,8 @@ export function createVersionedRouter(
       { 
         field: 'version',
         message: errorMessage,
-        ...(req.apiVersion?.requested && { requestedVersion: req.apiVersion.requested }),
-        ...(req.apiVersion?.effective && { effectiveVersion: req.apiVersion.effective })
+        ...((req as any).apiVersion?.requested && { requestedVersion: (req as any).apiVersion.requested }),
+        ...((req as any).apiVersion?.effective && { effectiveVersion: (req as any).apiVersion.effective })
       }
     ];
     
@@ -278,7 +278,7 @@ export function versionedRoute(
   versionHandlers: Record<string, (req: Request, res: Response, next: NextFunction) => void | Promise<void>>
 ): (req: Request, res: Response, next: NextFunction) => Promise<void> {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const version = req.apiVersion?.effective ?? CURRENT_API_VERSION;
+    const version = (req as any).apiVersion?.effective ?? CURRENT_API_VERSION;
     
     // Find the exact version handler
     let handler = versionHandlers[version];

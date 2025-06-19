@@ -7,7 +7,7 @@
 
 import errorService from '@/services/error-service';
 import { ApiResponse, PaginatedApiResponse, Review } from '@/types';
-import { apiClient } from './api-client';
+import { BaseApiService, BaseSearchParams } from './base-api-service';
 
 /**
  * Review creation request interface
@@ -40,17 +40,13 @@ export interface UpdateReviewRequest {
 /**
  * Review search parameters
  */
-export interface ReviewSearchParams {
+export interface ReviewSearchParams extends BaseSearchParams {
   taskId?: string;
   authorId?: string;
   subjectId?: string;
   minRating?: number;
   maxRating?: number;
   isPublic?: boolean;
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
 }
 
 /**
@@ -73,188 +69,165 @@ export interface UserRatingStats {
 }
 
 /**
- * Fetch reviews with optional filtering
+ * Review Service Class
  * 
- * @param params - Search parameters for filtering reviews
- * @returns Promise with paginated reviews
+ * Extends BaseApiService to provide standardized CRUD operations plus review-specific functionality.
  */
-export async function getReviews(params?: ReviewSearchParams): Promise<PaginatedApiResponse<Review>> {
-  try {
-    return await apiClient.get('/reviews', params as any) as PaginatedApiResponse<Review>;
-  } catch (error) {
-    errorService.handleError(error, 'Failed to fetch reviews');
-    throw error;
+class ReviewService extends BaseApiService<Review, CreateReviewRequest, UpdateReviewRequest, ReviewSearchParams> {
+  constructor() {
+    super('/reviews');
+  }
+
+  /**
+   * Get reviews for a specific task
+   */
+  async getTaskReviews(taskId: string, params?: Omit<ReviewSearchParams, 'taskId'>): Promise<PaginatedApiResponse<Review>> {
+    try {
+      return await this.customGet(`/tasks/${taskId}/reviews`, params) as PaginatedApiResponse<Review>;
+    } catch (error) {
+      errorService.handleError(error, 'Failed to fetch task reviews');
+      throw error;
+    }
+  }
+
+  /**
+   * Get reviews authored by a specific user
+   */
+  async getUserAuthoredReviews(userId: string, params?: Omit<ReviewSearchParams, 'authorId'>): Promise<PaginatedApiResponse<Review>> {
+    try {
+      return await this.customGet(`/users/${userId}/authored-reviews`, params) as PaginatedApiResponse<Review>;
+    } catch (error) {
+      errorService.handleError(error, 'Failed to fetch user authored reviews');
+      throw error;
+    }
+  }
+
+  /**
+   * Get reviews about a specific user
+   */
+  async getUserReceivedReviews(userId: string, params?: Omit<ReviewSearchParams, 'subjectId'>): Promise<PaginatedApiResponse<Review>> {
+    try {
+      return await this.customGet(`/users/${userId}/received-reviews`, params) as PaginatedApiResponse<Review>;
+    } catch (error) {
+      errorService.handleError(error, 'Failed to fetch user received reviews');
+      throw error;
+    }
+  }
+
+  /**
+   * Get rating statistics for a user
+   */
+  async getUserRatingStats(userId: string): Promise<ApiResponse<UserRatingStats>> {
+    try {
+      return await this.customGet(`/users/${userId}/rating-stats`);
+    } catch (error) {
+      errorService.handleError(error, 'Failed to fetch user rating statistics');
+      throw error;
+    }
+  }
+
+  /**
+   * Check if current user can review a task
+   */
+  async canReviewTask(taskId: string): Promise<ApiResponse<{canReview: boolean; reason?: string}>> {
+    try {
+      return await this.customGet(`/can-review/${taskId}`);
+    } catch (error) {
+      errorService.handleError(error, 'Failed to check review permission');
+      throw error;
+    }
+  }
+
+  /**
+   * Flag a review as inappropriate
+   */
+  async flagReview(reviewId: string, reason: string): Promise<ApiResponse<void>> {
+    try {
+      return await this.customPost(`/${reviewId}/flag`, { reason });
+    } catch (error) {
+      errorService.handleError(error, 'Failed to flag review');
+      throw error;
+    }
+  }
+
+  /**
+   * Override getAll to include error handling
+   */
+  async getAll(params?: ReviewSearchParams): Promise<PaginatedApiResponse<Review>> {
+    try {
+      return await super.getAll(params);
+    } catch (error) {
+      errorService.handleError(error, 'Failed to fetch reviews');
+      throw error;
+    }
+  }
+
+  /**
+   * Override getById to include error handling
+   */
+  async getById(id: string): Promise<ApiResponse<Review>> {
+    try {
+      return await super.getById(id);
+    } catch (error) {
+      errorService.handleError(error, 'Failed to fetch review');
+      throw error;
+    }
+  }
+
+  /**
+   * Override create to include error handling
+   */
+  async create(data: CreateReviewRequest): Promise<ApiResponse<Review>> {
+    try {
+      return await super.create(data);
+    } catch (error) {
+      errorService.handleError(error, 'Failed to create review');
+      throw error;
+    }
+  }
+
+  /**
+   * Override update to include error handling
+   */
+  async update(id: string, data: UpdateReviewRequest): Promise<ApiResponse<Review>> {
+    try {
+      return await super.update(id, data);
+    } catch (error) {
+      errorService.handleError(error, 'Failed to update review');
+      throw error;
+    }
+  }
+
+  /**
+   * Override delete to include error handling
+   */
+  async delete(id: string): Promise<ApiResponse<void>> {
+    try {
+      return await super.delete(id);
+    } catch (error) {
+      errorService.handleError(error, 'Failed to delete review');
+      throw error;
+    }
   }
 }
 
-/**
- * Get a specific review by ID
- * 
- * @param reviewId - The review ID
- * @returns Promise with the review details
- */
-export async function getReviewById(reviewId: string): Promise<ApiResponse<Review>> {
-  try {
-    return await apiClient.get(`/reviews/${reviewId}`);
-  } catch (error) {
-    errorService.handleError(error, 'Failed to fetch review');
-    throw error;
-  }
-}
+// Create singleton instance
+const reviewServiceInstance = new ReviewService();
 
-/**
- * Create a new review
- * 
- * @param reviewData - The review data
- * @returns Promise with the created review
- */
-export async function createReview(reviewData: CreateReviewRequest): Promise<ApiResponse<Review>> {
-  try {
-    return await apiClient.post('/reviews', reviewData);
-  } catch (error) {
-    errorService.handleError(error, 'Failed to create review');
-    throw error;
-  }
-}
+// Export individual methods for backward compatibility and tree shaking
+export const getReviews = (params?: ReviewSearchParams) => reviewServiceInstance.getAll(params);
+export const getReviewById = (reviewId: string) => reviewServiceInstance.getById(reviewId);
+export const createReview = (reviewData: CreateReviewRequest) => reviewServiceInstance.create(reviewData);
+export const updateReview = (reviewId: string, reviewData: UpdateReviewRequest) => reviewServiceInstance.update(reviewId, reviewData);
+export const deleteReview = (reviewId: string) => reviewServiceInstance.delete(reviewId);
+export const getTaskReviews = (taskId: string, params?: Omit<ReviewSearchParams, 'taskId'>) => reviewServiceInstance.getTaskReviews(taskId, params);
+export const getUserAuthoredReviews = (userId: string, params?: Omit<ReviewSearchParams, 'authorId'>) => reviewServiceInstance.getUserAuthoredReviews(userId, params);
+export const getUserReceivedReviews = (userId: string, params?: Omit<ReviewSearchParams, 'subjectId'>) => reviewServiceInstance.getUserReceivedReviews(userId, params);
+export const getUserRatingStats = (userId: string) => reviewServiceInstance.getUserRatingStats(userId);
+export const canReviewTask = (taskId: string) => reviewServiceInstance.canReviewTask(taskId);
+export const flagReview = (reviewId: string, reason: string) => reviewServiceInstance.flagReview(reviewId, reason);
 
-/**
- * Update an existing review
- * 
- * @param reviewId - The review ID
- * @param reviewData - The updated review data
- * @returns Promise with the updated review
- */
-export async function updateReview(
-  reviewId: string, 
-  reviewData: UpdateReviewRequest
-): Promise<ApiResponse<Review>> {
-  try {
-    return await apiClient.put(`/reviews/${reviewId}`, reviewData);
-  } catch (error) {
-    errorService.handleError(error, 'Failed to update review');
-    throw error;
-  }
-}
-
-/**
- * Delete a review
- * 
- * @param reviewId - The review ID
- * @returns Promise indicating success or failure
- */
-export async function deleteReview(reviewId: string): Promise<ApiResponse<void>> {
-  try {
-    return await apiClient.delete(`/reviews/${reviewId}`);
-  } catch (error) {
-    errorService.handleError(error, 'Failed to delete review');
-    throw error;
-  }
-}
-
-/**
- * Get reviews for a specific task
- * 
- * @param taskId - The task ID
- * @param params - Additional search parameters
- * @returns Promise with paginated task reviews
- */
-export async function getTaskReviews(
-  taskId: string, 
-  params?: Omit<ReviewSearchParams, 'taskId'>
-): Promise<PaginatedApiResponse<Review>> {
-  try {
-    return await apiClient.get(`/tasks/${taskId}/reviews`, params) as PaginatedApiResponse<Review>;
-  } catch (error) {
-    errorService.handleError(error, 'Failed to fetch task reviews');
-    throw error;
-  }
-}
-
-/**
- * Get reviews authored by a specific user
- * 
- * @param userId - The user ID
- * @param params - Additional search parameters
- * @returns Promise with paginated reviews authored by the user
- */
-export async function getUserAuthoredReviews(
-  userId: string,
-  params?: Omit<ReviewSearchParams, 'authorId'>
-): Promise<PaginatedApiResponse<Review>> {
-  try {
-    return await apiClient.get(`/users/${userId}/authored-reviews`, params) as PaginatedApiResponse<Review>;
-  } catch (error) {
-    errorService.handleError(error, 'Failed to fetch user authored reviews');
-    throw error;
-  }
-}
-
-/**
- * Get reviews about a specific user
- * 
- * @param userId - The user ID
- * @param params - Additional search parameters
- * @returns Promise with paginated reviews about the user
- */
-export async function getUserReceivedReviews(
-  userId: string,
-  params?: Omit<ReviewSearchParams, 'subjectId'>
-): Promise<PaginatedApiResponse<Review>> {
-  try {
-    return await apiClient.get(`/users/${userId}/received-reviews`, params) as PaginatedApiResponse<Review>;
-  } catch (error) {
-    errorService.handleError(error, 'Failed to fetch user received reviews');
-    throw error;
-  }
-}
-
-/**
- * Get rating statistics for a user
- * 
- * @param userId - The user ID
- * @returns Promise with user rating statistics
- */
-export async function getUserRatingStats(userId: string): Promise<ApiResponse<UserRatingStats>> {
-  try {
-    return await apiClient.get(`/users/${userId}/rating-stats`);
-  } catch (error) {
-    errorService.handleError(error, 'Failed to fetch user rating statistics');
-    throw error;
-  }
-}
-
-/**
- * Check if current user can review a task
- * 
- * @param taskId - The task ID
- * @returns Promise with boolean indicating if review is allowed
- */
-export async function canReviewTask(taskId: string): Promise<ApiResponse<{canReview: boolean; reason?: string}>> {
-  try {
-    return await apiClient.get(`/reviews/can-review/${taskId}`);
-  } catch (error) {
-    errorService.handleError(error, 'Failed to check review permission');
-    throw error;
-  }
-}
-
-/**
- * Flag a review as inappropriate
- * 
- * @param reviewId - The review ID
- * @param reason - Reason for flagging
- * @returns Promise indicating success or failure
- */
-export async function flagReview(reviewId: string, reason: string): Promise<ApiResponse<void>> {
-  try {
-    return await apiClient.post(`/reviews/${reviewId}/flag`, { reason });
-  } catch (error) {
-    errorService.handleError(error, 'Failed to flag review');
-    throw error;
-  }
-}
-
-// Export service object
+// Export service object for backward compatibility
 export const reviewService = {
   getReviews,
   getReviewById,

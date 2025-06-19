@@ -83,10 +83,10 @@ export function useSocket() {
 /**
  * Hook for subscribing to socket events
  */
-export function useSocketEvent<T = any>(
+export function useSocketEvent<T = unknown>(
   eventType: SocketEventType | string,
   callback: (data: T) => void,
-  deps: any[] = []
+  deps: unknown[] = []
 ) {
   useEffect(() => {
     // Subscribe to the event
@@ -143,7 +143,7 @@ export function useChat(conversationId: string) {
     `conversation:${conversationId}:typing:start`,
     ({ user }) => {
       setTypingUsers((prevUsers) => {
-        if (!prevUsers.some((u) => (u as any).id === (user as any).id)) {
+        if (!prevUsers.some((u) => u.id === user.id)) {
           return [...prevUsers, user];
         }
         return prevUsers;
@@ -156,7 +156,7 @@ export function useChat(conversationId: string) {
     `conversation:${conversationId}:typing:stop`,
     ({ user }) => {
       setTypingUsers((prevUsers) => 
-        prevUsers.filter((u) => (u as any).id !== (user as any).id)
+        prevUsers.filter((u) => u.id !== user.id)
       );
     },
     [conversationId]

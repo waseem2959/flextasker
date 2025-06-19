@@ -16,7 +16,7 @@ class AdminController extends BaseController {
   /**
    * Get dashboard statistics
    */
-  getDashboardStats = this.asyncHandler(async (_req: Request, res: Response) => {
+  getDashboardStats = this.asyncHandler(async (_req: Request, res: Response): Promise<void> => {
     logger.info('Retrieving dashboard statistics');
     const stats = await adminService.getDashboardStatistics();
     
@@ -26,7 +26,7 @@ class AdminController extends BaseController {
   /**
    * Get users for moderation
    */
-  getUsers = this.asyncHandler(async (req: Request, res: Response) => {
+  getUsers = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const filters = {
       role: req.query.role as string,
       status: req.query.status as string,
@@ -44,7 +44,7 @@ class AdminController extends BaseController {
   /**
    * Get detailed user information
    */
-  getUserDetails = this.asyncHandler(async (req: Request, res: Response) => {
+  getUserDetails = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.params.id;
 
     logger.info('Admin retrieving user details', { userId });
@@ -56,10 +56,10 @@ class AdminController extends BaseController {
   /**
    * Update user status (activate, suspend, etc.)
    */
-  updateUserStatus = this.asyncHandler(async (req: Request, res: Response) => {
+  updateUserStatus = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.params.id;
     const { status, reason } = req.body;
-    const adminId = req.user!.id;
+    const adminId = (req.user as any)!.id;
 
     logger.info('Admin updating user status', { userId, status, adminId });
     await adminService.updateUserStatus(userId, status, reason, adminId);
@@ -70,7 +70,7 @@ class AdminController extends BaseController {
   /**
    * Get tasks for moderation
    */
-  getTasks = this.asyncHandler(async (req: Request, res: Response) => {
+  getTasks = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const filters = {
       status: req.query.status as string,
       reported: req.query.reported === 'true',
@@ -88,7 +88,7 @@ class AdminController extends BaseController {
   /**
    * Moderate a task (approve, reject, hide)
    */
-  moderateTask = this.asyncHandler(async (req: Request, res: Response) => {
+  moderateTask = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const taskId = req.params.id;
     const { action, reason } = req.body;
     const adminId = req.user?.id;
@@ -112,7 +112,7 @@ class AdminController extends BaseController {
   /**
    * Get reported reviews for moderation
    */
-  getReportedReviews = this.asyncHandler(async (req: Request, res: Response) => {
+  getReportedReviews = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
 
@@ -129,7 +129,7 @@ class AdminController extends BaseController {
   /**
    * Moderate a review (approve, reject, hide)
    */
-  moderateReview = this.asyncHandler(async (req: Request, res: Response) => {
+  moderateReview = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const reviewId = req.params.id;
     const { action, reason } = req.body;
     const adminId = req.user?.id;
@@ -148,7 +148,7 @@ class AdminController extends BaseController {
   /**
    * Get verification requests
    */
-  getVerifications = this.asyncHandler(async (req: Request, res: Response) => {
+  getVerifications = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const filters = {
       type: req.query.type as string,
       status: req.query.status as string,
@@ -165,10 +165,10 @@ class AdminController extends BaseController {
   /**
    * Process a verification request (approve or reject)
    */
-  processVerification = this.asyncHandler(async (req: Request, res: Response) => {
+  processVerification = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const verificationId = req.params.id;
     const { action, notes } = req.body;
-    const adminId = req.user!.id;
+    const adminId = (req.user as any)!.id;
 
     logger.info('Admin processing verification', { verificationId, action, adminId });
     await adminService.processVerification(verificationId, action, notes, adminId);
@@ -179,7 +179,7 @@ class AdminController extends BaseController {
   /**
    * Get system metrics
    */
-  getSystemMetrics = this.asyncHandler(async (_req: Request, res: Response) => {
+  getSystemMetrics = this.asyncHandler(async (_req: Request, res: Response): Promise<void> => {
     logger.info('Admin retrieving system metrics');
     const metrics = await adminService.getSystemMetrics();
     
@@ -189,7 +189,7 @@ class AdminController extends BaseController {
   /**
    * Get audit logs
    */
-  getAuditLogs = this.asyncHandler(async (req: Request, res: Response) => {
+  getAuditLogs = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const filters = {
       userId: req.query.userId as string,
       action: req.query.action as string,

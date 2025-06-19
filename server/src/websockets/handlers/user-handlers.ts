@@ -5,7 +5,7 @@
  */
 
 import { Socket } from 'socket.io';
-import { UserRole } from '../../../../shared/types/enums';
+import { UserRole } from '../../../../shared/types/common/enums';
 import { prisma } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import { monitorError } from '../../utils/monitoring';
@@ -185,7 +185,7 @@ export function registerUserHandlers(socket: Socket, socketManager: SocketManage
       
       // Get all connected socket users
       const sockets = await socketManager.getIo().fetchSockets();
-      const onlineUserIds = [...new Set(sockets.map(s => s.data.user.id))];
+      const onlineUserIds = Array.from(new Set(sockets.map(s => s.data.user.id)));
       
       // Get user details for online users
       const userDetails = await prisma.user.findMany({
@@ -197,7 +197,6 @@ export function registerUserHandlers(socket: Socket, socketManager: SocketManage
           firstName: true,
           lastName: true,
           email: true,
-          avatar: true,
           role: true,
           status: true,
           lastActive: true
@@ -249,14 +248,14 @@ export async function updateUserOnlineStatus(
       where: {
         OR: [
           { userId: userId },
-          { contactUserId: userId }
+          { contactId: userId }
         ]
       }
     });
 
     // Notify each contact
     for (const contact of contacts) {
-      const contactId = contact.userId === userId ? contact.contactUserId : contact.userId;
+      const contactId = contact.userId === userId ? contact.contactId : contact.userId;
       if (contactId) {  // Add null check
         socketManager.sendToUser(contactId, 'user:onlineStatus', {
           userId: userId,

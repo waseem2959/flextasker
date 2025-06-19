@@ -380,7 +380,7 @@ export function performanceMonitoringMiddleware(req: Request, res: Response, nex
   const originalEnd = res.end.bind(res);
   res.end = function(this: Response, ...args: any[]) {
     const responseTime = Date.now() - startTime;
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
 
     // Record API request metrics
     monitor.recordApiRequest(responseTime, res.statusCode, userId);

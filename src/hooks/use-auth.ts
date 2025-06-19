@@ -30,7 +30,7 @@ import { useContext } from 'react';
 interface AuthResultWithTokens {
   success: boolean;
   message?: string;
-  user?: any;
+  user?: User;
   token?: string;
   refreshToken?: string;
 }
@@ -89,11 +89,18 @@ export function useRequireAuth(): User {
 }
 
 /**
+ * Type guard to ensure user is authenticated and has a user object
+ */
+function isAuthenticatedUser(auth: AuthContextType): auth is AuthContextType & { user: User } {
+  return auth.isAuthenticated && auth.user !== null;
+}
+
+/**
  * Hook for checking if the current user is an admin
  */
 export function useIsAdmin(): boolean {
   const auth = useAuth();
-  return isAuthenticated(auth) && (auth.user as any).role === UserRole.ADMIN;
+  return isAuthenticatedUser(auth) && auth.user.role === UserRole.ADMIN;
 }
 
 /**
@@ -101,18 +108,15 @@ export function useIsAdmin(): boolean {
  */
 export function useIsTasker(): boolean {
   const auth = useAuth();
-  return isAuthenticated(auth) && (auth.user as any).role === UserRole.TASKER;
+  return isAuthenticatedUser(auth) && auth.user.role === UserRole.TASKER;
 }
 
 /**
  * Hook for checking if the current user is a regular user
- * Fixed to use the correct enum value
  */
 export function useIsRegularUser(): boolean {
   const auth = useAuth();
-  // Changed from UserRole.USER to UserRole.REGULAR_USER if that's what exists,
-  // or ensure UserRole.USER is defined in your enum
-  return isAuthenticated(auth) && (auth.user as any).role === UserRole.USER;
+  return isAuthenticatedUser(auth) && auth.user.role === UserRole.USER;
 }
 
 /**
@@ -120,7 +124,7 @@ export function useIsRegularUser(): boolean {
  */
 export function useHasRole(requiredRole: UserRole): boolean {
   const auth = useAuth();
-  return isAuthenticated(auth) && (auth.user as any).role === requiredRole;
+  return isAuthenticatedUser(auth) && auth.user.role === requiredRole;
 }
 
 /**
@@ -129,10 +133,10 @@ export function useHasRole(requiredRole: UserRole): boolean {
 export function useRequireRole(requiredRole: UserRole): User {
   const user = useRequireAuth();
   
-  if ((user as any).role !== requiredRole) {
+  if (user.role !== requiredRole) {
     throw new Error(
       `This component requires a user with role ${requiredRole}, ` +
-      `but the current user has role ${(user as any).role}. ` +
+      `but the current user has role ${user.role}. ` +
       `Use a conditional or route guard to check roles before rendering this component.`
     );
   }
@@ -145,7 +149,7 @@ export function useRequireRole(requiredRole: UserRole): User {
  */
 export function useHasAnyRole(roles: UserRole[]): boolean {
   const auth = useAuth();
-  return isAuthenticated(auth) && roles.includes((auth.user as any).role);
+  return isAuthenticated(auth) && roles.includes(auth.user.role);
 }
 
 /**
@@ -154,10 +158,10 @@ export function useHasAnyRole(roles: UserRole[]): boolean {
 export function useRequireAnyRole(roles: UserRole[]): User {
   const user = useRequireAuth();
   
-  if (!roles.includes((user as any).role)) {
+  if (!roles.includes(user.role)) {
     throw new Error(
       `This component requires a user with one of the following roles: ${roles.join(', ')}, ` +
-      `but the current user has role ${(user as any).role}. ` +
+      `but the current user has role ${user.role}. ` +
       `Use a conditional or route guard to check roles before rendering this component.`
     );
   }

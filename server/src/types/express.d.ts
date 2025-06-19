@@ -1,13 +1,12 @@
 import 'express';
 import { VersionStatus } from '../utils/api-versioning';
+import { AuthenticatedUser } from '../middleware/auth-middleware';
 
 declare global {
   namespace Express {
     interface Request {
-      // Added by authentication middleware - using Prisma User type for consistency
-      user?: User & {
-        language?: string;
-      };
+      // Added by authentication middleware
+      user?: AuthenticatedUser;
 
       // Added by file upload middleware (if using custom file handling)
       files?: {

@@ -16,7 +16,7 @@
 import * as ApiTypes from './api-types';
 import * as Enums from './enums';
 import * as ErrorTypes from './error-types';
-import * as TaskTypes from './task-types';
+import * as TaskTypes from '../task/unified-task-types';
 import * as UserTypes from './user-types';
 
 export { ApiTypes, Enums, ErrorTypes, TaskTypes, UserTypes };

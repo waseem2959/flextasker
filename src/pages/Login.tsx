@@ -7,7 +7,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { Lock, User } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Layout } from '../components/layout/Layout';
+import { Layout } from '../components/layout/layout';
+import { SEO } from '../utils/seo';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -45,6 +46,12 @@ const Login = () => {
 
   return (
     <Layout>
+      <SEO
+        title="Login | Flextasker"
+        description="Sign in to your Flextasker account to post tasks or offer your services. Join our community of skilled professionals and task seekers."
+        canonicalUrl="https://flextasker.com/login"
+        noindex={true}
+      />
       <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50 via-white to-primary-50 font-body">
         <div className="w-full max-w-md">
           <Card className="border-2 border-neutral-200 shadow-xl hover:shadow-2xl transition-shadow duration-300 rounded-xl overflow-hidden">

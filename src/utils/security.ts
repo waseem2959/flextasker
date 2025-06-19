@@ -20,7 +20,7 @@ export const contentSecurityPolicy = {
   'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
   'img-src': ["'self'", "data:", "https://cdn.jsdelivr.net", "https://*.cloudfront.net"],
   'font-src': ["'self'", "https://fonts.gstatic.com"],
-  'connect-src': ["'self'", import.meta.env.VITE_API_URL ?? 'http://localhost:3000'],
+  'connect-src': ["'self'", (typeof import !== 'undefined' && import.meta?.env?.VITE_API_URL) || process.env.VITE_API_URL || 'http://localhost:3000'],
   'frame-src': ["'none'"],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
@@ -443,10 +443,52 @@ export function setupSecurityEventListeners(): void {
 
 // Export individual functions for backward compatibility
 export const sanitizeHtml = Sanitizer.sanitizeHTML;
+export const sanitizeHTML = Sanitizer.sanitizeHTML; // Alias for consistency
 export const validateCSRFToken = (token: string): boolean => {
   const storedToken = CSRFProtection.getToken();
   return token === storedToken;
 };
+
+/**
+ * Initialize the authentication system
+ * 
+ * This function should be called early in the application lifecycle,
+ * typically before rendering the app.
+ */
+export function initializeAuth(): void {
+  try {
+    // Set up security event listeners for token refresh and session management
+    setupSecurityEventListeners();
+    
+    // Get auth data using the secure AuthSecurity class
+    const authData = AuthSecurity.getAuthData();
+    if (authData?.token && AuthSecurity.isTokenExpired(authData.token)) {
+      // Token is expired, clear it to trigger re-login
+      AuthSecurity.clearAuthData();
+      console.warn('Expired authentication token detected and cleared');
+    }
+    
+    // Log success
+    console.info('Auth initialization successful');
+  } catch (error) {
+    // Log error but don't crash the application
+    console.error('Failed to initialize authentication system', { error });
+  }
+}
+
+/**
+ * Check if the user is authenticated
+ * 
+ * @returns Promise that resolves to true if the user is authenticated, false otherwise
+ */
+export function isAuthenticated(): boolean {
+  try {
+    const authData = AuthSecurity.getAuthData();
+    return !!authData?.token && !AuthSecurity.isTokenExpired(authData.token);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Export all security utilities
@@ -462,5 +504,8 @@ export default {
   RECOMMENDED_SECURITY_HEADERS,
   setupSecurityEventListeners,
   sanitizeHtml,
-  validateCSRFToken
+  sanitizeHTML,
+  validateCSRFToken,
+  initializeAuth,
+  isAuthenticated
 };

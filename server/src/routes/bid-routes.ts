@@ -9,12 +9,11 @@
  * - Retrieving bid statistics
  */
 
-import { bidController } from '@/controllers/bid-controller';
+import { bidController } from '../controllers/bid-controller';
 import { NextFunction, Request, Response, Router } from 'express';
-import { body, param, query } from 'express-validator';
-import { BidStatus, UserRole } from '../../../shared/types/enums';
 import { authenticateToken, requireRoles } from '../middleware/auth-middleware';
-import { validate } from '../middleware/validation-middleware';
+import { validateRequest } from '../middleware/zod-validation-middleware';
+import { bidValidationConfigs } from '../validation/bid-validation';
 
 const router = Router();
 

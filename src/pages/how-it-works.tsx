@@ -2,11 +2,40 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CreditCard, MessageSquare, Shield, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Layout } from '../components/layout/Layout';
+import { Layout } from '../components/layout/layout';
+import { SEO } from '../utils/seo';
 
 const HowItWorks = () => {
   return (
     <Layout>
+      <SEO
+        title="How It Works | Simple Task Marketplace | Flextasker"
+        description="Learn how Flextasker works in 3 simple steps: Post a task, get offers from skilled taskers, and choose the best one. Safe, secure, and easy to use."
+        canonicalUrl="https://flextasker.com/how-it-works"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'HowTo',
+          name: 'How to use Flextasker',
+          description: 'Learn how to post tasks and hire skilled workers on Flextasker',
+          step: [
+            {
+              '@type': 'HowToStep',
+              name: 'Post your task',
+              text: 'Describe what you need done, set your budget, and post your task'
+            },
+            {
+              '@type': 'HowToStep', 
+              name: 'Get offers',
+              text: 'Receive offers from qualified taskers in your area'
+            },
+            {
+              '@type': 'HowToStep',
+              name: 'Choose & pay',
+              text: 'Select the best tasker and pay securely through our platform'
+            }
+          ]
+        }}
+      />
       {/* Hero Section - Clean and Simple */}
       <div className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

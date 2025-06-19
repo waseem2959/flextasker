@@ -8,7 +8,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { performance } from 'perf_hooks';
-import metricsService from '@/utils/monitoring/metrics-service';
+import metricsService from '../utils/monitoring/metrics-service';
 
 // Extend the Request type to include our custom properties
 declare global {

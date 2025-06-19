@@ -9,49 +9,22 @@
 
 import { ApiResponse, PaginatedApiResponse, Task } from '@/types';
 import { BaseApiService, BaseSearchParams } from './base-api-service';
+// Import unified task types
+import { 
+  TaskSearchParams as UnifiedTaskSearchParams,
+  TaskCreateRequest as CreateTaskRequest,
+  TaskUpdateRequest as UpdateTaskRequest
+} from '../../../shared/types/task/unified-task-types';
 
 /**
- * Task search parameters extending base search params
+ * Task search parameters for API service - uses unified types
  */
-export interface TaskSearchParams extends BaseSearchParams {
-  status?: string;  // We'll convert TaskStatus enum to string when calling API
-  category?: string;
-  minBudget?: number;
-  maxBudget?: number;
-  location?: string;
-  userId?: string;
+export interface TaskSearchParams extends Omit<UnifiedTaskSearchParams, 'page' | 'limit' | 'sortBy' | 'sortDirection'>, BaseSearchParams {
+  sortBy?: 'createdAt' | 'dueDate' | 'budget' | 'priority';
 }
 
-/**
- * Create task request
- */
-export interface CreateTaskRequest {
-  title: string;
-  description: string;
-  category: string;
-  budget?: number;
-  budgetType?: string;  // String representation of BudgetType enum
-  location?: string;
-  dueDate?: string;
-  attachments?: string[];
-  skills?: string[];
-}
-
-/**
- * Update task request
- */
-export interface UpdateTaskRequest {
-  title?: string;
-  description?: string;
-  category?: string;
-  budget?: number;
-  budgetType?: string;  // String representation of BudgetType enum
-  location?: string;
-  status?: string;      // String representation of TaskStatus enum
-  dueDate?: string;
-  attachments?: string[];
-  skills?: string[];
-}
+// Re-export unified types for backward compatibility
+export type { CreateTaskRequest, UpdateTaskRequest };
 
 /**
  * Task API Service Class

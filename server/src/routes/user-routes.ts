@@ -9,15 +9,45 @@
  * - Profile verification
  */
 
-import { userController } from '@/controllers/user-controller';
-import { authenticateToken, optionalAuth } from '@/middleware/auth-middleware';
-import { uploadAvatar } from '@/middleware/upload-middleware';
-import { validate } from '@/middleware/validation-middleware';
+import { userController } from '../controllers/user-controller';
+import { authenticateToken, optionalAuth } from '../middleware/auth-middleware';
+import { uploadAvatar } from '../middleware/upload-middleware';
+import { validateRequest } from '../middleware/zod-validation-middleware';
+import { userValidationConfigs } from '../validation/user-validation';
 import { Router } from 'express';
-import { body, param, query } from 'express-validator';
-import { UserRole } from '../../../shared/types/enums';
+import { z } from 'zod';
 
 const router = Router();
+
+// Additional validation schemas not in user-validation
+const getUserStatsSchema = {
+  params: z.object({
+    id: z.string().uuid('Invalid user ID format')
+  })
+};
+
+const verifyEmailSchema = {
+  params: z.object({
+    token: z.string().min(1, 'Token is required')
+  })
+};
+
+const requestPasswordResetSchema = {
+  body: z.object({
+    email: z.string().email('Valid email is required')
+  })
+};
+
+const resetPasswordSchema = {
+  body: z.object({
+    token: z.string().min(1, 'Token is required'),
+    newPassword: z.string()
+      .min(8, 'New password must be at least 8 characters')
+      .max(100, 'New password must be less than 100 characters')
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 
+        'Password must include uppercase, lowercase, number and special character')
+  })
+};
 
 /**
  * Get Current User Profile
@@ -31,9 +61,7 @@ router.get('/me', authenticateToken, userController.getMyProfile);
  */
 router.get('/:id', 
   optionalAuth,
-  validate([
-    param('id').isUUID().withMessage('Invalid user ID format')
-  ]),
+  validateRequest(userValidationConfigs.getUserById),
   userController.getUserById
 );
 
@@ -43,16 +71,7 @@ router.get('/:id',
  */
 router.put('/me',
   authenticateToken,
-  validate([
-    body('name').optional().isString().trim().isLength({ min: 1, max: 100 })
-      .withMessage('Name must be between 1 and 100 characters'),
-    body('bio').optional().isString().trim().isLength({ max: 500 })
-      .withMessage('Bio cannot exceed 500 characters'),
-    body('phone').optional().matches(/^\+?\d{10,15}$/)
-      .withMessage('Phone number must be valid (10-15 digits, may include + prefix)'),
-    body('location').optional().isString().trim().isLength({ max: 100 })
-      .withMessage('Location cannot exceed 100 characters')
-  ]),
+  validateRequest(userValidationConfigs.updateProfile),
   userController.updateUser
 );
 
@@ -72,13 +91,7 @@ router.put('/me/avatar',
  */
 router.put('/me/password',
   authenticateToken,
-  validate([
-    body('currentPassword').notEmpty().withMessage('Current password is required'),
-    body('newPassword').isLength({ min: 8, max: 100 })
-      .withMessage('New password must be between 8 and 100 characters')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-      .withMessage('Password must include uppercase, lowercase, number and special character')
-  ]),
+  validateRequest(userValidationConfigs.changePassword),
   userController.updatePassword
 );
 
@@ -88,9 +101,7 @@ router.put('/me/password',
  */
 router.delete('/me',
   authenticateToken,
-  validate([
-    body('confirmPassword').notEmpty().withMessage('Password confirmation is required')
-  ]),
+  validateRequest(userValidationConfigs.deactivateAccount),
   userController.deleteUser
 );
 
@@ -100,14 +111,7 @@ router.delete('/me',
  */
 router.get('/search', 
   optionalAuth,
-  validate([
-    query('query').optional().isString().trim(),
-    query('role').optional().isIn(Object.values(UserRole)),
-    query('location').optional().isString().trim(),
-    query('minRating').optional().isFloat({ min: 0, max: 5 }),
-    query('page').optional().isInt({ min: 1 }).toInt(),
-    query('limit').optional().isInt({ min: 1, max: 100 }).toInt()
-  ]),
+  validateRequest(userValidationConfigs.searchUsers),
   userController.searchUsers
 );
 
@@ -126,9 +130,7 @@ router.get('/me/stats',
  */
 router.get('/:id/stats',
   optionalAuth,
-  validate([
-    param('id').isUUID().withMessage('Invalid user ID format')
-  ]),
+  validateRequest(getUserStatsSchema),
   userController.getUserStats
 );
 
@@ -137,9 +139,7 @@ router.get('/:id/stats',
  * GET /api/v1/users/verify-email/:token
  */
 router.get('/verify-email/:token',
-  validate([
-    param('token').isString().notEmpty().withMessage('Token is required')
-  ]),
+  validateRequest(verifyEmailSchema),
   userController.verifyEmail
 );
 
@@ -148,9 +148,7 @@ router.get('/verify-email/:token',
  * POST /api/v1/users/request-password-reset
  */
 router.post('/request-password-reset',
-  validate([
-    body('email').isEmail().withMessage('Valid email is required')
-  ]),
+  validateRequest(requestPasswordResetSchema),
   userController.requestPasswordReset
 );
 
@@ -159,13 +157,7 @@ router.post('/request-password-reset',
  * POST /api/v1/users/reset-password
  */
 router.post('/reset-password',
-  validate([
-    body('token').isString().notEmpty().withMessage('Token is required'),
-    body('newPassword').isLength({ min: 8, max: 100 })
-      .withMessage('New password must be between 8 and 100 characters')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-      .withMessage('Password must include uppercase, lowercase, number and special character')
-  ]),
+  validateRequest(resetPasswordSchema),
   userController.resetPassword
 );
 

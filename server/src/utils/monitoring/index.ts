@@ -81,7 +81,7 @@ export function securityMonitoringMiddleware(req: Request, _res: Response, next:
       suspiciousHeader,
       suspiciousQuery,
       suspiciousBody,
-      user: req.user?.id
+      user: (req.user as any)?.id
     });
   }
   

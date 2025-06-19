@@ -5,7 +5,7 @@
  * the frontend and backend to ensure consistency across the codebase.
  */
 
-import { ErrorType, HttpStatusCode } from './enums';
+import { ErrorType, HttpStatusCode } from '../errors';
 
 /**
  * Base application error class
@@ -250,7 +250,7 @@ export class ServerError extends AppError {
   ) {
     super(
       message,
-      ErrorType.SERVER_ERROR,
+      ErrorType.SERVER,
       code,
       HttpStatusCode.INTERNAL_SERVER_ERROR,
       details,
@@ -272,7 +272,7 @@ export class NetworkError extends AppError {
   ) {
     super(
       message,
-      ErrorType.NETWORK_ERROR,
+      ErrorType.NETWORK,
       'ERR_NETWORK',
       HttpStatusCode.SERVICE_UNAVAILABLE,
       details,
@@ -328,9 +328,9 @@ export function createErrorFromType(
       return new ConflictError(message, code, details, path);
     case ErrorType.RATE_LIMIT:
       return new RateLimitError(message, details?.retryAfter, details, path);
-    case ErrorType.SERVER_ERROR:
+    case ErrorType.SERVER:
       return new ServerError(message, code, details, path);
-    case ErrorType.NETWORK_ERROR:
+    case ErrorType.NETWORK:
       return new NetworkError(message, details, path);
     case ErrorType.TIMEOUT:
       return new TimeoutError(message, details, path);

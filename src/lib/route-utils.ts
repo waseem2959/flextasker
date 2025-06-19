@@ -39,6 +39,9 @@ export const ROUTES = {
   BIDS: '/bids',
   BID_DETAIL: (id: string = ':id') => `/bids/${id}`,
   
+  // Other routes
+  HOW_IT_WORKS: '/how-it-works',
+  
   // Admin routes
   ADMIN: '/admin',
   ADMIN_DASHBOARD: '/admin/dashboard',

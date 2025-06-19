@@ -5,8 +5,8 @@
  * tracking schema versions, and ensuring consistency across environments.
  */
 
-import fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import { config } from './config';
 import { prisma } from './database';
 import { withTransaction } from './db-transaction';

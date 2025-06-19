@@ -57,7 +57,7 @@ export function sendSuccess<T>(
   data: T,
   message?: string,
   statusCode: number = 200
-): Response {
+): void {
   const response: ApiSuccessResponse<T> = {
     success: true,
     data,
@@ -70,7 +70,7 @@ export function sendSuccess<T>(
     statusCode
   });
   
-  return res.status(statusCode).json(response);
+  res.status(statusCode).json(response);
 }
 
 /**
@@ -88,7 +88,7 @@ export function sendPaginatedSuccess<T>(
   pagination: PaginationInfo,
   message?: string,
   statusCode: number = 200
-): Response {
+): void {
   const response: ApiSuccessResponse<T> = {
     success: true,
     data,
@@ -107,7 +107,7 @@ export function sendPaginatedSuccess<T>(
     }
   });
   
-  return res.status(statusCode).json(response);
+  res.status(statusCode).json(response);
 }
 
 /**
@@ -125,7 +125,7 @@ export function sendError(
   statusCode: number = 500,
   code?: string,
   details?: ErrorDetail[]
-): Response {
+): void {
   const response: ApiErrorResponse = {
     success: false,
     error: {
@@ -143,7 +143,7 @@ export function sendError(
     errorCode: code
   });
   
-  return res.status(statusCode).json(response);
+  res.status(statusCode).json(response);
 }
 
 /**
@@ -157,13 +157,13 @@ export function sendValidationError(
   res: Response,
   errors: Record<string, string>,
   message: string = 'Validation failed'
-): Response {
+): void {
   const details: ErrorDetail[] = Object.entries(errors).map(([field, message]) => ({
     field,
     message
   }));
   
-  return sendError(res, message, 400, 'VALIDATION_ERROR', details);
+  sendError(res, message, 400, 'VALIDATION_ERROR', details);
 }
 
 /**
@@ -177,9 +177,9 @@ export function sendNotFoundError(
   res: Response,
   message: string = 'Resource not found',
   resource?: string
-): Response {
+): void {
   const code = resource ? `${resource.toUpperCase()}_NOT_FOUND` : 'NOT_FOUND';
-  return sendError(res, message, 404, code);
+  sendError(res, message, 404, code);
 }
 
 /**
@@ -191,8 +191,8 @@ export function sendNotFoundError(
 export function sendUnauthorizedError(
   res: Response,
   message: string = 'Unauthorized access'
-): Response {
-  return sendError(res, message, 401, 'UNAUTHORIZED');
+): void {
+  sendError(res, message, 401, 'UNAUTHORIZED');
 }
 
 /**
@@ -204,8 +204,8 @@ export function sendUnauthorizedError(
 export function sendForbiddenError(
   res: Response,
   message: string = 'Access forbidden'
-): Response {
-  return sendError(res, message, 403, 'FORBIDDEN');
+): void {
+  sendError(res, message, 403, 'FORBIDDEN');
 }
 
 /**
@@ -219,9 +219,9 @@ export function sendConflictError(
   res: Response,
   message: string = 'Resource conflict',
   resource?: string
-): Response {
+): void {
   const code = resource ? `${resource.toUpperCase()}_CONFLICT` : 'CONFLICT';
-  return sendError(res, message, 409, code);
+  sendError(res, message, 409, code);
 }
 
 /**

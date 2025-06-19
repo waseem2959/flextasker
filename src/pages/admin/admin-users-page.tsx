@@ -1,269 +1,356 @@
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { UserRole } from '../../../shared/types/common/enums';
-// Removed unused admin layout
+import { useAdminUsers, useAdmin } from '../../hooks/use-admin-query';
+import { Layout } from '../../components/layout/layout';
+import { SEO } from '../../utils/seo';
+import { usePerformance } from '../../hooks/use-performance';
 
 // Import our components
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-// Import Lucide icons instead of Material UI
-import { Edit, Eye, MoreVertical, Search } from 'lucide-react';
+// Import optimized components
+import {
+  MemoizedUserAvatar,
+  MemoizedRoleBadge,
+  MemoizedStatusBadge,
+  MemoizedFormattedDate,
+  MemoizedLoadingSpinner,
+  MemoizedStatsCard,
+  MemoizedActionButtons,
+  MemoizedEmptyState
+} from '../../components/optimized/memoized-components';
+import { DebouncedSearchInput } from '../../components/optimized/debounced-inputs';
+import { VirtualizedTable } from '../../components/optimized/virtualized-list';
 
-// Helper function to get badge class name based on user role
-const getBadgeClassNameByRole = (role: UserRole): string => {
-  switch (role) {
-    case UserRole.ADMIN:
-      return 'bg-[hsl(196,80%,42%)] text-white hover:bg-[hsl(196,80%,36%)]';
-    case UserRole.TASKER:
-      return 'bg-[hsl(263,85%,50%)] text-white hover:bg-[hsl(263,85%,44%)]';
-    default:
-      return 'bg-[hsl(220,14%,96%)] text-[hsl(206,33%,35%)] hover:bg-[hsl(220,14%,90%)]';
-  }
-};
+// Import Lucide icons
+import { AlertCircle, Users, UserCheck, UserX } from 'lucide-react';
 
-// User interface matching the backend model
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  averageRating: number;
-  createdAt: string;
-  isActive: boolean;
-}
+// Badge styling moved to memoized components for better performance
 
 const AdminUsersPage = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  // Keep error state for potential API error handling in the future
-  const [error] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Pagination
+  const [roleFilter, setRoleFilter] = useState<UserRole | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   
-  // Fetch users data
-  useEffect(() => {
-    // In a real implementation, this would call an API
-    // Currently using mock data for demonstration purposes
-    setLoading(true);
-    
-    // Mock data
-    const mockUsers: User[] = Array.from({ length: 50 }, (_, i) => ({
-      id: `user-${i + 1}`,
-      email: `user${i + 1}@example.com`,
-      firstName: `First${i + 1}`,
-      lastName: `Last${i + 1}`,
-      role: getUserRole(i),
-      averageRating: Math.round((Math.random() * 4 + 1) * 10) / 10,
-      createdAt: new Date(Date.now() - Math.random() * 10000000000).toISOString(),
-      isActive: Math.random() > 0.2
-    }));
-    
-    setUsers(mockUsers);
-    setFilteredUsers(mockUsers);
-    setLoading(false);
-  }, []);
-  
-  // Handle search
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredUsers(users);
-      return;
-    }
-    
-    const term = searchTerm.toLowerCase();
-    const filtered = users.filter(user => 
-      user.email.toLowerCase().includes(term) ||
-      user.firstName.toLowerCase().includes(term) ||
-      user.lastName.toLowerCase().includes(term) ||
-      `${user.firstName} ${user.lastName}`.toLowerCase().includes(term)
-    );
-    
-    setFilteredUsers(filtered);
-    setPage(0); // Reset to first page on search
-  }, [searchTerm, users]);
-  
-  // Page and rows per page are now handled directly in the UI
-  
-  // Date formatting is now handled directly in JSX
-  
-  // Helper function to determine user role based on index
-  const getUserRole = (index: number): UserRole => {
-    if (index % 10 === 0) {
-      return UserRole.ADMIN;
-    } else if (index % 3 === 0) {
-      return UserRole.TASKER;
-    } else {
-      return UserRole.USER;
-    }
+  // Performance monitoring
+  const { } = usePerformance({
+    componentName: 'AdminUsersPage',
+    enabled: process.env.NODE_ENV === 'development'
+  });
+
+  // Prepare filters for the query
+  const filters = useMemo(() => ({
+    search: searchTerm || undefined,
+    role: roleFilter !== 'all' ? roleFilter : undefined,
+    isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
+    page,
+    limit: rowsPerPage
+  }), [searchTerm, roleFilter, statusFilter, page, rowsPerPage]);
+
+  // Use React Query hooks
+  const {
+    data: usersData,
+    isLoading,
+    isError,
+    error
+  } = useAdminUsers(filters);
+
+  const {
+    updateUserStatus,
+    deleteUser,
+    isUpdatingStatus,
+    isDeleting
+  } = useAdmin();
+
+  const users = usersData?.users || [];
+  const totalUsers = usersData?.total || 0;
+
+  const handleChangePage = (newPage: number) => {
+    setPage(newPage);
   };
   
-  // Render functions to extract the nested ternary
-  const renderLoading = () => (
-    <div className="py-8 text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(196,80%,43%)] mx-auto"></div>
-      <p className="mt-4 text-[hsl(220,14%,46%)]">Loading users...</p>
-    </div>
-  );
-
-  const renderError = () => (
-    <div className="py-8 text-center text-[hsl(354,70%,54%)]">{error}</div>
-  );
-
-  const renderUsersTable = () => (
-    <Card className="w-full overflow-hidden">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Rating</TableHead>
-              <TableHead>Join Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredUsers
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{`${user.firstName} ${user.lastName}`}</TableCell>
-                  <TableCell className="text-[hsl(220,14%,46%)]">{user.email}</TableCell>
-                  <TableCell>
-                    <Badge 
-                      className={getBadgeClassNameByRole(user.role)}
-                    >
-                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {user.averageRating.toFixed(1)}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant={user.isActive ? "default" : "outline"}
-                      className={
-                        user.isActive ? 'bg-[hsl(142,71%,45%)] text-white' : 'text-[hsl(356,100%,65%)] border-[hsl(356,100%,85%)]'
-                      }
-                    >
-                      {user.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </div>
-      
-      {/* Pagination */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-[hsl(215,16%,90%)]">
-        <div className="text-sm text-[hsl(220,14%,46%)]">
-          Showing <span className="font-medium">{Math.min(page * rowsPerPage + 1, filteredUsers.length)}</span> to <span className="font-medium">
-          {Math.min((page + 1) * rowsPerPage, filteredUsers.length)}</span> of <span className="font-medium">{filteredUsers.length}</span> results
-        </div>
-        
-        <div className="flex space-x-2">
-          <select
-            className="border border-[hsl(215,16%,80%)] rounded-md text-sm py-1"
-            value={rowsPerPage}
-            onChange={(e) => {
-              const value = parseInt(e.target.value, 10);
-              setRowsPerPage(value);
-              setPage(0);
-            }}
-            aria-label="Rows per page"
-            title="Select number of rows per page"
-          >
-            {[10, 25, 50].map(value => (
-              <option key={value} value={value}>Show {value}</option>
-            ))}
-          </select>
-
-          <div className="flex">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(page - 1)}
-              disabled={page === 0}
-              className="rounded-r-none border-r-0"
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(page + 1)}
-              disabled={page >= Math.ceil(filteredUsers.length / rowsPerPage) - 1}
-              className="rounded-l-none"
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-
-  // Function to determine which content to render based on state
-  const renderContent = () => {
-    if (loading) {
-      return renderLoading();
-    }
-    if (error) {
-      return renderError();
-    }
-    return renderUsersTable();
+  const handleChangeRowsPerPage = (newRowsPerPage: number) => {
+    setRowsPerPage(newRowsPerPage);
+    setPage(0);
   };
-  
+
+  const handleToggleUserStatus = (userId: string, currentStatus: boolean) => {
+    updateUserStatus(userId, !currentStatus);
+  };
+
+
+  const handleDeleteUser = (userId: string) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      deleteUser(userId);
+    }
+  };
+
+  // Calculate pagination
+  const totalPages = Math.ceil(totalUsers / rowsPerPage);
+
+  // Define table columns for virtualized table
+  const tableColumns = useMemo(() => [
+    {
+      key: 'name',
+      header: 'Name',
+      width: '200px',
+      render: (user: any) => (
+        <div className="flex items-center space-x-3">
+          <MemoizedUserAvatar
+            firstName={user.firstName}
+            lastName={user.lastName}
+            avatar={user.avatar}
+            size="sm"
+          />
+          <span>{user.firstName} {user.lastName}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      width: '180px',
+      render: (user: any) => user.email,
+    },
+    {
+      key: 'role',
+      header: 'Role',
+      width: '100px',
+      render: (user: any) => <MemoizedRoleBadge role={user.role} />,
+    },
+    {
+      key: 'rating',
+      header: 'Rating',
+      width: '80px',
+      render: (user: any) => `${user.averageRating.toFixed(1)} ⭐`,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      width: '100px',
+      render: (user: any) => (
+        <MemoizedStatusBadge 
+          status="status"
+          isActive={user.isActive}
+        />
+      ),
+    },
+    {
+      key: 'tasks',
+      header: 'Tasks',
+      width: '80px',
+      render: (user: any) => user.totalTasks || 0,
+    },
+    {
+      key: 'created',
+      header: 'Created',
+      width: '120px',
+      render: (user: any) => <MemoizedFormattedDate date={user.createdAt} />,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      width: '180px',
+      render: (user: any) => (
+        <MemoizedActionButtons
+          actions={[
+            {
+              label: user.isActive ? 'Deactivate' : 'Activate',
+              onClick: () => handleToggleUserStatus(user.id, user.isActive),
+              disabled: isUpdatingStatus
+            },
+            {
+              label: 'View',
+              onClick: () => console.log('View user', user.id),
+              variant: 'outline'
+            },
+            {
+              label: 'Delete',
+              onClick: () => handleDeleteUser(user.id),
+              variant: 'destructive',
+              disabled: isDeleting
+            }
+          ]}
+        />
+      ),
+    },
+  ], [isUpdatingStatus, isDeleting]);
+
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <div className="container mx-auto px-4 py-8">
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-[hsl(206,33%,16%)]">User Management</h1>
+    <Layout>
+      <SEO
+        title="User Management | Admin Dashboard | Flextasker"
+        description="Manage users, view user statistics, and control user access on Flextasker admin panel."
+        canonicalUrl="https://flextasker.com/admin/users"
+      />
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+            <p className="text-gray-600 mt-2">Manage user accounts, roles, and permissions</p>
+          </div>
 
-        <div className="flex flex-wrap gap-4 items-center mb-6">
-          {/* Search */}
-          <div className="relative flex-grow max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[hsl(220,14%,46%)]" />
-            <Input
-              placeholder="Search users by name or email"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+          {/* Stats Cards - Memoized for better performance */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <MemoizedStatsCard
+              title="Total Users"
+              value={totalUsers}
+              icon={<Users className="h-4 w-4" />}
+            />
+            <MemoizedStatsCard
+              title="Active Users"
+              value={users.filter(u => u.isActive).length}
+              icon={<UserCheck className="h-4 w-4" />}
+            />
+            <MemoizedStatsCard
+              title="Inactive Users"
+              value={users.filter(u => !u.isActive).length}
+              icon={<UserX className="h-4 w-4" />}
+            />
+            <MemoizedStatsCard
+              title="Taskers"
+              value={users.filter(u => u.role === UserRole.TASKER).length}
+              icon={<Users className="h-4 w-4" />}
             />
           </div>
-        </div>
-        
-        {renderContent()}
+
+          {/* Filters and Search */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Filter Users</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <DebouncedSearchInput
+                  value={searchTerm}
+                  onSearch={setSearchTerm}
+                  placeholder="Search users..."
+                  delay={300}
+                  loading={isLoading}
+                />
+                <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value as UserRole | 'all')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value={UserRole.USER}>Users</SelectItem>
+                    <SelectItem value={UserRole.TASKER}>Taskers</SelectItem>
+                    <SelectItem value={UserRole.ADMIN}>Admins</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'inactive')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={rowsPerPage.toString()} onValueChange={(value) => handleChangeRowsPerPage(parseInt(value))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Items per page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 per page</SelectItem>
+                    <SelectItem value="10">10 per page</SelectItem>
+                    <SelectItem value="25">25 per page</SelectItem>
+                    <SelectItem value="50">50 per page</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Loading and Error States - Memoized */}
+          {isLoading && (
+            <MemoizedLoadingSpinner
+              size="lg"
+              text="Loading users..."
+              className="py-16"
+            />
+          )}
+
+          {isError && (
+            <MemoizedEmptyState
+              icon={<AlertCircle className="h-12 w-12" />}
+              title="Error loading users"
+              description={error instanceof Error ? error.message : 'Failed to load users data.'}
+              className="py-16"
+            />
+          )}
+
+          {/* Users Table - Virtualized for better performance */}
+          {!isLoading && !isError && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Users ({totalUsers})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {users.length > 0 ? (
+                  <VirtualizedTable
+                    items={users}
+                    columns={tableColumns}
+                    rowHeight={72}
+                    containerHeight={600}
+                    className="w-full"
+                    loading={isLoading}
+                    emptyMessage="No users found"
+                    onRowClick={(user) => console.log('Row clicked:', user.id)}
+                  />
+                ) : (
+                  <MemoizedEmptyState
+                    icon={<Users className="h-12 w-12" />}
+                    title="No users found"
+                    description="No users match your current filters."
+                  />
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pagination */}
+          {!isLoading && !isError && totalPages > 1 && (
+            <Card className="mt-6">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-600">
+                    Showing {page * rowsPerPage + 1}-{Math.min((page + 1) * rowsPerPage, totalUsers)} of {totalUsers} users
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleChangePage(page - 1)}
+                      disabled={page === 0}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm">
+                      Page {page + 1} of {totalPages}
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleChangePage(page + 1)}
+                      disabled={page >= totalPages - 1}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 

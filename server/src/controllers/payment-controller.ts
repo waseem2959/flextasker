@@ -14,7 +14,7 @@ class PaymentController extends BaseController {
   /**
    * Create a new payment for a task
    */
-  createPayment = this.asyncHandler(async (req: Request, res: Response) => {
+  createPayment = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const paymentData = req.body;
 
@@ -27,7 +27,7 @@ class PaymentController extends BaseController {
   /**
    * Get a payment by ID
    */
-  getPaymentById = this.asyncHandler(async (req: Request, res: Response) => {
+  getPaymentById = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const paymentId = req.params.id;
     const userId = req.user!.id;
 
@@ -40,7 +40,7 @@ class PaymentController extends BaseController {
   /**
    * Get user's payment history
    */
-  getPaymentHistory = this.asyncHandler(async (req: Request, res: Response) => {
+  getPaymentHistory = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -62,7 +62,7 @@ class PaymentController extends BaseController {
   /**
    * Get payment summary for the current user
    */
-  getPaymentSummary = this.asyncHandler(async (req: Request, res: Response) => {
+  getPaymentSummary = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
 
     logger.info('Retrieving payment summary', { userId });
@@ -74,7 +74,7 @@ class PaymentController extends BaseController {
   /**
    * Request a refund for a payment
    */
-  requestRefund = this.asyncHandler(async (req: Request, res: Response) => {
+  requestRefund = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const paymentId = req.params.id;
     const userId = req.user!.id;
     const { reason, amount } = req.body;
@@ -88,7 +88,7 @@ class PaymentController extends BaseController {
   /**
    * Get platform payment statistics
    */
-  getPaymentStatistics = this.asyncHandler(async (req: Request, res: Response) => {
+  getPaymentStatistics = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { startDate, endDate } = req.query;
     
     const start = startDate ? new Date(startDate as string) : undefined;
@@ -103,7 +103,7 @@ class PaymentController extends BaseController {
   /**
    * Get task payment information
    */
-  getTaskPayments = this.asyncHandler(async (req: Request, res: Response) => {
+  getTaskPayments = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const taskId = req.params.taskId;
     const userId = req.user!.id;
 
@@ -116,7 +116,7 @@ class PaymentController extends BaseController {
   /**
    * Add payment method
    */
-  addPaymentMethod = this.asyncHandler(async (req: Request, res: Response) => {
+  addPaymentMethod = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
     const paymentMethodData = req.body;
 
@@ -129,7 +129,7 @@ class PaymentController extends BaseController {
   /**
    * Get user's payment methods
    */
-  getPaymentMethods = this.asyncHandler(async (req: Request, res: Response) => {
+  getPaymentMethods = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.id;
 
     logger.info('Retrieving payment methods', { userId });
@@ -141,7 +141,7 @@ class PaymentController extends BaseController {
   /**
    * Delete payment method
    */
-  deletePaymentMethod = this.asyncHandler(async (req: Request, res: Response) => {
+  deletePaymentMethod = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const paymentMethodId = req.params.id;
     const userId = req.user!.id;
 
@@ -154,7 +154,7 @@ class PaymentController extends BaseController {
   /**
    * Get payment receipt
    */
-  getPaymentReceipt = this.asyncHandler(async (req: Request, res: Response) => {
+  getPaymentReceipt = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const paymentId = req.params.id;
     const userId = req.user!.id;
 

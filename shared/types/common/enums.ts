@@ -105,6 +105,7 @@ export enum ReviewRating {
  * Account verification status
  */
 export enum VerificationStatus {
+  UNVERIFIED = 'unverified',
   PENDING = 'pending',
   VERIFIED = 'verified',
   REJECTED = 'rejected',
@@ -136,36 +137,5 @@ export enum TaskCategory {
   OTHER = 'other'
 }
 
-/**
- * Error types for better error handling
- */
-export enum ErrorType {
-  VALIDATION = 'validation',
-  AUTHENTICATION = 'authentication',
-  AUTHORIZATION = 'authorization',
-  NOT_FOUND = 'not_found',
-  CONFLICT = 'conflict',
-  RATE_LIMIT = 'rate_limit',
-  SERVER_ERROR = 'server_error',
-  NETWORK_ERROR = 'network_error',
-  TIMEOUT = 'timeout',
-  UNKNOWN = 'unknown'
-}
-
-/**
- * HTTP status codes commonly used
- */
-export enum HttpStatusCode {
-  OK = 200,
-  CREATED = 201,
-  NO_CONTENT = 204,
-  BAD_REQUEST = 400,
-  UNAUTHORIZED = 401,
-  FORBIDDEN = 403,
-  NOT_FOUND = 404,
-  CONFLICT = 409,
-  UNPROCESSABLE_ENTITY = 422,
-  TOO_MANY_REQUESTS = 429,
-  INTERNAL_SERVER_ERROR = 500,
-  SERVICE_UNAVAILABLE = 503
-}
+// Re-export error types for consistency
+export { ErrorType, HttpStatusCode } from '../errors';

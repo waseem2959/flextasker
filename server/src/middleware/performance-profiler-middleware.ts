@@ -9,7 +9,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { performance } from 'perf_hooks';
-import { logger } from '@/utils/logger';
+import { logger } from '../utils/logger';
 
 /**
  * Interface for performance entry
@@ -80,7 +80,7 @@ export function performanceProfiler(req: Request, res: Response, next: NextFunct
   }
   
   // Get or generate request ID
-  const requestId = req.context?.requestId || req.headers['x-request-id'] as string || 'unknown';
+  const requestId = (req as any).context?.requestId || req.headers['x-request-id'] as string || 'unknown';
   
   // Record start time
   const startTime = performance.now();

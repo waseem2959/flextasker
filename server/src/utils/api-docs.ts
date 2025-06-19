@@ -7,7 +7,7 @@
 
 import { Router } from 'express';
 import { OpenAPIV3 } from 'openapi-types';
-import fs from 'fs/promises';
+import * as fs from 'fs/promises';
 import { logger } from './logger';
 import { config } from './config';
 

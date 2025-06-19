@@ -30,10 +30,10 @@ export interface User extends Omit<BaseUser, 'createdAt' | 'updatedAt'> {
   // Computed property for full name
   name?: string;
 
-  // Frontend-specific optional fields
-  avatar?: string | null;
-  phone?: string | null;
-  bio?: string | null;
+  // Frontend-specific optional fields  
+  avatar?: string;
+  phone?: string;
+  bio?: string;
   trustScore?: number;
   emailVerified?: boolean;
   phoneVerified?: boolean;
@@ -44,9 +44,9 @@ export interface User extends Omit<BaseUser, 'createdAt' | 'updatedAt'> {
   lastActive?: Date | null;
 
   // Optional location fields (flattened from shared structure)
-  city?: string | null;
-  state?: string | null;
-  country?: string | null;
+  city?: string;
+  state?: string;
+  country?: string;
 
   // Computed fields for UI
   averageRating?: number;
@@ -86,16 +86,16 @@ export class UserImpl implements User {
 
   // Frontend-specific fields
   name?: string;
-  avatar?: string | null;
+  avatar?: string;
   trustScore?: number;
   emailVerified?: boolean;
   phoneVerified?: boolean;
   lastActive?: Date | null;
-  bio?: string | null;
-  phone?: string | null;
-  city?: string | null;
-  state?: string | null;
-  country?: string | null;
+  bio?: string;
+  phone?: string;
+  city?: string;
+  state?: string;
+  country?: string;
   averageRating?: number;
   totalReviews?: number;
   completedTasks?: number;
@@ -117,7 +117,7 @@ export class UserImpl implements User {
   static fromApiResponse(apiUser: ApiUserResponse): User {
     const role = (apiUser as any).role ?? UserRole.USER;
     return new UserImpl({
-      ...apiUser,
+      ...(apiUser as any),
       // Convert string dates to Date objects
       createdAt: apiUser.createdAt ? new Date(apiUser.createdAt) : new Date(),
       updatedAt: apiUser.updatedAt ? new Date(apiUser.updatedAt) : new Date(),
@@ -194,6 +194,30 @@ export interface Task {
   owner: User;
   assignee?: User | null;
   bidCount?: number;
+  
+  // Status-specific properties
+  startedAt?: Date;
+  taskerName?: string;
+  cancelledAt?: Date;
+  cancellationReason?: string;
+  disputeReason?: string;
+  clientName?: string;
+  bids?: any[];
+  dueDate?: Date;
+  acceptedBidId?: string;
+  acceptedAt?: Date;
+  taskerId?: string;
+  taskerAvatar?: string;
+  startByDate?: Date;
+  estimatedCompletionDate?: Date;
+  progress?: number;
+  rating?: number;
+  review?: string;
+  cancelledBy?: string;
+  disputedAt?: Date;
+  disputeResolution?: string;
+  clientId?: string;
+  clientAvatar?: string;
 }
 
 /**

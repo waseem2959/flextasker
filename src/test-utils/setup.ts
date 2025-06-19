@@ -348,6 +348,23 @@ declare global {
 process.env.NODE_ENV = 'test';
 process.env.VITE_API_URL = 'http://localhost:3001';
 
+// Mock import.meta for Vite environment variables
+Object.defineProperty(globalThis, 'import', {
+  value: {
+    meta: {
+      env: {
+        VITE_API_URL: 'http://localhost:3001/api/v1',
+        VITE_APP_NAME: 'Flextasker',
+        VITE_APP_VERSION: '1.0.0',
+        MODE: 'test',
+        DEV: false,
+        PROD: false,
+        SSR: false,
+      },
+    },
+  },
+});
+
 // === TEST UTILITIES EXPORT ===
 
 import { render, RenderOptions } from '@testing-library/react';

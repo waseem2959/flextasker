@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { getInitials } from '@/services/user';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layout } from '../components/layout/Layout';
+import { Layout } from '../components/layout/layout';
 
 const Profile = () => {
   const { user, isAuthenticated } = useAuth();

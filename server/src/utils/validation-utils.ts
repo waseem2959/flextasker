@@ -6,10 +6,10 @@
  */
 
 import { Request } from 'express';
-import { ValidationChain, ValidationError, validationResult } from 'express-validator';
 import { z } from 'zod';
-import { BidStatus, BudgetType, TaskPriority, TaskStatus, UserRole } from '../../../shared/types/enums';
+import { BidStatus, BudgetType, TaskPriority, TaskStatus, UserRole } from '../../../shared/types/common/enums';
 import { logger } from './logger';
+import { validationResult, ValidationChain, ValidationError } from 'express-validator';
 
 // Note: validation-schemas.ts has been consolidated into this file
 // All schemas are now defined in the ValidationSchemas object below
@@ -455,9 +455,11 @@ export function sanitizeObject<T extends Record<string, any>>(
  * 
  * @param email Email to validate
  * @returns Boolean indicating if email is valid
+ * @deprecated Use validateEmail from client lib/validation-utils for consistent validation
  */
 export function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  // Consistent email regex pattern across frontend and backend
+  return /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(email);
 }
 
 /**
@@ -543,7 +545,6 @@ export default {
   validateRequest,
   composeValidators,
   sanitizeObject,
-  isValidEmail,
   validatePasswordStrength,
   initializeValidation,
   ValidationSchemas,

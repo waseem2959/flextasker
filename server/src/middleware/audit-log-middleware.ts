@@ -26,7 +26,7 @@ export const auditLog = (action: string, resource: string) => {
       // We use setImmediate to avoid blocking the response
       setImmediate(async () => {
         try {
-          const userId = req.user?.id;
+          const userId = (req.user as any)?.id;
           const resourceId = req.params.id ?? req.body.id;
           
           const auditData: any = {

@@ -7,12 +7,12 @@
 
 import type { Request, NextFunction } from 'express'; // Removed unused Response import
 import { ValidationError } from '../error-utils';
-import DOMPurify from 'dompurify';
+import * as DOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 
 // Initialize JSDOM and DOMPurify
 const { window } = new JSDOM('');
-const purify = DOMPurify(window as unknown as Window & typeof globalThis);
+const purify = (DOMPurify as any).default(window as unknown as Window & typeof globalThis);
 
 
 
@@ -200,30 +200,6 @@ export function validateRequiredFields(requiredFields: string[]) {
   };
 }
 
-/**
- * Validates email format
- * @param emailField Name of the email field
- */
-export function validateEmail(emailField: string = 'email') {
-  return (req: Request, _res: unknown, next: NextFunction): void => {
-    const email = req.body?.[emailField];
-    if (!email) return next();
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      const error = new ValidationError('Invalid email format', {
-        errors: [{
-          field: emailField,
-          message: 'Please enter a valid email address',
-          code: 'INVALID_EMAIL'
-        }]
-      });
-      return next(error);
-    }
-    
-    next();
-  };
-}
 
 /**
  * Validates password strength

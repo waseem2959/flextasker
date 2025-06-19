@@ -75,12 +75,24 @@ class HybridCache {
     // Redis cleanup is handled internally
     // Only clean up fallback cache
 
-    // Clean up fallback cache
-    const now = Date.now();
-    for (const [key, entry] of this.fallbackCache.entries()) {
-      if (now - entry.timestamp > entry.ttl) {
-        this.fallbackCache.delete(key);
+    // Optimized cleanup: only process if cache is getting full
+    if (this.fallbackCache.size > this.maxFallbackSize * 0.8) {
+      const now = Date.now();
+      const keysToDelete: string[] = [];
+      
+      for (const [key, entry] of Array.from(this.fallbackCache.entries())) {
+        if (now - entry.timestamp > entry.ttl * 1000) { // Convert seconds to milliseconds
+          keysToDelete.push(key);
+        }
       }
+      
+      // Batch delete expired entries
+      keysToDelete.forEach(key => this.fallbackCache.delete(key));
+      
+      logger.debug('Cache cleanup completed', { 
+        expiredEntries: keysToDelete.length,
+        remainingEntries: this.fallbackCache.size 
+      });
     }
   }
 
@@ -145,7 +157,7 @@ setInterval(() => {
  */
 function generateCacheKey(req: Request): string {
   const { method, path, query, user } = req;
-  const userId = user?.id || 'anonymous';
+  const userId = (user as any)?.id || 'anonymous';
   
   // Create a unique key based on method, path, query params, and user
   const keyData = {
@@ -294,7 +306,7 @@ export const cacheConfigs = {
   userSpecific: createCacheMiddleware({
     ttl: 300,
     keyGenerator: (req) => {
-      const userId = req.user?.id || 'anonymous';
+      const userId = (req.user as any)?.id || 'anonymous';
       return `user:${userId}:${req.path}:${JSON.stringify(req.query)}`;
     }
   }),

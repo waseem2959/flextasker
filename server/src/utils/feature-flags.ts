@@ -5,13 +5,10 @@
  * controlled rollouts, A/B testing, and environment-specific feature activation.
  */
 
-import { PrismaClient } from '@prisma/client';
 import { Request } from 'express';
 import { config } from './config';
+import { prisma } from './database';
 import { logger } from './logger';
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
 
 // Cache TTL for feature flags
 // const FEATURE_FLAGS_CACHE_TTL = 5 * 60; // 5 minutes
@@ -310,7 +307,7 @@ export async function isFeatureEnabledForRequest(
   // For authenticated requests, check user-specific flag
   return isFeatureEnabledForUser(
     featureName,
-    req.user.id,
+    (req.user as any).id,
     req.user.role
   );
 }

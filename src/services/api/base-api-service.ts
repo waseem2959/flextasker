@@ -11,7 +11,7 @@ import { apiClient } from './api-client';
 /**
  * Generic search parameters interface
  */
-export interface BaseSearchParams extends Record<string, string | number | boolean | undefined> {
+export interface BaseSearchParams extends Record<string, any> {
   query?: string;
   page?: number;
   limit?: number;

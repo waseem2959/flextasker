@@ -8,10 +8,9 @@
  * - Verification status checks
  */
 
-import { verificationController } from '@/controllers/verification-controller';
-import { authenticateToken } from '@/middleware/auth-middleware';
-import { uploadVerification } from '@/middleware/upload-middleware';
-import { validate } from '@/middleware/validation-middleware';
+import { verificationController } from '../controllers/verification-controller';
+import { authenticateToken } from '../middleware/auth-middleware';
+import { uploadVerification } from '../middleware/upload-middleware';
 import { Router } from 'express';
 import { body } from 'express-validator';
 
@@ -31,11 +30,10 @@ router.post('/email/send',
  * POST /api/v1/verification/email/verify
  */
 router.post('/email/verify',
-  validate([
+  
     body('token')
       .notEmpty()
       .withMessage('Verification token is required'),
-  ]),
   verificationController.verifyEmail
 );
 
@@ -45,11 +43,10 @@ router.post('/email/verify',
  */
 router.post('/phone/send',
   authenticateToken,
-  validate([
+  
     body('phone')
       .matches(/^\+?\d{10,15}$/)
       .withMessage('Please provide a valid phone number (10-15 digits, + prefix optional)')
-  ]),
   verificationController.sendPhoneVerificationCode
 );
 
@@ -59,11 +56,10 @@ router.post('/phone/send',
  */
 router.post('/phone/verify',
   authenticateToken,
-  validate([
+  
     body('code')
       .notEmpty()
       .withMessage('Verification code is required')
-  ]),
   verificationController.verifyPhoneCode
 );
 
@@ -74,7 +70,7 @@ router.post('/phone/verify',
 router.post('/identity/upload',
   authenticateToken,
   uploadVerification,
-  validate([
+  
     body('documentType')
       .optional()
       .isIn(['ID_DOCUMENT', 'ADDRESS_PROOF', 'BACKGROUND_CHECK'])
@@ -85,7 +81,6 @@ router.post('/identity/upload',
       .trim()
       .isLength({ max: 500 })
       .withMessage('Notes must be less than 500 characters')
-  ]),
   verificationController.uploadIdentityDocument
 );
 
@@ -104,13 +99,12 @@ router.get('/status',
  */
 router.post('/request-manual',
   authenticateToken,
-  validate([
+  
     body('reason')
       .isString()
       .trim()
       .isLength({ min: 10, max: 500 })
       .withMessage('Reason must be between 10 and 500 characters'),
-  ]),
   verificationController.requestManualVerification
 );
 

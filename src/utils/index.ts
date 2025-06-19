@@ -43,7 +43,6 @@ export {
 export {
     formatBudget,
     formatTaskStatus,
-    getBudgetDisplayText,
     getStatusColor,
     getStatusIcon,
     getTaskStatusDisplayText,
@@ -51,6 +50,14 @@ export {
     isTaskInProgress,
     isTaskOpen
 } from './task-utils';
+
+// Export budget utilities
+export {
+    formatTaskBudget,
+    getCurrencySymbol,
+    calculatePlatformFee,
+    validateBudget
+} from './budget-utils';
 
 // Export UI utilities
 export {
@@ -61,13 +68,22 @@ export {
 // Export security utilities
 export {
     sanitizeHtml,
-    validateCSRFToken
+    sanitizeHTML,
+    validateCSRFToken,
+    isAuthenticated
 } from './security';
 
-// Export SEO utilities
+// Export SEO utilities (placeholder version)
 export {
-    generateMetaTags,
-    generateStructuredData
+    SEO,
+    defaultSeoConfig,
+    generateBreadcrumbSchema,
+    generateOrganizationSchema,
+    generateLocalBusinessSchema,
+    generateProductSchema,
+    generatePersonSchema,
+    generateFAQSchema,
+    generateJobPostingSchema
 } from './seo';
 
 // Export accessibility utilities
@@ -82,6 +98,22 @@ export {
 export {
     createErrorBoundary,
     handleAsyncError,
-    logError
+    logError,
+    handleDatabaseError,
+    isDatabaseError,
+    formatDatabaseError
 } from './error-handler';
+
+// Export form validation utilities (consolidated)
+export {
+    useFormValidation,
+    registerSchema,
+    loginSchema,
+    profileUpdateSchema,
+    passwordChangeSchema,
+    contactFormSchema,
+    createTaskSchema,
+    taskUpdateSchema,
+    taskSearchSchema
+} from './form-validation';
 

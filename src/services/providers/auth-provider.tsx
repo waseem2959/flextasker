@@ -16,6 +16,7 @@ import { AuthContext } from '../../contexts/context-instance';
 import { AuthContextType, LoginCredentials, RegisterData, User, UserRole } from '../../types';
 import { userService } from '../api/user-service';
 import { logger } from '../logging';
+import { AuthSecurity } from '../../utils/security';
 
 /**
  * Authentication Provider Component
@@ -30,45 +31,61 @@ const AuthProvider = ({ children }: { readonly children: ReactNode }) => {
   const [activeRole, setActiveRole] = useState<UserRole | null>(null);
   const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('accessToken'));
-  const [refreshToken, setRefreshToken] = useState<string | null>(() => localStorage.getItem('refreshToken'));
+  const [token, setToken] = useState<string | null>(() => {
+    const authData = AuthSecurity.getAuthData();
+    return authData?.token || null;
+  });
+  const [refreshToken, setRefreshToken] = useState<string | null>(() => {
+    const authData = AuthSecurity.getAuthData();
+    return authData?.refreshToken || null;
+  });
   const [loading, setLoading] = useState(false);
 
   // Fetch the current user (if authenticated)
   const { data: userData, isLoading: isUserLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: userService.getCurrentUser,
-    enabled: !!localStorage.getItem('accessToken'),
+    enabled: !!token && !AuthSecurity.isTokenExpired(token),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1
   });
   
   // Token management methods
   const setTokens = useCallback((accessToken: string, refreshToken?: string) => {
-    localStorage.setItem('accessToken', accessToken);
+    // Use secure storage for tokens
+    AuthSecurity.storeAuthData(accessToken, refreshToken);
     setToken(accessToken);
     
     if (refreshToken) {
-      localStorage.setItem('refreshToken', refreshToken);
       setRefreshToken(refreshToken);
     }
   }, []);
 
   const getToken = useCallback(() => {
-    return token ?? localStorage.getItem('accessToken');
+    if (token) return token;
+    const authData = AuthSecurity.getAuthData();
+    return authData?.token || null;
   }, [token]);
 
   const getRefreshToken = useCallback(() => {
-    return refreshToken ?? localStorage.getItem('refreshToken');
+    if (refreshToken) return refreshToken;
+    const authData = AuthSecurity.getAuthData();
+    return authData?.refreshToken || null;
   }, [refreshToken]);
 
   // Auth state management methods
   const updateUser = useCallback((newUser: User | null) => {
     setUser(newUser);
     if (newUser) {
-      setRole((newUser as any).role ?? null);
-      setActiveRole((newUser as any).activeRole ?? (newUser as any).role ?? null);
-      setAvailableRoles((newUser as any).availableRoles ?? [(newUser as any).role ?? UserRole.USER]);
+      // Type-safe property access for user roles
+      const userWithRole = newUser as User & { 
+        role?: UserRole; 
+        activeRole?: UserRole; 
+        availableRoles?: UserRole[];
+      };
+      setRole(userWithRole.role ?? null);
+      setActiveRole(userWithRole.activeRole ?? userWithRole.role ?? null);
+      setAvailableRoles(userWithRole.availableRoles ?? [userWithRole.role ?? UserRole.USER]);
       setIsAuthenticated(true);
     } else {
       setRole(null);
@@ -90,6 +107,9 @@ const AuthProvider = ({ children }: { readonly children: ReactNode }) => {
     setIsAuthenticated(false);
     setToken(null);
     setRefreshToken(null);
+    // Clear secure auth data
+    AuthSecurity.clearAuthData();
+    // Also clear any legacy localStorage entries
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
@@ -99,7 +119,9 @@ const AuthProvider = ({ children }: { readonly children: ReactNode }) => {
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginCredentials) => userService.login(credentials),
     onSuccess: (data) => {
-      setTokens((data as any).token, (data as any).refreshToken);
+      // Type-safe access to login response data
+      const loginResponse = data as unknown as { token: string; refreshToken?: string };
+      setTokens(loginResponse.token, loginResponse.refreshToken);
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
     onError: () => {

@@ -13,19 +13,8 @@ import { logger } from '../utils/logger';
 import { EmailService } from './email-service';
 import { PushNotificationService } from './push-notification-service';
 
-// Define notification types for better type safety
-export type NotificationType = 
-  | 'TASK_CREATED'
-  | 'BID_RECEIVED'
-  | 'BID_ACCEPTED'
-  | 'BID_REJECTED'
-  | 'TASK_STARTED'
-  | 'TASK_COMPLETED'
-  | 'PAYMENT_RECEIVED'
-  | 'PAYMENT_SENT'
-  | 'REVIEW_RECEIVED'
-  | 'MESSAGE_RECEIVED'
-  | 'SYSTEM_ALERT';
+// Import notification types from shared enums
+import { NotificationType } from '../../shared/types/common/enums';
 
 export interface NotificationData {
   userId: string;

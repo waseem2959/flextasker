@@ -5,13 +5,13 @@
  * and authorization related middleware for the application.
  */
 
-import { db } from '@/utils/database';
-import { AuthenticationError, AuthorizationError } from '@/utils/error-utils';
+import { db } from '../utils/database';
+import { AuthenticationError, AuthorizationError } from '../utils/error-utils';
 import { NextFunction, Request, Response } from 'express';
 // Use require for jsonwebtoken to avoid TypeScript issues
 const jwt = require('jsonwebtoken');
-import { UserRole } from '../../../shared/types/enums';
-import { logger } from '@/utils/logger';
+import { UserRole } from '../../../shared/types/common/enums';
+import { logger } from '../utils/logger';
 
 // ===== TYPE DEFINITIONS =====
 
@@ -38,15 +38,7 @@ export interface AuthenticatedUser {
   isActive: boolean;
 }
 
-/**
- * Extend the Express Request type using module augmentation
- * This is the modern way to add custom properties to Express types
- */
-declare module 'express-serve-static-core' {
-  interface Request {
-    user?: AuthenticatedUser;
-  }
-}
+// User types are defined in src/types/express.d.ts
 
 // ===== AUTHENTICATION MIDDLEWARE =====
 
@@ -201,15 +193,15 @@ export const requireRoles = (roles: UserRole[]) => {
       return next(new AuthenticationError('Authentication required'));
     }
 
-    const hasRequiredRole = roles.some(role => req.user!.role === role);
+    const hasRequiredRole = roles.some(role => (req.user as any)!.role === role);
     
     if (!hasRequiredRole) {
       return next(new AuthorizationError('Insufficient permissions'));
     }
     
     logger.info('Role authorization successful', { 
-      userId: req.user.id, 
-      userRole: req.user.role,
+      userId: (req.user as any).id, 
+      userRole: (req.user as any).role,
       requiredRoles: roles 
     });
     
@@ -245,7 +237,7 @@ export const requireEmailVerification = async (
     
     // Get the latest user data to check email verification status
     const user = await db.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: (req.user as any).id },
       select: { emailVerified: true },
     });
     
@@ -259,7 +251,7 @@ export const requireEmailVerification = async (
       );
     }
     
-    logger.info('Email verification check passed', { userId: req.user.id });
+    logger.info('Email verification check passed', { userId: (req.user as any).id });
     next();
   } catch (error) {
     next(error);
@@ -282,12 +274,12 @@ export const authorizeOwner = (paramIdField: string = 'userId') => {
       return next(new AuthorizationError(`Missing required parameter: ${paramIdField}`));
     }
     
-    if (req.user.id !== ownerId && req.user.role !== UserRole.ADMIN) {
+    if ((req.user as any).id !== ownerId && (req.user as any).role !== UserRole.ADMIN) {
       return next(new AuthorizationError('You do not have permission to access this resource'));
     }
     
     logger.info('Owner authorization successful', { 
-      userId: req.user.id,
+      userId: (req.user as any).id,
       resourceOwnerId: ownerId
     });
     

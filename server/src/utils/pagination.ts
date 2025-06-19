@@ -5,13 +5,10 @@
  * ensuring consistent behavior across the application.
  */
 
-import { PrismaClient } from '@prisma/client';
 import { Request } from 'express';
 import { z } from 'zod';
+import { prisma } from './database';
 import { logger } from './logger';
-
-// Prisma client instance
-const prisma = new PrismaClient();
 
 // Pagination parameters schema
 export const paginationSchema = z.object({

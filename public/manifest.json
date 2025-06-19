@@ -131,5 +131,43 @@
         }
       ]
     }
-  }
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+flextasker",
+      "url": "/task?taskId=%s"
+    }
+  ],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "auto"
+  },
+  "widgets": [
+    {
+      "name": "Quick Task",
+      "short_name": "Quick Task",
+      "description": "Quickly post a new task",
+      "tag": "quick-task",
+      "template": "quick-task-template",
+      "ms_ac_template": "adaptive-card.json",
+      "data": "/widgets/quick-task/data",
+      "type": "application/json",
+      "screenshot": {
+        "src": "/screenshots/widget-quick-task.jpg",
+        "sizes": "400x200",
+        "label": "Quick task widget"
+      },
+      "icons": [
+        {
+          "src": "/icons/widget-quick-task.png",
+          "sizes": "256x256"
+        }
+      ],
+      "auth": false,
+      "update": 86400
+    }
+  ]
 }

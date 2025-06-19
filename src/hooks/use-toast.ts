@@ -109,6 +109,8 @@ interface ToastProviderProps {
 export function ToastProvider({ children }: ToastProviderProps) {
   const [state, dispatch] = React.useReducer(toastReducer, { toasts: [] });
 
+  const timeoutsRef = React.useRef<Map<string, NodeJS.Timeout>>(new Map());
+
   const toast = React.useCallback((props: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast: Toast = {
@@ -120,15 +122,23 @@ export function ToastProvider({ children }: ToastProviderProps) {
 
     dispatch({ type: 'ADD_TOAST', toast: newToast });
 
-    // Auto dismiss after duration
+    // Auto dismiss after duration with proper cleanup
     if (newToast.duration && newToast.duration > 0) {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         dispatch({ type: 'DISMISS_TOAST', id });
+        timeoutsRef.current.delete(id);
       }, newToast.duration);
+      timeoutsRef.current.set(id, timeout);
     }
   }, []);
 
   const dismiss = React.useCallback((id: string) => {
+    // Clear auto-dismiss timeout when manually dismissing
+    const timeout = timeoutsRef.current.get(id);
+    if (timeout) {
+      clearTimeout(timeout);
+      timeoutsRef.current.delete(id);
+    }
     dispatch({ type: 'DISMISS_TOAST', id });
   }, []);
 
@@ -144,6 +154,12 @@ export function ToastProvider({ children }: ToastProviderProps) {
       if (toast.open === false) {
         const timeout = setTimeout(() => {
           dispatch({ type: 'REMOVE_TOAST', id: toast.id });
+          // Clean up any remaining auto-dismiss timeout
+          const autoTimeout = timeoutsRef.current.get(toast.id);
+          if (autoTimeout) {
+            clearTimeout(autoTimeout);
+            timeoutsRef.current.delete(toast.id);
+          }
         }, 200); // Animation duration
         timeouts.push(timeout);
       }
@@ -153,6 +169,14 @@ export function ToastProvider({ children }: ToastProviderProps) {
       timeouts.forEach(clearTimeout);
     };
   }, [state.toasts]);
+
+  // Cleanup all timeouts on unmount
+  React.useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+      timeoutsRef.current.clear();
+    };
+  }, []);
 
   const value: ToastContextValue = {
     toasts: state.toasts,

@@ -4,7 +4,7 @@
  * This context provides real-time notification functionality throughout the application.
  */
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { useAuth } from '../hooks/use-auth';
 import useSocket from '../hooks/use-socket';
 import { apiClient } from '../services/api/api-client';
@@ -57,17 +57,36 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   const [error, setError] = useState<Error | null>(null);
   const { isConnected } = useSocket();
   
-  // Handle new notification events
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+  
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  
+  // Handle new notification events with memory leak prevention
   const handleNewNotification = useCallback((notification: any) => {
-    setNotifications(prev => [{
-      id: notification.id,
-      userId: notification.userId,
-      type: notification.type,
-      message: notification.message ?? notification.content,
-      isRead: notification.read ?? false,
-      relatedId: notification.relatedId ?? notification.taskId ?? notification.bidId,
-      createdAt: notification.createdAt ? new Date(notification.createdAt) : new Date()
-    }, ...prev]);
+    if (!isMountedRef.current) return;
+    
+    setNotifications(prev => {
+      const newNotification = {
+        id: notification.id,
+        userId: notification.userId,
+        type: notification.type,
+        message: notification.message ?? notification.content,
+        isRead: notification.read ?? false,
+        relatedId: notification.relatedId ?? notification.taskId ?? notification.bidId,
+        createdAt: notification.createdAt ? new Date(notification.createdAt) : new Date()
+      };
+      
+      // Prevent duplicates and limit to 50 notifications to prevent memory issues
+      const filtered = prev.filter(n => n.id !== notification.id);
+      const updated = [newNotification, ...filtered];
+      return updated.slice(0, 50); // Reduced from 100 to 50 for better performance
+    });
   }, []);
   
   // Calculate unread count
@@ -75,26 +94,35 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     return notifications.filter(notification => !notification.isRead).length;
   }, [notifications]);
   
-  // Clear error
+  // Clear error with mounted check
   const clearError = useCallback(() => {
-    setError(null);
+    if (isMountedRef.current) {
+      setError(null);
+    }
   }, []);
   
-  // Fetch notifications from API
+  // Fetch notifications from API with mounted check
   const fetchNotifications = useCallback(async () => {
-    if (!isAuthenticated || !user) return;
+    if (!isAuthenticated || !user || !isMountedRef.current) return;
     
     setLoading(true);
     setError(null);
     
     try {
       const response = await apiClient.get<Notification[]>('/notifications');
-      setNotifications((response as any).data || []);
+      if (isMountedRef.current) {
+        const notificationData = (response as any).data || [];
+        setNotifications(Array.isArray(notificationData) ? notificationData.slice(0, 50) : []);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch notifications'));
-      console.error('Error fetching notifications:', err);
+      if (isMountedRef.current) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch notifications'));
+        console.error('Error fetching notifications:', err);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [isAuthenticated, user]);
   

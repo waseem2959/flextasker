@@ -27,11 +27,25 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Separate vendor chunks for better caching
-          'react-vendor': ['react', 'react-dom'],
-          'router-vendor': ['react-router-dom'],
-          'ui-vendor': ['@radix-ui/react-dropdown-menu', '@radix-ui/react-dialog', '@radix-ui/react-avatar'],
-          'utils-vendor': ['date-fns', 'clsx', 'tailwind-merge'],
+          // Core React chunks
+          'react-core': ['react', 'react-dom'],
+          'router': ['react-router-dom'],
+          
+          // UI library chunks (split by usage frequency)
+          'ui-primitives': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-avatar'],
+          'ui-advanced': ['@radix-ui/react-navigation-menu', '@radix-ui/react-popover'],
+          'ui-forms': ['@radix-ui/react-select', '@radix-ui/react-checkbox', '@radix-ui/react-switch'],
+          
+          // Feature-specific chunks
+          'charts': ['recharts'],
+          'animations': ['framer-motion'],
+          'forms': ['react-hook-form', '@hookform/resolvers'],
+          'query': ['@tanstack/react-query'],
+          
+          // Utility chunks
+          'date-utils': ['date-fns'],
+          'ui-utils': ['clsx', 'tailwind-merge', 'class-variance-authority'],
+          'validation': ['zod'],
         },
       },
     },

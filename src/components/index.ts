@@ -9,7 +9,7 @@
 export * from './ui';
 
 // === LAYOUT COMPONENTS ===
-export * from './layout/Layout';
+export * from './layout/layout';
 
 // === FEATURE COMPONENTS ===
 
@@ -18,8 +18,7 @@ export * from './protected-route';
 
 // Task Management
 export * from './task/task-card';
-export * from './task/task-creation-wizard';
-export * from './task/task-form';
+export * from './task/unified-task-wizard';
 export * from './task/task-list';
 
 // Homepage Components
@@ -56,8 +55,6 @@ export { PortfolioDisplay, SkillsDisplay, SkillsPortfolio } from './user/skills-
 export { TrustScore, VerificationBadge, VerificationBadges } from './user/verification-badges';
 
 // Payment Components
-export { CommissionCalculator } from './payment/commission-calculator';
-export { EscrowService } from './payment/escrow-service';
 export { PaymentMethodSelector } from './payment/payment-method-selector';
 
 // Trust & Safety Components
@@ -65,6 +62,5 @@ export { PaymentMethodSelector } from './payment/payment-method-selector';
 export { IdentityVerification } from './trust/identity-verification';
 export { ReviewDisplay, ReviewForm } from './trust/review-system';
 
-// Integration Examples
-// export { Phase3IntegrationExample } from '../examples/phase-3-integration-example'; // Commented out - file not found
+// Integration Examples - Removed broken import
 

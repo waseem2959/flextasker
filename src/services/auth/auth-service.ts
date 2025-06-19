@@ -10,7 +10,6 @@
 
 import { User, UserRole } from '@/types';
 // Error handler removed for simplicity
-import { isValidEmail, validatePassword } from '@/utils/validation';
 import axios from 'axios';
 import { apiClient } from '../api/api-client';
 import {
@@ -318,7 +317,7 @@ export const credentialUtils = {
     rememberMe: boolean = false
   ): LoginCredentials {
     // Validate email
-    if (!email || !isValidEmail(email)) {
+    if (!email || !email.includes('@')) {
       throw new Error('Please enter a valid email address');
     }
     
@@ -363,14 +362,13 @@ export const credentialUtils = {
     }
     
     // Validate email
-    if (!email || !isValidEmail(email)) {
+    if (!email || !email.includes('@')) {
       throw new Error('Please enter a valid email address');
     }
     
     // Validate password
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
-      throw new Error(passwordValidation.message ?? 'Invalid password');
+    if (!password || password.length < 8) {
+      throw new Error('Password must be at least 8 characters long');
     }
     
     // Create the registration data
@@ -513,7 +511,7 @@ export const authService = {
    * @param email User's email
    */
   async forgotPassword(email: string): Promise<void> {
-    if (!email || !isValidEmail(email)) {
+    if (!email || !email.includes('@')) {
       throw new Error('Please enter a valid email address');
     }
     
@@ -531,9 +529,8 @@ export const authService = {
       throw new Error('Invalid password reset token');
     }
     
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
-      throw new Error(passwordValidation.message ?? 'Invalid password');
+    if (!password || password.length < 8) {
+      throw new Error('Password must be at least 8 characters long');
     }
     
     await apiClient.post('/auth/reset-password', { token, password });
@@ -566,9 +563,8 @@ export const authService = {
       throw new Error('Current password is required');
     }
     
-    const passwordValidation = validatePassword(newPassword);
-    if (!passwordValidation.isValid) {
-      throw new Error(passwordValidation.message ?? 'Invalid new password');
+    if (!newPassword || newPassword.length < 8) {
+      throw new Error('New password must be at least 8 characters long');
     }
     
     await apiClient.put('/users/me/password', { 

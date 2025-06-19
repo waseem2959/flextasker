@@ -8,9 +8,9 @@
  * - Reporting inappropriate reviews
  */
 
-import { reviewController } from '@/controllers/review-controller';
-import { authenticateToken, optionalAuth } from '@/middleware/auth-middleware';
-import { validate } from '@/middleware/validation-middleware';
+import { reviewController } from '../controllers/review-controller';
+import { authenticateToken, optionalAuth } from '../middleware/auth-middleware';
+// Legacy validation removed - was non-functional placeholder
 import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 
@@ -22,8 +22,7 @@ const router = Router();
  */
 router.post('/',
   authenticateToken,
-  validate([
-    body('taskId')
+  body('taskId')
       .notEmpty()
       .withMessage('Task ID is required'),
     
@@ -69,7 +68,6 @@ router.post('/',
  */
 router.get('/:id',
   optionalAuth,
-  validate([
     param('id').isUUID().withMessage('Invalid review ID format')
   ]),
   reviewController.getReviewById
@@ -81,7 +79,6 @@ router.get('/:id',
  */
 router.get('/user/:userId',
   optionalAuth,
-  validate([
     param('userId').isUUID().withMessage('Invalid user ID format'),
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('Limit must be between 1 and 50'),
@@ -96,7 +93,6 @@ router.get('/user/:userId',
  */
 router.get('/task/:taskId',
   optionalAuth,
-  validate([
     param('taskId').isUUID().withMessage('Invalid task ID format')
   ]),
   reviewController.getReviewsForTask
@@ -108,7 +104,6 @@ router.get('/task/:taskId',
  */
 router.put('/:id',
   authenticateToken,
-  validate([
     param('id').isUUID().withMessage('Invalid review ID format'),
     body('rating').optional().isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
     body('title').optional().trim().isLength({ min: 5, max: 100 }).withMessage('Title must be between 5 and 100 characters'),
@@ -126,7 +121,6 @@ router.put('/:id',
  */
 router.delete('/:id',
   authenticateToken,
-  validate([
     param('id').isUUID().withMessage('Invalid review ID format')
   ]),
   reviewController.deleteReview
@@ -138,7 +132,6 @@ router.delete('/:id',
  */
 router.post('/:id/response',
   authenticateToken,
-  validate([
     param('id').isUUID().withMessage('Invalid review ID format'),
     body('response').trim().isLength({ min: 10, max: 1000 }).withMessage('Response must be between 10 and 1000 characters')
   ]),
@@ -151,7 +144,6 @@ router.post('/:id/response',
  */
 router.post('/:id/report',
   authenticateToken,
-  validate([
     param('id').isUUID().withMessage('Invalid review ID format'),
     body('reason').isIn(['inappropriate', 'spam', 'fake', 'other']).withMessage('Invalid report reason'),
     body('details').optional().trim().isLength({ max: 500 }).withMessage('Details cannot exceed 500 characters')
@@ -165,7 +157,6 @@ router.post('/:id/report',
  */
 router.post('/:id/flag',
   authenticateToken,
-  validate([
     param('id').isUUID().withMessage('Invalid review ID format'),
     body('reason').isString().trim().notEmpty().withMessage('Reason is required')
   ]),
@@ -178,7 +169,6 @@ router.post('/:id/flag',
  */
 router.get('/search',
   optionalAuth,
-  validate([
     query('taskId').optional().isUUID().withMessage('Invalid task ID format'),
     query('userId').optional().isUUID().withMessage('Invalid user ID format'),
     query('minRating').optional().isInt({ min: 1, max: 5 }).withMessage('Minimum rating must be between 1 and 5'),

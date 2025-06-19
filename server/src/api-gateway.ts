@@ -1,18 +1,20 @@
-import express, { Application, NextFunction, Request, Response } from 'express';
+import * as express from 'express';
+import { Application, NextFunction, Request, Response } from 'express';
 import { rateLimiter } from './middleware/rate-limiter-middleware';
-import requestContext from './middleware/request-context-middleware';
+import * as requestContext from './middleware/request-context-middleware';
 import { security } from './middleware/security-middleware';
 import { config } from './utils/config';
+import { errorHandlerMiddleware } from './utils/error-utils';
 import { createI18nMiddleware, languageMiddleware } from './utils/i18n';
 import { logger } from './utils/logger';
 
-import compression from 'compression';
-import cookieParser from 'cookie-parser';
-import cors from 'cors';
+import * as compression from 'compression';
+import * as cookieParser from 'cookie-parser';
+import * as cors from 'cors';
 import helmet from 'helmet';
 import { authenticateToken } from './middleware/auth-middleware';
 import { apiDocHandler } from './utils/api-docs';
-import healthMonitor from './utils/health-monitor';
+import * as healthMonitor from './utils/health-monitor';
 
 export class ApiGateway {
   private readonly app: Application;
@@ -43,7 +45,7 @@ export class ApiGateway {
     
     // Request processing
     this.app.use(compression());
-    this.app.use(requestContext);
+    this.app.use(requestContext.default);
     this.app.use(rateLimiter);
     
     // Internationalization
@@ -62,9 +64,9 @@ export class ApiGateway {
     });
   }
   private setupHealthRoutes(): void {
-    this.app.get('/health', healthMonitor.livenessProbeHandler);
-    this.app.get('/health/ready', healthMonitor.readinessProbeHandler);
-    this.app.get('/health/status', healthMonitor.healthCheckHandler);
+    this.app.get('/health', healthMonitor.default.livenessProbeHandler);
+    this.app.get('/health/ready', healthMonitor.default.readinessProbeHandler);
+    this.app.get('/health/status', healthMonitor.default.healthCheckHandler);
   }
   
   /**
@@ -99,7 +101,7 @@ export class ApiGateway {
     adminRouter.use(authenticateToken);
     // Admin role check middleware
     const adminCheckMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-      if (req.user?.role !== 'ADMIN') {
+      if ((req.user as any)?.role !== 'ADMIN') {
         res.status(403).json({
           success: false,
           error: {
@@ -146,20 +148,8 @@ export class ApiGateway {
     });
   }
   private setupErrorHandling(): void {
-    // Central error handling middleware - must be registered last
-    const errorMiddleware = (
-      err: any,
-      _req: Request,
-      res: Response,
-      next: NextFunction
-    ) => {
-      if (res.headersSent) {
-        return next(err);
-      }
-      res.status(500).json({ error: 'Internal server error' });
-    };
-    
-    this.app.use(errorMiddleware as express.ErrorRequestHandler);
+    // Use the comprehensive error handling middleware
+    this.app.use(errorHandlerMiddleware);
   }
   public getApp(): Application {
     return this.app;

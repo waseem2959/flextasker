@@ -14,7 +14,7 @@ import { ConnectionOptions, ConnectionState, SocketServiceConfig } from './socke
 
 // Default configuration
 const DEFAULT_CONFIG: SocketServiceConfig = {
-  socketUrl: import.meta.env.VITE_SOCKET_URL ?? 'http://localhost:5000/socket',
+  socketUrl: import.meta.env.VITE_SOCKET_URL ?? 'http://localhost:3000',
   maxReconnectAttempts: 5,
   reconnectDelay: 1000,
   autoReconnect: true,

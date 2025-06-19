@@ -5,7 +5,7 @@
  */
 
 import { Socket } from 'socket.io';
-import { NotificationType } from '../../../../shared/types/enums';
+import { NotificationType } from '../../../../shared/types/common/enums';
 import { prisma } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import { monitorError } from '../../utils/monitoring';

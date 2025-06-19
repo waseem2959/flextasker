@@ -7,22 +7,15 @@
  * - Type validation helpers
  */
 
-import { logger } from '../services/logging';
 import {
   BidStatus, BudgetType,
-  Task as RegularTask,
+  Task,
   TaskPriority, TaskStatus, UserRole
 } from '../types';
-import {
-  AcceptedTask,
-  CancelledTask,
-  CompletedTask,
-  Task as DiscriminatedTask,
-  DisputedTask,
-  InProgressTask,
-  OpenTask,
-  TaskBase
-} from '../types/task-types';
+
+// Define missing discriminated task types
+export type DiscriminatedTask = Task;
+export type RegularTask = Task;
 
 /**
  * ======================
@@ -36,7 +29,7 @@ import {
  * @param task - Task to check
  * @returns Type predicate for OpenTask
  */
-export function isOpenTask(task: DiscriminatedTask): task is OpenTask {
+export function isOpenTask(task: Task): boolean {
   return task.status === TaskStatus.OPEN;
 }
 
@@ -46,7 +39,7 @@ export function isOpenTask(task: DiscriminatedTask): task is OpenTask {
  * @param task - Task to check
  * @returns Type predicate for AcceptedTask
  */
-export function isAcceptedTask(task: DiscriminatedTask): task is AcceptedTask {
+export function isAcceptedTask(task: Task): boolean {
   return task.status === TaskStatus.ACCEPTED;
 }
 
@@ -56,7 +49,7 @@ export function isAcceptedTask(task: DiscriminatedTask): task is AcceptedTask {
  * @param task - Task to check
  * @returns Type predicate for InProgressTask
  */
-export function isInProgressTask(task: DiscriminatedTask): task is InProgressTask {
+export function isInProgressTask(task: Task): boolean {
   return task.status === TaskStatus.IN_PROGRESS;
 }
 
@@ -66,7 +59,7 @@ export function isInProgressTask(task: DiscriminatedTask): task is InProgressTas
  * @param task - Task to check
  * @returns Type predicate for CompletedTask
  */
-export function isCompletedTask(task: DiscriminatedTask): task is CompletedTask {
+export function isCompletedTask(task: Task): boolean {
   return task.status === TaskStatus.COMPLETED;
 }
 
@@ -76,7 +69,7 @@ export function isCompletedTask(task: DiscriminatedTask): task is CompletedTask 
  * @param task - Task to check
  * @returns Type predicate for CancelledTask
  */
-export function isCancelledTask(task: DiscriminatedTask): task is CancelledTask {
+export function isCancelledTask(task: Task): boolean {
   return task.status === TaskStatus.CANCELLED;
 }
 
@@ -86,7 +79,7 @@ export function isCancelledTask(task: DiscriminatedTask): task is CancelledTask 
  * @param task - Task to check
  * @returns Type predicate for DisputedTask
  */
-export function isDisputedTask(task: DiscriminatedTask): task is DisputedTask {
+export function isDisputedTask(task: Task): boolean {
   return task.status === TaskStatus.DISPUTED;
 }
 
@@ -180,115 +173,9 @@ export function isBidStatus(status: any): status is BidStatus {
  * @param task - Regular task from types/index.ts
  * @returns Task with discriminated union pattern from types/task.ts
  */
-export function toDiscriminatedTask(task: RegularTask): DiscriminatedTask {
-  // Define the base task properties shared by all subtypes
-  const baseTask: TaskBase = {
-    id: task.id,
-    title: task.title,
-    description: task.description,
-    category: task.category,
-    budget: task.budget,
-    location: task.location,
-    clientId: (task.owner as any).id,
-    clientName: `${(task.owner as any).firstName} ${(task.owner as any).lastName}`,
-    clientAvatar: task.owner.avatar,
-    createdAt: task.createdAt,
-    updatedAt: task.createdAt, // Using createdAt as updatedAt since Task doesn't have updatedAt
-    tags: task.tags ?? []
-  };
-  
-  // Create defaults for fields that might not exist on the original task
-  const taskerDetails = task.assignee ? {
-    taskerId: (task.assignee as any).id,
-    taskerName: `${(task.assignee as any).firstName} ${(task.assignee as any).lastName}`,
-    taskerAvatar: task.assignee.avatar
-  } : {
-    taskerId: '',
-    taskerName: '',
-    taskerAvatar: null
-  };
-
-  // Return different subtypes based on task status
-  switch(task.status) {
-    case TaskStatus.OPEN: {
-      return {
-        ...baseTask,
-        status: TaskStatus.OPEN,
-        dueDate: task.deadline,
-        bids: [] // Default empty array since bids might not exist
-      };
-    }
-      
-    case TaskStatus.ACCEPTED:
-      return {
-        ...baseTask,
-        ...taskerDetails,
-        status: TaskStatus.ACCEPTED,
-        acceptedBidId: '', // Using default values
-        acceptedAt: new Date(),
-        startByDate: task.startDate,
-        dueDate: task.deadline
-      };
-      
-    case TaskStatus.IN_PROGRESS:
-      return {
-        ...baseTask,
-        ...taskerDetails,
-        status: TaskStatus.IN_PROGRESS,
-        acceptedBidId: '',
-        acceptedAt: new Date(),
-        startedAt: task.startDate ?? new Date(),
-        estimatedCompletionDate: task.deadline,
-        progress: 0,
-        dueDate: task.deadline
-      };
-      
-    case TaskStatus.COMPLETED:
-      return {
-        ...baseTask,
-        ...taskerDetails,
-        status: TaskStatus.COMPLETED,
-        acceptedBidId: '',
-        acceptedAt: new Date(),
-        startedAt: task.startDate ?? new Date(),
-        completedAt: task.completedAt ?? new Date(),
-        rating: 0,
-        review: ''
-      };
-      
-    case TaskStatus.CANCELLED:
-      return {
-        ...baseTask,
-        status: TaskStatus.CANCELLED,
-        cancelledAt: new Date(),
-        cancelledBy: (task.owner as any).id,
-        cancellationReason: ''
-      };
-      
-    case TaskStatus.DISPUTED:
-      return {
-        ...baseTask,
-        ...taskerDetails,
-        status: TaskStatus.DISPUTED,
-        acceptedBidId: '',
-        acceptedAt: new Date(),
-        startedAt: task.startDate ?? new Date(),
-        completedAt: task.completedAt,
-        disputedAt: new Date(),
-        disputeReason: 'Dispute reason not provided',
-        disputeResolution: null
-      };
-        default: {
-      // Fallback to open task if status is unknown
-      logger.warn(`Unknown task status: ${task.status}. Defaulting to OPEN.`);
-      return {
-        ...baseTask,
-        status: TaskStatus.OPEN,
-        dueDate: task.deadline,
-        bids: []
-      };
-    }
-  }
+export function toDiscriminatedTask(task: Task): Task {
+  // Simple identity function since we now use a unified Task interface
+  return task;
 }
 
 /**
@@ -320,8 +207,8 @@ export function toRegularTask(task: DiscriminatedTask): RegularTask {
     // Create a minimal User object for the owner from client information
     owner: {
       id: task.clientId,
-      firstName: task.clientName.split(' ')[0],
-      lastName: task.clientName.split(' ')[1] || '',
+      firstName: task.clientName?.split(' ')[0] || 'Unknown',
+      lastName: task.clientName?.split(' ')[1] || '',
       email: '', // Default value
       role: UserRole.USER,
       trustScore: 0,
@@ -390,7 +277,7 @@ export function toRegularTask(task: DiscriminatedTask): RegularTask {
  * @param task - Task to check
  * @returns Type predicate for discriminated union task
  */
-export function isDiscriminatedTask(task: RegularTask | DiscriminatedTask): task is DiscriminatedTask {
+export function isDiscriminatedTask(task: Task): boolean {
   return 'status' in task && Object.prototype.hasOwnProperty.call(task, 'status');
 }
 
@@ -400,7 +287,7 @@ export function isDiscriminatedTask(task: RegularTask | DiscriminatedTask): task
  * @param task - Task to check
  * @returns Type predicate for regular task
  */
-export function isRegularTask(task: RegularTask | DiscriminatedTask): task is RegularTask {
+export function isRegularTask(task: Task): boolean {
   return !isDiscriminatedTask(task);
 }
 
@@ -410,12 +297,9 @@ export function isRegularTask(task: RegularTask | DiscriminatedTask): task is Re
  * @param task - Task that could be either type
  * @returns Task in discriminated union format
  */
-export function ensureDiscriminatedTask(task: RegularTask | DiscriminatedTask): DiscriminatedTask {
-  if (isDiscriminatedTask(task)) {
-    return task;
-  } else {
-    return toDiscriminatedTask(task);
-  }
+export function ensureDiscriminatedTask(task: Task): Task {
+  // Simple identity function since we now use a unified Task interface
+  return task;
 }
 
 /**

@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { TaskImage } from '@/components/ui/progressive-image';
 import { cn, truncateText } from '@/lib/utils';
-import { BudgetType, Task } from '@/types';
+import { Task } from '@/types';
+import { formatTaskBudget } from '@/utils/budget-utils';
+import { getCategoryDefaultImage } from '@/utils/category-utils';
 import { getLocationDisplayText } from '@/utils/task-utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ArrowRight, Clock, MapPin } from 'lucide-react';
@@ -14,56 +16,7 @@ interface TaskCardProps {
   task: Task;
 }
 
-/**
- * Helper function to get default image for a category
- */
-const getCategoryDefaultImage = (category: Task['category']): string => {
-  const imageMap: Record<string, string> = {
-    'cleaning': 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=500&auto=format&fit=crop&q=60',
-    'moving': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&auto=format&fit=crop&q=60',
-    'handyman': 'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=500&auto=format&fit=crop&q=60',
-    'delivery': 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=500&auto=format&fit=crop&q=60',
-    'general': 'https://images.unsplash.com/photo-1531685250784-7569952593d2?w=500&auto=format&fit=crop&q=60'
-  };
-  
-  // Safely access the category name
-  const categoryName = typeof category === 'object' && category !== null ? 
-    category.name : 'general';
-  const normalizedKey = categoryName.toLowerCase();
-  
-  return imageMap[normalizedKey] ?? imageMap.general;
-};
-
-/**
- * Format task budget with correct currency and type designation
- */
-const formatTaskBudget = (budget: number | { amount?: number; type?: string } | undefined, budgetType?: string): string => {
-  if (!budget) return '$0.00';
-  
-  // Handle object-style budget
-  if (typeof budget === 'object' && budget !== null) {
-    const amount = budget.amount?.toFixed(2) ?? '0.00';
-    const type = budget.type ?? budgetType;
-    
-    let suffix = '';
-    if (type === BudgetType.HOURLY) {
-      suffix = '/hr';
-    } else if (type === BudgetType.NEGOTIABLE) {
-      suffix = ' (Negotiable)';
-    }
-    
-    return `$${amount}${suffix}`;
-  }
-  
-  // Handle number budget
-  if (typeof budget === 'number') {
-    const formattedValue = budget.toFixed(2);
-    const suffix = budgetType === BudgetType.HOURLY ? '/hr' : '';
-    return `$${formattedValue}${suffix}`;
-  }
-  
-  return '$0.00';
-};
+// Removed duplicate helper functions - now using centralized utilities
 
 /**
  * TaskCard component for displaying a task in a card format
@@ -75,13 +28,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     if (taskWithPossibleImages.images && taskWithPossibleImages.images.length > 0) {
       return taskWithPossibleImages.images;
     }
-    return [getCategoryDefaultImage(task.category)];
+    return [getCategoryDefaultImage(task.category.name)];
   };
   
   // Format the budget to display it with proper formatting
-  const formatBudget = (): string => {
-    return formatTaskBudget(task.budget, task.budgetType);
-  };
+  const formattedBudget = formatTaskBudget(task.budget, task.budgetType);
   
   // Get display data
   const taskImages = getTaskImages();
@@ -199,7 +150,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
         <div className="flex flex-col">
           <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-1 font-body">Budget</p>
           <p className="text-xl font-bold text-primary-700 font-heading">
-            {formatBudget()}
+            {formattedBudget}
           </p>
         </div>
 

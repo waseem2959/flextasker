@@ -73,6 +73,7 @@ export function initializeRoutes(app: Application): void {
   const reviewRoutes = require('../routes/reviews-routes').default;
   const verificationRoutes = require('../routes/verification-routes').default;
   const monitoringRoutes = require('../routes/monitoring-routes').default;
+  const conversationRoutes = require('../routes/conversation-routes').default;
   
   // Mount routes
   app.use('/api/auth', authRoutes);
@@ -85,6 +86,7 @@ export function initializeRoutes(app: Application): void {
   app.use('/api/reviews', reviewRoutes);
   app.use('/api/verification', verificationRoutes);
   app.use('/api/monitoring', monitoringRoutes);
+  app.use('/api/conversations', conversationRoutes);
   
 
   

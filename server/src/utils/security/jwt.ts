@@ -4,7 +4,8 @@
  * This module provides JWT verification and handling functions for authentication.
  */
 
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
+import { config } from '../config';
 import { logger } from '../logger';
 
 type JwtPayload = {
@@ -15,9 +16,13 @@ type JwtPayload = {
   exp?: number;
 };
 
-// JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET ?? 'your-default-secret-change-in-production';
-const JWT_EXPIRY = process.env.JWT_EXPIRY ?? '1d';
+// JWT configuration from centralized config
+const JWT_SECRET = config.JWT_SECRET;
+const JWT_EXPIRY = config.JWT_EXPIRES_IN;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 // JWT payload type is defined above as JwtPayload
 
@@ -30,7 +35,7 @@ const JWT_EXPIRY = process.env.JWT_EXPIRY ?? '1d';
  */
 export function verifyJwt(token: string): JwtPayload {
   try {
-    const decoded = (jwt as any).verify(token, JWT_SECRET) as JwtPayload;
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
     
     // Ensure the payload has the expected structure
     if (!decoded?.userId) {

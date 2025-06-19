@@ -10,7 +10,7 @@ import {
     BidStatus,
     NotificationType,
     TaskStatus
-} from '../../../../shared/types/enums';
+} from '../../../../shared/types/common/enums';
 import { prisma } from '../../utils/database';
 import { logger } from '../../utils/logger';
 import { monitorError } from '../../utils/monitoring';
@@ -259,8 +259,7 @@ async function processBidAcceptance(bidId: string, bid: any): Promise<any> {
             id: true,
             firstName: true,
             lastName: true,
-            averageRating: true,
-            avatar: true
+            averageRating: true
           }
         }
       }
@@ -461,9 +460,8 @@ export function registerTaskHandlers(socket: Socket, socketManager: SocketManage
               id: true,
               firstName: true,
               lastName: true,
-              averageRating: true,
-              avatar: true
-            }
+              averageRating: true
+              }
           }
         }
       });

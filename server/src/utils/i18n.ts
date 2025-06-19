@@ -8,9 +8,9 @@
 import { Request, Response, NextFunction } from 'express';
 import i18next from 'i18next';
 import Backend from 'i18next-fs-backend';
-import middleware from 'i18next-http-middleware';
-import path from 'path';
-import fs from 'fs/promises';
+import * as middleware from 'i18next-http-middleware';
+import * as path from 'path';
+import * as fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { logger } from './logger';
 import { config } from './config';
@@ -98,7 +98,7 @@ import { AuthenticatedUser } from '../middleware/auth-middleware';
 // Extend the Express Request type to include language
 interface AuthenticatedRequest extends Request {
   user?: AuthenticatedUser & { language?: string };
-  language?: string;
+  language: string;
 }
 
 /**
@@ -106,18 +106,18 @@ interface AuthenticatedRequest extends Request {
  * Sets language based on user preferences or request
  */
 export function languageMiddleware(
-  req: AuthenticatedRequest, 
+  req: Request, 
   res: Response, 
   next: NextFunction
 ) {
   // If user is authenticated and has a language preference, use that
-  const userLanguage = req.user?.language;
+  const userLanguage = (req.user as any)?.language;
   if (userLanguage && SUPPORTED_LANGUAGES.includes(userLanguage)) {
-    req.language = userLanguage;
+    (req as any).language = userLanguage;
   }
   
   // Set Content-Language header
-  res.set('Content-Language', req.language ?? DEFAULT_LANGUAGE);
+  res.set('Content-Language', (req as any).language ?? DEFAULT_LANGUAGE);
   
   next();
 }
@@ -346,7 +346,7 @@ async function createDefaultTranslations(localesPath: string): Promise<void> {
  * Translate message with the given key and options
  */
 export function t(key: string, options?: Record<string, any>): string {
-  return i18next.t(key, options);
+  return i18next.t(key, options) as string;
 }
 
 /**

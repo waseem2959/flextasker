@@ -9,11 +9,11 @@
  */
 
 import { Router } from 'express';
-import { body } from 'express-validator';
 import { authRateLimiter } from '../middleware/rate-limiter-middleware';
 import { authenticateToken } from '../middleware/auth-middleware';
-import { validate } from '../middleware/validation-middleware';
-import { authController } from '@/controllers/auth-controller';
+import { validateRequest } from '../middleware/zod-validation-middleware';
+import { authValidationConfigs } from '../validation/auth-validation';
+import { authController } from '../controllers/auth-controller';
 
 const router = Router();
 
@@ -23,33 +23,7 @@ const router = Router();
  */
 router.post('/register', 
   authRateLimiter,
-  validate([
-    body('email')
-      .isEmail()
-      .normalizeEmail()
-      .withMessage('Please provide a valid email address'),
-    
-    body('password')
-      .isLength({ min: 8 })
-      .withMessage('Password must be at least 8 characters long')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-      .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
-    
-    body('firstName')
-      .trim()
-      .isLength({ min: 1, max: 50 })
-      .withMessage('First name is required and must be less than 50 characters'),
-    
-    body('lastName')
-      .trim()
-      .isLength({ min: 1, max: 50 })
-      .withMessage('Last name is required and must be less than 50 characters'),
-    
-    body('role')
-      .optional()
-      .isIn(['USER', 'TASKER'])
-      .withMessage('Role must be either USER or TASKER')
-  ]),
+  validateRequest(authValidationConfigs.register),
   authController.register
 );
 
@@ -59,16 +33,7 @@ router.post('/register',
  */
 router.post('/login',
   authRateLimiter,
-  validate([
-    body('email')
-      .isEmail()
-      .normalizeEmail()
-      .withMessage('Please provide a valid email address'),
-    
-    body('password')
-      .notEmpty()
-      .withMessage('Password is required')
-  ]),
+  validateRequest(authValidationConfigs.login),
   authController.login
 );
 
@@ -77,11 +42,7 @@ router.post('/login',
  * POST /api/v1/auth/refresh-token
  */
 router.post('/refresh-token',
-  validate([
-    body('refreshToken')
-      .notEmpty()
-      .withMessage('Refresh token is required')
-  ]),
+  validateRequest(authValidationConfigs.refreshToken),
   authController.refreshToken
 );
 
@@ -100,12 +61,7 @@ router.post('/logout',
  */
 router.post('/forgot-password',
   authRateLimiter,
-  validate([
-    body('email')
-      .isEmail()
-      .normalizeEmail()
-      .withMessage('Please provide a valid email address')
-  ]),
+  validateRequest(authValidationConfigs.forgotPassword),
   authController.forgotPassword
 );
 
@@ -114,17 +70,7 @@ router.post('/forgot-password',
  * POST /api/v1/auth/reset-password
  */
 router.post('/reset-password',
-  validate([
-    body('token')
-      .notEmpty()
-      .withMessage('Reset token is required'),
-    
-    body('password')
-      .isLength({ min: 8 })
-      .withMessage('Password must be at least 8 characters long')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-      .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character')
-  ]),
+  validateRequest(authValidationConfigs.resetPassword),
   authController.resetPassword
 );
 
@@ -134,17 +80,7 @@ router.post('/reset-password',
  */
 router.post('/change-password',
   authenticateToken,
-  validate([
-    body('currentPassword')
-      .notEmpty()
-      .withMessage('Current password is required'),
-    
-    body('newPassword')
-      .isLength({ min: 8 })
-      .withMessage('New password must be at least 8 characters long')
-      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-      .withMessage('New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character')
-  ]),
+  validateRequest(authValidationConfigs.changePassword),
   authController.changePassword
 );
 

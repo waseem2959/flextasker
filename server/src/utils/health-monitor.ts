@@ -5,14 +5,11 @@
  * various application components and dependencies.
  */
 
-import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
-import os from 'os';
+import * as os from 'os';
 import { config } from './config';
+import { prisma } from './database';
 import { logger } from './logger';
-
-// Initialize Prisma client
-const prisma = new PrismaClient();
 
 // Health status types
 export enum HealthStatus {

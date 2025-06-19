@@ -8,16 +8,22 @@
  * This ensures consistency and makes the purpose of each file immediately clear.
  */
 
-// Import core shared enums as the canonical source
+// Import core shared types as the canonical source
 // These are shared between frontend and backend and should be the source of truth
 import {
     BidStatus,
     BudgetType,
+    ErrorType,
+    HttpStatusCode,
     NotificationType,
+    TaskCategory,
     TaskPriority,
     TaskStatus,
-    UserRole
-} from '../../shared/types/common/enums';
+    UserRole,
+    PaymentStatus,
+    ReviewRating,
+    VerificationStatus
+} from '../../shared/types';
 
 // Import additional app-specific enums that don't conflict with shared enums
 import {
@@ -31,66 +37,61 @@ import {
     Environment,
     FeatureFlag,
     FormFieldType,
-    HttpStatusCode,
     Language,
     MetricType,
     PaymentMethod,
-    PaymentStatus,
     ProfileVisibility,
     RequestMethod,
-    ReviewRating,
     SortDirection,
-    TaskCategory,
     TaskComplexity,
     TaskUrgency,
     Theme,
     TimeFormat,
     ToastType,
-    TrackingCategory,
-    VerificationStatus
+    TrackingCategory
 } from './app-enums';
 
 // Re-export shared enums as the canonical source
 export {
     BidStatus,
     BudgetType,
+    ErrorType,
+    HttpStatusCode,
     NotificationType,
+    PaymentStatus,
+    ReviewRating,
+    TaskCategory,
     TaskPriority,
     TaskStatus,
-    UserRole
+    UserRole,
+    VerificationStatus
 };
 
 // Re-export additional app-specific enums
-    export {
-        AuthStatus,
-        BrowserType,
-        ConnectionState,
-        CurrencyCode,
-        DateFormat,
-        DeviceType,
-        DistanceUnit,
-        Environment,
-
-        FeatureFlag,
-        FormFieldType,
-        HttpStatusCode,
-        Language,
-        MetricType,
-        PaymentMethod,
-        PaymentStatus,
-        ProfileVisibility,
-        RequestMethod,
-        ReviewRating,
-        SortDirection,
-        TaskCategory,
-        TaskComplexity,
-        TaskUrgency,
-        Theme,
-        TimeFormat,
-        ToastType,
-        TrackingCategory,
-        VerificationStatus
-    };
+export {
+    AuthStatus,
+    BrowserType,
+    ConnectionState,
+    CurrencyCode,
+    DateFormat,
+    DeviceType,
+    DistanceUnit,
+    Environment,
+    FeatureFlag,
+    FormFieldType,
+    Language,
+    MetricType,
+    PaymentMethod,
+    ProfileVisibility,
+    RequestMethod,
+    SortDirection,
+    TaskComplexity,
+    TaskUrgency,
+    Theme,
+    TimeFormat,
+    ToastType,
+    TrackingCategory
+};
 
 // Export button-specific types with selective exports for ButtonSize and ButtonVariant
 // to avoid conflicts with app-enums
@@ -122,8 +123,14 @@ export * from './api-client-types';
 // Export model types
 export * from './models-types';
 
-// Export task discriminated union types
-export * from './task-types';
+// Export shared task types that actually exist (excluding Task to avoid conflicts)
+export type {
+  TaskCore,
+  TaskBudget,
+  TaskLocation,
+  TaskTiming,
+  TaskRequirements
+} from '../../shared/types/task';
 
 // Export API response types
 export * from './api-types';
@@ -138,7 +145,7 @@ import * as AppEnums from './app-enums';
 
 import * as MessagingTypes from './messaging-types';
 import * as ModelTypes from './models-types';
-import * as TaskTypes from './task-types';
+import * as TaskTypes from '../../shared/types/task';
 
 // Re-export with namespaces to prevent naming conflicts
 export {
