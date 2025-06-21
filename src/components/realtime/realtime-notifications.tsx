@@ -8,23 +8,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Bell,
-  X,
-  Check,
   CheckCheck,
-  Archive,
   Settings,
   Filter,
-  Search,
   Circle,
-  Clock,
   MessageSquare,
   DollarSign,
   Star,
-  AlertTriangle,
-  Info,
-  ChevronDown,
-  Volume2,
-  VolumeX
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -34,9 +25,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { 
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
   DropdownMenuCheckboxItem
 } from '../ui/dropdown-menu';
 import { 
@@ -54,7 +43,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { cn } from '../../lib/utils';
 import { useEnhancedSocket } from '../../hooks/use-enhanced-socket';
-import { useAuth } from '../../hooks/use-auth';
+// import { useAuth } from '../../hooks/use-auth'; // Not currently used
 import { formatDistanceToNow, isToday, isYesterday, format } from 'date-fns';
 
 export type NotificationType = 
@@ -203,7 +192,7 @@ const RealtimeNotifications: React.FC<RealtimeNotificationsProps> = ({
   onNotificationClick,
   onNotificationAction
 }) => {
-  const { user } = useAuth();
+  // const { user } = useAuth(); // Not currently used
   const { on, off, emit } = useEnhancedSocket();
 
   // State
@@ -428,14 +417,14 @@ const RealtimeNotifications: React.FC<RealtimeNotificationsProps> = ({
     emit('mark_notifications_read', { notificationIds: unreadIds });
   }, [notifications, emit]);
 
-  // Archive notification
-  const archiveNotification = useCallback((notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === notificationId ? { ...n, isArchived: true } : n)
-    );
-    
-    emit('archive_notification', { notificationId });
-  }, [emit]);
+  // Archive notification - not currently used
+  // const archiveNotification = useCallback((notificationId: string) => {
+  //   setNotifications(prev => 
+  //     prev.map(n => n.id === notificationId ? { ...n, isArchived: true } : n)
+  //   );
+  //   
+  //   emit('archive_notification', { notificationId });
+  // }, [emit]);
 
   // Handle notification action
   const handleNotificationAction = useCallback((notification: RealtimeNotification, actionId: string) => {

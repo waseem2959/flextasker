@@ -197,9 +197,9 @@
 <a name='L132'></a><a href='#L132'>132</a>
 <a name='L133'></a><a href='#L133'>133</a>
 <a name='L134'></a><a href='#L134'>134</a>
-<a name='L135'></a><a href='#L135'>135</a>
-<a name='L136'></a><a href='#L136'>136</a>
-<a name='L137'></a><a href='#L137'>137</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L135'></a><a href='#L135'>135</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -224,8 +224,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -268,8 +266,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -340,12 +336,14 @@ import { useAuth } from '@/hooks';
 import { UserRole } from '@/types';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layout } from '../components/layout/Layout';
+import { Layout } from '../components/layout/layout';
 import { useDashboard } from '../hooks/use-dashboard-query';
 import { SEO } from '../utils/seo';
 import { AlertCircle } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PageLoading } from '../components/ui/loading-spinner';
+import { PageLayout } from '../components/ui/page-header';
 &nbsp;
 // Import dashboard components
 import { DashboardStats } from '../components/dashboard/dashboard-stats';
@@ -363,8 +361,6 @@ const Dashboard = <span class="cstat-no" title="statement not covered" ><span cl
   
   const {
     tasks: myTasks,
-    stats,
-    activity,
     isLoading,
     isError,
     error,
@@ -385,7 +381,7 @@ const Dashboard = <span class="cstat-no" title="statement not covered" ><span cl
 <span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (isError) {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
       &lt;Layout&gt;
-        &lt;div className="py-8 bg-white min-h-screen font-primary"&gt;
+        &lt;div className="py-8 bg-neutral-50 min-h-screen"&gt;
           &lt;div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"&gt;
             &lt;Card className="p-8 text-center"&gt;
               &lt;AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" /&gt;
@@ -410,18 +406,16 @@ const Dashboard = <span class="cstat-no" title="statement not covered" ><span cl
         description="Manage your tasks, view your stats, check messages and track your progress on Flextasker."
         canonicalUrl="https://flextasker.com/dashboard"
       /&gt;
-      &lt;div className="py-8 bg-white min-h-screen font-primary"&gt;
+      &lt;div className="py-8 bg-neutral-50 min-h-screen"&gt;
         &lt;div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"&gt;
           &lt;div className="container mx-auto py-6 max-w-7xl"&gt;
             {isLoading &amp;&amp; (
-              &lt;div className="flex items-center justify-center h-40"&gt;
-                &lt;div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(196,80%,43%)]"&gt;&lt;/div&gt;
-              &lt;/div&gt;
+              &lt;PageLoading message="Loading your dashboard..." /&gt;
             )}
-            &lt;h1 className="text-2xl font-bold mb-4 text-[hsl(206,33%,16%)] font-primary"&gt;
+            &lt;h1 className="text-3xl font-bold mb-4 text-neutral-900 font-display"&gt;
               Welcome, {userWithDetails.firstName || 'User'}!
             &lt;/h1&gt;
-            &lt;p className="mt-1 text-[hsl(220,14%,46%)] font-primary"&gt;
+            &lt;p className="mt-1 text-neutral-600 font-primary"&gt;
               Welcome back, {userWithDetails.firstName || userWithDetails.email?.split('@')[0] || 'User'}
             &lt;/p&gt;
           &lt;/div&gt;
@@ -440,10 +434,10 @@ const Dashboard = <span class="cstat-no" title="statement not covered" ><span cl
             {/* Overview Tab */}
             &lt;TabsContent value="overview" className="space-y-6"&gt;
               {/* Quick Stats */}
-              &lt;DashboardStats user={user} myTasks={myTasks} stats={stats} /&gt;
+              &lt;DashboardStats user={user} myTasks={myTasks} /&gt;
               
               {/* Recent Activity */}
-              &lt;RecentActivity user={user} activity={activity} /&gt;
+              &lt;RecentActivity user={user} /&gt;
               
               {/* Quick Links */}
               &lt;QuickLinks user={user} /&gt;
@@ -478,7 +472,7 @@ export default Dashboard;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-18T17:23:27.444Z
+                at 2025-06-20T04:32:32.883Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

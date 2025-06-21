@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Filter, Star, Clock, MapPin, DollarSign, X, ChevronDown, Sparkles } from 'lucide-react';
+import { Search, Filter, Star, Clock, DollarSign, X, ChevronDown, Sparkles } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Checkbox } from '../ui/checkbox';
 import { Slider } from '../ui/slider';
 import { useDebounce } from '../../hooks/use-debounce';
-import { useLocalStorage } from '../../hooks/use-local-storage';
+// import { useLocalStorage } from '../../hooks/use-local-storage'; // Hook doesn't exist yet
 
 interface SearchFilters {
   categories: string[];
@@ -55,7 +55,7 @@ interface SmartSearchProps {
   showSavedSearches?: boolean;
   showAdvancedFilters?: boolean;
   categories?: Array<{ id: string; name: string; icon?: string }>;
-  popularSkills?: string[];
+  // popularSkills?: string[]; // Not used in current implementation
   className?: string;
 }
 
@@ -66,7 +66,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
   showSavedSearches = true,
   showAdvancedFilters = true,
   categories = [],
-  popularSkills = [],
+  // popularSkills = [], // Not used in current implementation
   className = ''
 }) => {
   const [query, setQuery] = useState('');
@@ -84,9 +84,9 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
     sortBy: 'relevance'
   });
 
-  // Saved searches management
-  const [savedSearches, setSavedSearches] = useLocalStorage<SavedSearch[]>('saved-searches', []);
-  const [showSavedSearches, setShowSavedSearches] = useState(false);
+  // Saved searches management - TODO: implement useLocalStorage hook
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
+  const [showSavedSearchesPanel, setShowSavedSearchesPanel] = useState(false);
 
   // Refs and hooks
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -259,7 +259,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
       resultCount: 0 // Would be updated after search
     };
 
-    setSavedSearches(prev => [newSavedSearch, ...prev.slice(0, 9)]);
+    setSavedSearches((prev: SavedSearch[]) => [newSavedSearch, ...prev.slice(0, 9)]);
   };
 
   /**
@@ -268,11 +268,11 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
   const loadSavedSearch = (savedSearch: SavedSearch) => {
     setQuery(savedSearch.query);
     setActiveFilters(savedSearch.filters);
-    setShowSavedSearches(false);
+    setShowSavedSearchesPanel(false);
     
     // Update last used
-    setSavedSearches(prev =>
-      prev.map(s =>
+    setSavedSearches((prev: SavedSearch[]) =>
+      prev.map((s: SavedSearch) =>
         s.id === savedSearch.id
           ? { ...s, lastUsed: new Date().toISOString() }
           : s
@@ -287,7 +287,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
    * Delete saved search
    */
   const deleteSavedSearch = (searchId: string) => {
-    setSavedSearches(prev => prev.filter(s => s.id !== searchId));
+    setSavedSearches((prev: SavedSearch[]) => prev.filter((s: SavedSearch) => s.id !== searchId));
   };
 
   /**
@@ -352,7 +352,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
             ref={suggestionsRef}
             className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 mt-1 max-h-96 overflow-y-auto"
           >
-            {suggestions.map((suggestion, index) => (
+            {suggestions.map((suggestion) => (
               <button
                 key={`${suggestion.type}-${suggestion.value}`}
                 onClick={() => handleSuggestionSelect(suggestion)}
@@ -498,7 +498,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
 
         {/* Saved Searches */}
         {showSavedSearches && savedSearches.length > 0 && (
-          <Popover open={showSavedSearches} onOpenChange={setShowSavedSearches}>
+          <Popover open={showSavedSearchesPanel} onOpenChange={setShowSavedSearchesPanel}>
             <PopoverTrigger asChild>
               <Button variant="outline">
                 <Star className="w-4 h-4 mr-2" />
@@ -508,7 +508,7 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
             <PopoverContent className="w-80" align="start">
               <div className="space-y-3">
                 <h3 className="font-semibold">Saved Searches</h3>
-                {savedSearches.map(savedSearch => (
+                {savedSearches.map((savedSearch: SavedSearch) => (
                   <div key={savedSearch.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                     <button
                       onClick={() => loadSavedSearch(savedSearch)}

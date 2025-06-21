@@ -39,6 +39,8 @@ interface CacheEntry<T = any> {
 interface CacheStatistics {
   totalEntries: number;
   totalSize: number;
+  hits: number;
+  misses: number;
   hitRate: number;
   missRate: number;
   evictionCount: number;
@@ -253,7 +255,7 @@ class IndexedDBCacheLayer implements CacheLayer {
     });
   }
 
-  async set<T>(key: string, entry: CacheEntry<T>): Promise<void> {
+  async set<T>(_key: string, entry: CacheEntry<T>): Promise<void> { // key parameter renamed to indicate it's not used
     const db = await this.getDB();
     
     return new Promise((resolve, reject) => {
@@ -474,6 +476,24 @@ class CacheManagerService {
         }
       });
       return null;
+    }
+  }
+
+  /**
+   * Check if a key exists in cache (without accessing it)
+   */
+  async has(key: string): Promise<boolean> {
+    try {
+      for (const layer of this.layers) {
+        const entry = await layer.get(key);
+        if (entry && !this.isExpired(entry)) {
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Cache has error:', error);
+      return false;
     }
   }
 
@@ -736,11 +756,11 @@ class CacheManagerService {
       case 'high':
         return this.layers; // Use all layers
       case 'normal':
-        return this.layers.slice(0, 2); // Use fastest 2 layers
+        return this.layers.slice(0, Math.min(2, this.layers.length)); // Use fastest 2 layers
       case 'low':
-        return this.layers.slice(-1); // Use only slowest layer
+        return this.layers.slice(0, 1); // Use only memory layer for low priority
       default:
-        return this.layers.slice(0, 2);
+        return this.layers.slice(0, Math.min(2, this.layers.length));
     }
   }
 
@@ -758,7 +778,7 @@ class CacheManagerService {
     
     if (this.config.enableEncryption) {
       // Simple encryption placeholder (in real app, use proper encryption)
-      serialized = btoa(JSON.stringify(serialized));
+      serialized = btoa(JSON.stringify(serialized)) as T;
     }
     
     return serialized;
@@ -805,6 +825,8 @@ class CacheManagerService {
       this.stats = {
         totalEntries,
         totalSize: Object.values(storageUsage).reduce((sum, size) => sum + size, 0),
+        hits: this.hitCount,
+        misses: this.missCount,
         hitRate: totalRequests > 0 ? (this.hitCount / totalRequests) * 100 : 0,
         missRate: totalRequests > 0 ? (this.missCount / totalRequests) * 100 : 0,
         evictionCount: this.evictionCount,
@@ -895,6 +917,7 @@ export function useCache() {
   return {
     get: <T>(key: string) => cacheManager.get<T>(key),
     set: <T>(key: string, data: T, options?: any) => cacheManager.set(key, data, options),
+    has: (key: string) => cacheManager.has(key),
     delete: (key: string) => cacheManager.delete(key),
     clear: () => cacheManager.clear(),
     getOrSet: <T>(key: string, factory: () => Promise<T>, options?: any) => 

@@ -114,8 +114,8 @@ class AriaService {
   /**
    * Generate comprehensive ARIA attributes from config
    */
-  generateAriaAttributes(config: AriaConfig): Record<string, string | undefined> {
-    const attrs: Record<string, string | undefined> = {};
+  generateAriaAttributes(config: AriaConfig): Record<string, string> {
+    const attrs: Record<string, string> = {};
 
     // Role
     if (config.role) {
@@ -338,7 +338,7 @@ class AriaService {
       input: {
         id: config.id,
         'aria-labelledby': labelId,
-        'aria-describedby': describedBy || undefined,
+        ...(describedBy && { 'aria-describedby': describedBy }),
         'aria-invalid': config.invalid ? 'true' : 'false',
         'aria-required': config.required ? 'true' : 'false'
       },
@@ -432,20 +432,27 @@ class AriaService {
     return {
       table: {
         role: 'table',
-        'aria-label': config.caption ? i18nService.translate(config.caption) : undefined,
-        'aria-rowcount': config.rowCount?.toString() || undefined,
-        'aria-colcount': config.colCount?.toString() || undefined
+        ...(config.caption && { 'aria-label': i18nService.translate(config.caption) }),
+        ...(config.rowCount && { 'aria-rowcount': config.rowCount.toString() }),
+        ...(config.colCount && { 'aria-colcount': config.colCount.toString() })
       },
       caption: config.caption ? {
         role: 'caption'
       } : undefined,
-      headers: (colIndex: number, sortable: boolean = false) => ({
-        role: 'columnheader',
-        'aria-colindex': (colIndex + 1).toString(),
-        'aria-sort': (sortable && config.sortColumn === colIndex) 
-          ? config.sortDirection || 'none'
-          : sortable ? 'none' : undefined
-      }),
+      headers: (colIndex: number, sortable: boolean = false) => {
+        const attrs: Record<string, string> = {
+          role: 'columnheader',
+          'aria-colindex': (colIndex + 1).toString()
+        };
+        
+        if (sortable) {
+          attrs['aria-sort'] = (config.sortColumn === colIndex) 
+            ? config.sortDirection || 'none'
+            : 'none';
+        }
+        
+        return attrs;
+      },
       cells: (rowIndex: number, colIndex: number) => ({
         role: 'cell',
         'aria-rowindex': (rowIndex + 1).toString(),
@@ -465,7 +472,7 @@ class AriaService {
     return {
       role: 'dialog',
       'aria-label': i18nService.translate(config.title),
-      'aria-describedby': config.describedBy,
+      ...(config.describedBy && { 'aria-describedby': config.describedBy }),
       'aria-modal': config.modal !== false ? 'true' : 'false'
     };
   }
@@ -485,16 +492,26 @@ class AriaService {
     return {
       list: {
         role: 'list',
-        'aria-label': config.label ? i18nService.translate(config.label) : undefined,
-        'aria-multiselectable': config.multiselectable ? 'true' : undefined,
-        'aria-orientation': config.orientation
+        ...(config.label && { 'aria-label': i18nService.translate(config.label) }),
+        ...(config.multiselectable && { 'aria-multiselectable': 'true' }),
+        ...(config.orientation && { 'aria-orientation': config.orientation })
       },
-      item: (index: number, selected?: boolean) => ({
-        role: 'listitem',
-        'aria-setsize': config.setSize?.toString(),
-        'aria-posinset': (index + 1).toString(),
-        'aria-selected': selected !== undefined ? selected.toString() : undefined
-      })
+      item: (index: number, selected?: boolean) => {
+        const attrs: Record<string, string> = {
+          role: 'listitem',
+          'aria-posinset': (index + 1).toString()
+        };
+        
+        if (config.setSize) {
+          attrs['aria-setsize'] = config.setSize.toString();
+        }
+        
+        if (selected !== undefined) {
+          attrs['aria-selected'] = selected.toString();
+        }
+        
+        return attrs;
+      }
     };
   }
 

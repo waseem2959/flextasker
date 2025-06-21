@@ -93,8 +93,9 @@ router.get('/health/detailed',
 router.get('/metrics',
   authenticateToken,
   requireRoles([UserRole.ADMIN]),
-  
+  [
     query('period').optional().isIn(['1h', '24h', '7d', '30d']).withMessage('Invalid period')
+  ],
   async (req: Request, res: Response) => {
     const monitor = PerformanceMonitor.getInstance();
     const period = req.query.period as string || '1h';
@@ -149,8 +150,9 @@ router.get('/metrics',
 router.get('/alerts',
   authenticateToken,
   requireRoles([UserRole.ADMIN]),
-  
+  [
     query('severity').optional().isIn(['low', 'medium', 'high']).withMessage('Invalid severity level')
+  ],
   (req: Request, res: Response) => {
     const monitor = PerformanceMonitor.getInstance();
     const severityFilter = req.query.severity as string;

@@ -20,7 +20,7 @@ export const contentSecurityPolicy = {
   'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
   'img-src': ["'self'", "data:", "https://cdn.jsdelivr.net", "https://*.cloudfront.net"],
   'font-src': ["'self'", "https://fonts.gstatic.com"],
-  'connect-src': ["'self'", (typeof import !== 'undefined' && import.meta?.env?.VITE_API_URL) || process.env.VITE_API_URL || 'http://localhost:3000'],
+  'connect-src': ["'self'", 'http://localhost:3000'],
   'frame-src': ["'none'"],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
@@ -64,7 +64,7 @@ export function generateNonce(): string {
  * CSRF protection token handling
  */
 export class CSRFProtection {
-  private static tokenName = 'flextasker_csrf_token';
+  private static tokenName = 'csrf_token';
   
   /**
    * Generate a new CSRF token
@@ -74,31 +74,55 @@ export class CSRFProtection {
     window.crypto.getRandomValues(array);
     const token = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
     
-    // Store the token in localStorage for persistence
-    localStorage.setItem(this.tokenName, token);
+    // Store the token in a cookie
+    document.cookie = `${this.tokenName}=${token}; path=/; SameSite=Strict`;
     return token;
   }
   
   /**
-   * Get the current CSRF token or generate a new one
+   * Get the current CSRF token from cookie
    */
-  public static getToken(): string {
-    let token = localStorage.getItem(this.tokenName);
-    
-    if (!token) {
-      token = this.generateToken();
+  public static getToken(): string | null {
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === this.tokenName) {
+        return value;
+      }
     }
-    
-    return token;
+    return null;
   }
   
   /**
    * Create headers with CSRF token
    */
   public static getHeaders(): HeadersInit {
-    return {
-      'X-CSRF-Token': this.getToken()
-    };
+    const token = this.getToken();
+    return token ? { 'X-CSRF-Token': token } : {};
+  }
+  
+  /**
+   * Validate a token against the stored token
+   */
+  public static validateToken(token: string | null): boolean {
+    if (!token) return false;
+    const storedToken = this.getToken();
+    return token === storedToken;
+  }
+  
+  /**
+   * Clear the CSRF token
+   */
+  public static clearToken(): void {
+    document.cookie = `${this.tokenName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+  }
+  
+  /**
+   * Refresh the CSRF token
+   */
+  public static refreshToken(): string {
+    this.clearToken();
+    return this.generateToken();
   }
   
   /**
@@ -268,127 +292,189 @@ export class SessionSecurity {
  * Authentication security utilities
  */
 export class AuthSecurity {
+  private static AUTH_KEY_NAME = 'auth_key';
+  private static AUTH_TOKENS_NAME = 'auth_tokens';
+  
   /**
-   * Check if a token is expired
+   * Generate encryption key
    */
-  public static isTokenExpired(token: string): boolean {    try {
-      // JWT tokens have three parts separated by dots
-      const parts = token.split('.');
-      
-      if (parts.length !== 3) {
-        return true; // Not a valid JWT token
-      }
-      
-      // The second part is the payload, which is base64url encoded
-      const payload = parts[1];
-      
-      // Convert base64url to base64 by replacing characters
-      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-      
-      // Decode and parse the payload
-      const decodedPayload = JSON.parse(atob(base64));
-      
-      // Check if the token has an expiration claim
-      if (!decodedPayload.exp) {
-        return false; // No expiration, assume it's valid
-      }
-      
-      // Compare the expiration timestamp with the current time
-      // exp is in seconds, Date.now() is in milliseconds
-      return decodedPayload.exp * 1000 < Date.now();
-    } catch (e) {
-      logger.error('Error checking token expiration', { error: e });
-      return true; // Assume expired if there was an error
-    }
+  private static async generateKey(): Promise<CryptoKey> {
+    return await crypto.subtle.generateKey(
+      {
+        name: 'AES-GCM',
+        length: 256,
+      },
+      true,
+      ['encrypt', 'decrypt']
+    );
   }
   
   /**
-   * Extract user info from a JWT token
+   * Store the encryption key
    */
-  public static decodeToken<T>(token: string): T | null {    try {
-      // JWT tokens have three parts separated by dots
-      const parts = token.split('.');
-      
-      if (parts.length !== 3) {
-        return null; // Not a valid JWT token
-      }
-      
-      // The second part is the payload, which is base64url encoded
-      const payload = parts[1];
-      
-      // Convert base64url to base64 by replacing characters
-      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-      
-      // Decode and parse the payload
-      return JSON.parse(atob(base64)) as T;
-    } catch (e) {
-      logger.error('Error decoding token', { error: e });
-      return null;
+  private static async storeKey(key: CryptoKey): Promise<void> {
+    const exported = await crypto.subtle.exportKey('jwk', key);
+    localStorage.setItem(this.AUTH_KEY_NAME, JSON.stringify(exported));
+  }
+  
+  /**
+   * Get or create encryption key
+   */
+  private static async getKey(): Promise<CryptoKey> {
+    const storedKey = localStorage.getItem(this.AUTH_KEY_NAME);
+    
+    if (storedKey) {
+      const jwk = JSON.parse(storedKey);
+      return await crypto.subtle.importKey(
+        'jwk',
+        jwk,
+        { name: 'AES-GCM' },
+        true,
+        ['encrypt', 'decrypt']
+      );
     }
+    
+    const key = await this.generateKey();
+    await this.storeKey(key);
+    return key;
   }
   
   /**
    * Securely store authentication data
-   * Note: For high-security applications, consider using a more secure storage method
    */
-  public static storeAuthData(token: string, refreshToken?: string): void {
-    // Store tokens with a timestamp for expiration checking
-    const authData = {
-      token,
-      refreshToken,
-      timestamp: Date.now()
-    };
-    
-    // Use session key to encrypt
-    const sessionKey = this.getSessionKey();
-    const encryptedData = SessionSecurity.encryptData(authData, sessionKey);
-    
-    localStorage.setItem('flextasker_auth', encryptedData);
+  public static async storeAuthData(accessToken: string, refreshToken?: string): Promise<void> {
+    try {
+      const authData = {
+        accessToken,
+        refreshToken
+      };
+      
+      const key = await this.getKey();
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      
+      const dataString = JSON.stringify(authData);
+      const encodedData = new TextEncoder().encode(dataString);
+      
+      const encryptedData = await crypto.subtle.encrypt(
+        {
+          name: 'AES-GCM',
+          iv: iv
+        },
+        key,
+        encodedData
+      );
+      
+      const storedData = {
+        encryptedData: btoa(String.fromCharCode(...new Uint8Array(encryptedData))),
+        iv: btoa(String.fromCharCode(...iv)),
+        salt: btoa(String.fromCharCode(...salt))
+      };
+      
+      localStorage.setItem(this.AUTH_TOKENS_NAME, JSON.stringify(storedData));
+    } catch (error) {
+      // Fall back to plain storage if encryption fails
+      const authData = { accessToken, refreshToken };
+      localStorage.setItem(this.AUTH_TOKENS_NAME, JSON.stringify(authData));
+    }
   }
   
   /**
    * Retrieve stored authentication data
    */
-  public static getAuthData(): { token: string; refreshToken?: string; timestamp: number } | null {
-    const encryptedData = localStorage.getItem('flextasker_auth');
-    
-    if (!encryptedData) {
-      return null;
-    }
-    
-    // Use session key to decrypt
-    const sessionKey = this.getSessionKey();
-    return SessionSecurity.decryptData<{ token: string; refreshToken?: string; timestamp: number }>(
-      encryptedData, 
-      sessionKey
-    );
-  }
-  
-  /**
-   * Get or create a session key
-   * This key is used for encrypting auth data
-   */
-  private static getSessionKey(): string {
-    let sessionKey = sessionStorage.getItem('flextasker_session_key');
-    
-    if (!sessionKey) {
-      // Generate a random session key
-      const array = new Uint8Array(16);
-      window.crypto.getRandomValues(array);
-      sessionKey = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  public static async getAuthData(): Promise<{ accessToken: string | null; refreshToken: string | null }> {
+    try {
+      const storedDataString = localStorage.getItem(this.AUTH_TOKENS_NAME);
       
-      sessionStorage.setItem('flextasker_session_key', sessionKey);
+      if (!storedDataString) {
+        return { accessToken: null, refreshToken: null };
+      }
+      
+      const storedData = JSON.parse(storedDataString);
+      
+      // Check if it's encrypted data
+      if (storedData.encryptedData && storedData.iv) {
+        const key = await this.getKey();
+        
+        const encryptedArray = new Uint8Array(
+          atob(storedData.encryptedData).split('').map(c => c.charCodeAt(0))
+        );
+        const iv = new Uint8Array(
+          atob(storedData.iv).split('').map(c => c.charCodeAt(0))
+        );
+        
+        const decryptedData = await crypto.subtle.decrypt(
+          {
+            name: 'AES-GCM',
+            iv: iv
+          },
+          key,
+          encryptedArray
+        );
+        
+        const decodedData = new TextDecoder().decode(decryptedData);
+        return JSON.parse(decodedData);
+      } else {
+        // Plain text fallback
+        return {
+          accessToken: storedData.accessToken || null,
+          refreshToken: storedData.refreshToken || null
+        };
+      }
+    } catch (error) {
+      return { accessToken: null, refreshToken: null };
     }
-    
-    return sessionKey;
   }
   
   /**
    * Clear all authentication data
    */
   public static clearAuthData(): void {
-    localStorage.removeItem('flextasker_auth');
-    sessionStorage.removeItem('flextasker_session_key');
+    localStorage.removeItem(this.AUTH_TOKENS_NAME);
+    localStorage.removeItem(this.AUTH_KEY_NAME);
+  }
+  
+  /**
+   * Check if a token is expired
+   */
+  public static isTokenExpired(token: string | null): boolean {
+    if (!token) return true;
+    
+    try {
+      const payload = this.getTokenPayload(token);
+      if (!payload || !payload.exp) return true;
+      
+      return payload.exp * 1000 < Date.now();
+    } catch (e) {
+      return true;
+    }
+  }
+  
+  /**
+   * Get token payload
+   */
+  public static getTokenPayload(token: string | null): any {
+    if (!token) return null;
+    
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+      
+      const payload = parts[1];
+      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const decodedPayload = JSON.parse(atob(base64));
+      
+      return decodedPayload;
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  /**
+   * Extract user info from a JWT token
+   */
+  public static decodeToken<T>(token: string): T | null {
+    return this.getTokenPayload(token) as T;
   }
 }
 
@@ -424,14 +510,14 @@ export const RECOMMENDED_SECURITY_HEADERS = {
  */
 export function setupSecurityEventListeners(): void {
   // Listen for visibility changes to detect when a user returns to the tab
-  document.addEventListener('visibilitychange', () => {
+  document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'visible') {
       // Verify tokens are still valid
-      const authData = AuthSecurity.getAuthData();
+      const authData = await AuthSecurity.getAuthData();
       
-      if (authData && authData.token) {
+      if (authData && authData.accessToken) {
         // Check if token is expired
-        if (AuthSecurity.isTokenExpired(authData.token)) {
+        if (AuthSecurity.isTokenExpired(authData.accessToken)) {
           // Handle expired token - trigger refresh or logout
           const event = new CustomEvent('auth:token-expired');
           document.dispatchEvent(event);
@@ -455,14 +541,14 @@ export const validateCSRFToken = (token: string): boolean => {
  * This function should be called early in the application lifecycle,
  * typically before rendering the app.
  */
-export function initializeAuth(): void {
+export async function initializeAuth(): Promise<void> {
   try {
     // Set up security event listeners for token refresh and session management
     setupSecurityEventListeners();
     
     // Get auth data using the secure AuthSecurity class
-    const authData = AuthSecurity.getAuthData();
-    if (authData?.token && AuthSecurity.isTokenExpired(authData.token)) {
+    const authData = await AuthSecurity.getAuthData();
+    if (authData?.accessToken && AuthSecurity.isTokenExpired(authData.accessToken)) {
       // Token is expired, clear it to trigger re-login
       AuthSecurity.clearAuthData();
       console.warn('Expired authentication token detected and cleared');
@@ -481,10 +567,10 @@ export function initializeAuth(): void {
  * 
  * @returns Promise that resolves to true if the user is authenticated, false otherwise
  */
-export function isAuthenticated(): boolean {
+export async function isAuthenticated(): Promise<boolean> {
   try {
-    const authData = AuthSecurity.getAuthData();
-    return !!authData?.token && !AuthSecurity.isTokenExpired(authData.token);
+    const authData = await AuthSecurity.getAuthData();
+    return !!authData?.accessToken && !AuthSecurity.isTokenExpired(authData.accessToken);
   } catch {
     return false;
   }

@@ -138,8 +138,8 @@ export function getFileUrl(path: string): string {
   const cleanPath = path.startsWith('/') ? path.substring(1) : path;
 
   // Get the base API URL from environment variables
-  const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api';
-  const fileBaseUrl = import.meta.env.VITE_FILE_BASE_URL ?? `${baseUrl}/files`;
+  const baseUrl = (typeof process !== 'undefined' && process.env?.VITE_API_URL) ?? 'http://localhost:5000/api';
+  const fileBaseUrl = (typeof process !== 'undefined' && process.env?.VITE_FILE_BASE_URL) ?? `${baseUrl}/files`;
 
   return `${fileBaseUrl}/${cleanPath}`;
 }

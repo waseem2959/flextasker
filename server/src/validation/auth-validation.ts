@@ -2,57 +2,31 @@
  * Authentication Validation Schemas
  * 
  * Zod validation schemas for authentication-related operations
+ * Re-exports from centralized validation utilities with route-specific wrappers
  */
 
 import { z } from 'zod';
+import { ValidationSchemas } from '../utils/validation-utils';
 
-// User registration schema
+// Route-specific wrappers for centralized auth schemas
 export const registerSchema = z.object({
-  body: z.object({
-    email: z.string().email('Please provide a valid email address'),
-    password: z.string().min(8, 'Password must be at least 8 characters long')
-      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 
-        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
-    firstName: z.string().min(1, 'First name is required').max(50, 'First name too long'),
-    lastName: z.string().min(1, 'Last name is required').max(50, 'Last name too long'),
-    confirmPassword: z.string()
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  })
+  body: ValidationSchemas.Auth.register
 });
 
-// User login schema
 export const loginSchema = z.object({
-  body: z.object({
-    email: z.string().email('Please provide a valid email address'),
-    password: z.string().min(1, 'Password is required'),
-    rememberMe: z.boolean().optional()
-  })
+  body: ValidationSchemas.Auth.login
 });
 
-// Forgot password schema
 export const forgotPasswordSchema = z.object({
   body: z.object({
     email: z.string().email('Please provide a valid email address')
   })
 });
 
-// Reset password schema
 export const resetPasswordSchema = z.object({
-  body: z.object({
-    token: z.string().min(1, 'Reset token is required'),
-    password: z.string().min(8, 'Password must be at least 8 characters long')
-      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 
-        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
-    confirmPassword: z.string()
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  })
+  body: ValidationSchemas.Auth.resetPassword
 });
 
-// Change password schema
 export const changePasswordSchema = z.object({
   body: z.object({
     currentPassword: z.string().min(1, 'Current password is required'),
@@ -66,21 +40,18 @@ export const changePasswordSchema = z.object({
   })
 });
 
-// Refresh token schema
 export const refreshTokenSchema = z.object({
   body: z.object({
     refreshToken: z.string().min(1, 'Refresh token is required')
   })
 });
 
-// Email verification schema
 export const verifyEmailSchema = z.object({
   body: z.object({
     token: z.string().min(1, 'Verification token is required')
   })
 });
 
-// Resend verification schema
 export const resendVerificationSchema = z.object({
   body: z.object({
     email: z.string().email('Please provide a valid email address')

@@ -58,17 +58,32 @@ export const MemoizedRoleBadge = React.memo<RoleBadgeProps>(({ role, variant = '
   const getBadgeColor = (role: UserRole) => {
     switch (role) {
       case UserRole.ADMIN:
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+        return 'bg-red-100 text-red-800 hover:bg-red-200';
       case UserRole.TASKER:
-        return 'bg-purple-100 text-purple-800 hover:bg-purple-200';
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+      case UserRole.USER:
+        return 'bg-green-100 text-green-800 hover:bg-green-200';
       default:
         return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
     }
   };
 
+  const getRoleLabel = (role: UserRole) => {
+    switch (role) {
+      case UserRole.ADMIN:
+        return 'Admin';
+      case UserRole.TASKER:
+        return 'Tasker';
+      case UserRole.USER:
+        return 'User';
+      default:
+        return 'Unknown';
+    }
+  };
+
   return (
     <Badge className={getBadgeColor(role)} variant={variant}>
-      {role}
+      {getRoleLabel(role)}
     </Badge>
   );
 });
@@ -106,9 +121,9 @@ export const MemoizedStatusBadge = React.memo<StatusBadgeProps>(({ status, isAct
     }
   };
 
-  const displayStatus = typeof isActive === 'boolean' 
+  const displayStatus = typeof isActive === 'boolean' && status === 'status'
     ? (isActive ? 'Active' : 'Inactive')
-    : status;
+    : status.charAt(0).toUpperCase() + status.slice(1);
 
   return (
     <Badge className={getStatusColor(status, isActive)}>
@@ -132,19 +147,40 @@ export const MemoizedFormattedDate = React.memo<FormattedDateProps>(({
   className = ''
 }) => {
   const formattedDate = React.useMemo(() => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    
-    switch (format) {
-      case 'long':
-        return dateObj.toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        });
-      case 'relative':
-        return formatDate(dateObj.toISOString(), 'relative');
-      default:
-        return dateObj.toLocaleDateString();
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      
+      if (isNaN(dateObj.getTime())) {
+        return 'Invalid date';
+      }
+      
+      switch (format) {
+        case 'long':
+          return dateObj.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          });
+        case 'relative':
+          // Simple relative formatting
+          const now = new Date();
+          const diffMs = now.getTime() - dateObj.getTime();
+          const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          
+          if (diffDays === 0) return 'today';
+          if (diffDays === 1) return '1 day ago';
+          if (diffDays > 1) return `${diffDays} days ago`;
+          if (diffDays === -1) return 'in 1 day';
+          return `in ${Math.abs(diffDays)} days`;
+        default:
+          return dateObj.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+          });
+      }
+    } catch {
+      return 'Invalid date';
     }
   }, [date, format]);
 
@@ -172,8 +208,11 @@ export const MemoizedLoadingSpinner = React.memo<LoadingSpinnerProps>(({
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center ${className}`}>
-      <div className={`${sizeClasses[size]} animate-spin rounded-full border-b-2 border-primary`} />
+    <div className="flex flex-col items-center justify-center">
+      <div 
+        className={`${sizeClasses[size]} animate-spin rounded-full border-b-2 border-primary ${className}`} 
+        role="status"
+      />
       {text && <p className="mt-2 text-sm text-gray-600">{text}</p>}
     </div>
   );
@@ -207,7 +246,7 @@ export const MemoizedStatsCard = React.memo<StatsCardProps>(({
         {icon && <div className="h-4 w-4 text-muted-foreground">{icon}</div>}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-2xl font-bold">{typeof value === 'number' ? value.toLocaleString() : value}</div>
         {trend && (
           <p className={`text-xs ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
             {trend.isPositive ? '+' : ''}{trend.value}% from last month
@@ -256,10 +295,7 @@ export interface EmptyStateProps {
   icon?: React.ReactNode;
   title: string;
   description: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
+  action?: React.ReactNode;
   className?: string;
 }
 
@@ -275,11 +311,7 @@ export const MemoizedEmptyState = React.memo<EmptyStateProps>(({
       {icon && <div className="mb-4 text-gray-400">{icon}</div>}
       <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
       <p className="text-gray-600 mb-4 max-w-sm">{description}</p>
-      {action && (
-        <Button onClick={action.onClick} variant="outline">
-          {action.label}
-        </Button>
-      )}
+      {action && <div>{action}</div>}
     </div>
   );
 });

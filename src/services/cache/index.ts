@@ -50,7 +50,7 @@ class CacheIntegrationService {
   private isInitialized = false;
   private optimizationTimer: NodeJS.Timeout | null = null;
   private monitoringTimer: NodeJS.Timeout | null = null;
-  private lastOptimization = 0;
+  // private lastOptimization = 0; // Not currently used
 
   constructor(config?: Partial<CacheSystemConfig>) {
     this.config = {
@@ -128,6 +128,8 @@ class CacheIntegrationService {
    * Configure cache manager based on performance mode
    */
   private configureCacheManager(): void {
+    // Configuration object commented out as it's not currently used
+    /*
     const configs = {
       performance: {
         defaultTTL: 10 * 60 * 1000, // 10 minutes
@@ -176,6 +178,7 @@ class CacheIntegrationService {
     };
 
     const config = configs[this.config.performanceMode];
+    */
     console.log(`Configuring cache manager for ${this.config.performanceMode} mode`);
   }
 
@@ -333,7 +336,7 @@ class CacheIntegrationService {
    */
   private async optimizeCache(): Promise<void> {
     try {
-      const status = await this.getSystemStatus();
+      // const status = await this.getSystemStatus(); // Not currently used
       const optimizations = await this.getOptimizationRecommendations();
 
       // Apply high-impact, low-effort optimizations automatically
@@ -350,7 +353,7 @@ class CacheIntegrationService {
         }
       }
 
-      this.lastOptimization = Date.now();
+      // this.lastOptimization = Date.now(); // Property not defined
 
       performanceMonitor.recordMetric({
         name: 'cache.optimization.auto',
@@ -370,10 +373,10 @@ class CacheIntegrationService {
    */
   private async collectMetrics(): Promise<void> {
     try {
-      const [cacheStats, queryMetrics, warmingMetrics] = await Promise.all([
+      const [cacheStats, queryMetrics] = await Promise.all([ // warmingMetrics removed as it's not used
         cacheManager.getStatistics(),
-        queryCache.getMetrics(),
-        cacheWarmer.getMetrics()
+        queryCache.getMetrics()
+        // cacheWarmer.getMetrics() // Removed as warmingMetrics is not used
       ]);
 
       // Track overall system performance

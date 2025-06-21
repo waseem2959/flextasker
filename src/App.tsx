@@ -9,6 +9,7 @@ import { ROUTES } from "./lib/route-utils";
 import { useAuth } from "./hooks/use-auth";
 import { UserRole } from "../shared/types/common/enums";
 import { setupSecurityEventListeners } from "./utils/security";
+import { ErrorBoundary } from "./components/error-boundary";
 
 // PWA Components
 import InstallPrompt from "./components/pwa/install-prompt";
@@ -18,8 +19,14 @@ import PWAStatusComponent from "./components/pwa/pwa-status";
 // Auth Provider
 import AuthProvider from "./services/providers/auth-provider";
 
+// Theme Provider
+import { ThemeProvider } from "./contexts/theme-context";
+
 // Performance Monitor (dev only)
 import { PerformanceMonitor } from "./components/dev/performance-monitor";
+
+// Image Performance Monitor (dev only)
+import { ImagePerformanceToggle } from "./components/dev/image-performance-dashboard";
 
 // Import centralized lazy components
 import {
@@ -90,14 +97,17 @@ const App = () => {
   }, []);
 
   return (
-    <HelmetProvider>
-      <BrowserRouter>
-        <ReactQueryProvider>
-          <AuthProvider>
-            <TooltipProvider>
+    <ErrorBoundary>
+      <HelmetProvider>
+        <BrowserRouter>
+          <ReactQueryProvider>
+            <AuthProvider>
+              <ThemeProvider>
+                <TooltipProvider>
             <div className="min-h-screen bg-background">
               <Toaster />
               <PerformanceMonitor />
+              <ImagePerformanceToggle />
               
               {/* PWA Components */}
               <InstallPrompt />
@@ -206,11 +216,13 @@ const App = () => {
                 </Routes>
               </Suspense>
             </div>
-            </TooltipProvider>
-          </AuthProvider>
-        </ReactQueryProvider>
-      </BrowserRouter>
-    </HelmetProvider>
+                </TooltipProvider>
+              </ThemeProvider>
+            </AuthProvider>
+          </ReactQueryProvider>
+        </BrowserRouter>
+      </HelmetProvider>
+    </ErrorBoundary>
   );
 };
 

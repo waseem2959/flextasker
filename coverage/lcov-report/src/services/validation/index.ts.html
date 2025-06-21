@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/16</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>0/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/16</span>
             </div>
         
             
@@ -126,17 +126,7 @@
 <a name='L61'></a><a href='#L61'>61</a>
 <a name='L62'></a><a href='#L62'>62</a>
 <a name='L63'></a><a href='#L63'>63</a>
-<a name='L64'></a><a href='#L64'>64</a>
-<a name='L65'></a><a href='#L65'>65</a>
-<a name='L66'></a><a href='#L66'>66</a>
-<a name='L67'></a><a href='#L67'>67</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L64'></a><a href='#L64'>64</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -161,6 +151,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -175,7 +166,10 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -203,16 +197,9 @@
 &nbsp;
 import { z } from 'zod';
 import { validatePassword as validatePasswordUtil } from '@/lib/validation-utils';
-import { isValidEmail } from '@/utils/validation';
-import { 
-  taskCreateSchema,
-  taskUpdateSchema,
-  taskSearchSchema,
-  budgetSchema,
-  locationSchema,
-  timingSchema,
-  requirementsSchema
-} from '../../shared/validation/task-validation';
+import { validateEmail } from '@/lib/validation-utils';
+// Import Zod schemas from form validation since shared validation doesn't exist
+import { createTaskSchema as taskCreateSchema } from '@/utils/form-validation';
 import { TaskPriority, TaskStatus, BudgetType, UserRole } from '@/types';
 &nbsp;
 // Generic validation function
@@ -226,27 +213,31 @@ export const taskPrioritySchema = <span class="cstat-no" title="statement not co
 export const budgetTypeSchema = <span class="cstat-no" title="statement not covered" >z.nativeEnum(BudgetType);</span>
 export const userRoleSchema = <span class="cstat-no" title="statement not covered" >z.nativeEnum(UserRole);</span>
 &nbsp;
-export const emailSchema = <span class="cstat-no" title="statement not covered" >z.string().refine(isValidEmail, {</span>
-  message: 'Invalid email format'
-});
+export const emailSchema = <span class="cstat-no" title="statement not covered" >z.string().refine(</span>
+<span class="fstat-no" title="function not covered" >  (e</span>mail) =&gt; <span class="cstat-no" title="statement not covered" >validateEmail(email).isValid,</span>
+  { message: 'Invalid email format' }
+);
 &nbsp;
 export const passwordSchema = <span class="cstat-no" title="statement not covered" >z.string().refine(</span>
 <span class="fstat-no" title="function not covered" >  (p</span>assword) =&gt; <span class="cstat-no" title="statement not covered" >validatePasswordUtil(password).isValid,</span>
   { message: 'Password does not meet security requirements' }
 );
 &nbsp;
-// Re-export shared validation schemas with backward compatibility names
+// Re-export validation schemas with backward compatibility names
 export const createTaskSchema = <span class="cstat-no" title="statement not covered" >taskCreateSchema;</span>
-export const updateTaskSchema = <span class="cstat-no" title="statement not covered" >taskUpdateSchema;</span>
-export const taskFilterSchema = <span class="cstat-no" title="statement not covered" >taskSearchSchema;</span>
+export const updateTaskSchema = <span class="cstat-no" title="statement not covered" >z.object({});</span> // Placeholder
+export const taskFilterSchema = <span class="cstat-no" title="statement not covered" >z.object({});</span> // Placeholder
 &nbsp;
-// Re-export sub-schemas
-export { budgetSchema, locationSchema, timingSchema, requirementsSchema };
+// Placeholder sub-schemas
+export const budgetSchema = <span class="cstat-no" title="statement not covered" >z.object({});</span>
+export const locationSchema = <span class="cstat-no" title="statement not covered" >z.object({});</span>
+export const timingSchema = <span class="cstat-no" title="statement not covered" >z.object({});</span>
+export const requirementsSchema = <span class="cstat-no" title="statement not covered" >z.object({});</span>
 &nbsp;
 // Default export for convenience
 export default {
   validate,
-  isValidEmail,
+  validateEmail,
   validatePassword: validatePasswordUtil,
   taskStatusSchema,
   taskPrioritySchema,
@@ -268,7 +259,7 @@ export default {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-18T17:23:27.444Z
+                at 2025-06-20T04:32:32.883Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

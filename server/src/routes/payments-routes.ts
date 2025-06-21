@@ -21,7 +21,7 @@ const router = Router();
  */
 router.post('/',
   authenticateToken,
-  
+  [
     body('taskId')
       .notEmpty()
       .withMessage('Task ID is required'),
@@ -37,7 +37,8 @@ router.post('/',
     body('paymentDetails')
       .optional()
       .isObject()
-      .withMessage('Payment details must be an object'),
+      .withMessage('Payment details must be an object')
+  ],
   paymentController.createPayment
 );
 
@@ -47,8 +48,9 @@ router.post('/',
  */
 router.get('/:id',
   authenticateToken,
-  
+  [
     param('id').isUUID().withMessage('Invalid payment ID format')
+  ],
   paymentController.getPaymentById
 );
 
@@ -58,12 +60,13 @@ router.get('/:id',
  */
 router.get('/history',
   authenticateToken,
-  
+  [
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('Limit must be between 1 and 50'),
     query('startDate').optional().isISO8601().withMessage('Start date must be a valid ISO date'),
     query('endDate').optional().isISO8601().withMessage('End date must be a valid ISO date'),
     query('status').optional().isIn(['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED']).withMessage('Invalid status')
+  ],
   paymentController.getPaymentHistory
 );
 
@@ -73,8 +76,9 @@ router.get('/history',
  */
 router.get('/task/:taskId',
   authenticateToken,
-  
+  [
     param('taskId').isUUID().withMessage('Invalid task ID format')
+  ],
   paymentController.getTaskPayments
 );
 
@@ -84,9 +88,10 @@ router.get('/task/:taskId',
  */
 router.post('/methods',
   authenticateToken,
-  
+  [
     body('type').isIn(['CREDIT_CARD', 'BANK_ACCOUNT', 'DIGITAL_WALLET']).withMessage('Invalid payment method type'),
     body('details').isObject().withMessage('Payment details are required')
+  ],
   paymentController.addPaymentMethod
 );
 
@@ -105,8 +110,9 @@ router.get('/methods',
  */
 router.delete('/methods/:id',
   authenticateToken,
-  
+  [
     param('id').isUUID().withMessage('Invalid payment method ID')
+  ],
   paymentController.deletePaymentMethod
 );
 
@@ -116,10 +122,11 @@ router.delete('/methods/:id',
  */
 router.post('/:id/refund',
   authenticateToken,
-  
+  [
     param('id').isUUID().withMessage('Invalid payment ID format'),
     body('reason').isString().trim().isLength({ min: 10, max: 500 }).withMessage('Reason must be between 10 and 500 characters'),
     body('amount').optional().isFloat({ min: 0.01 }).withMessage('Refund amount must be greater than 0')
+  ],
   paymentController.requestRefund
 );
 
@@ -129,8 +136,9 @@ router.post('/:id/refund',
  */
 router.get('/:id/receipt',
   authenticateToken,
-  
+  [
     param('id').isUUID().withMessage('Invalid payment ID format')
+  ],
   paymentController.getPaymentReceipt
 );
 

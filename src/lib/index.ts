@@ -15,7 +15,7 @@ export { default as queryTypes } from './query-types';
 export { default as badgeUtils, badgeVariants } from './badge-utils';
 export { SidebarContext, default as sidebarUtils, useSidebar } from './sidebar-utils';
 export { default as toggleUtils, toggleVariants } from './toggle-utils';
-export { cn, formatCurrency, truncateText, default as uiUtils } from './ui-utils';
+export { cn, formatCurrency, truncate, default as uiUtils } from './ui-utils';
 
 // Validation exports
 export * from '@/services/validation';

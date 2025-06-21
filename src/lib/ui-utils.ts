@@ -5,10 +5,10 @@
  * These utilities are primarily focused on UI styling and class name management.
  */
 
-import { cn, formatCurrency, truncateText } from './utils';
+import { cn, formatCurrency, truncate } from './utils';
 
 // Re-export individual functions
-export { cn, formatCurrency, truncateText };
+export { cn, formatCurrency, truncate };
 
 /**
  * Status color mapping for consistent status indicators
@@ -160,7 +160,7 @@ export const getSuccessMessageClasses = () => {
 export default {
   cn,
   formatCurrency,
-  truncateText,
+  truncate,
   getStatusColors,
   formatFileSize,
   getInitials,

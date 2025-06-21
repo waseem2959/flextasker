@@ -5,6 +5,7 @@
  */
 
 import '@testing-library/jest-dom';
+import './test-setup';
 
 // === POLYFILLS ===
 
@@ -42,6 +43,7 @@ global.IntersectionObserver = class MockIntersectionObserver implements Intersec
   root: Element | Document | null = null;
   rootMargin: string = '0px';
   thresholds: ReadonlyArray<number> = [0];
+  private _observedElements = new Set<Element>();
 
   constructor(
     private _callback: IntersectionObserverCallback,
@@ -59,15 +61,52 @@ global.IntersectionObserver = class MockIntersectionObserver implements Intersec
   }
 
   disconnect(): void {
-    // Mock implementation - no-op for tests
+    this._observedElements.clear();
   }
 
-  observe(_target: Element): void {
-    // Mock implementation - no-op for tests
+  observe(target: Element): void {
+    this._observedElements.add(target);
+    // Simulate intersection immediately for tests
+    const entry: IntersectionObserverEntry = {
+      target,
+      isIntersecting: true,
+      intersectionRatio: 1,
+      boundingClientRect: {
+        bottom: 100,
+        height: 100,
+        left: 0,
+        right: 100,
+        top: 0,
+        width: 100,
+        x: 0,
+        y: 0,
+        toJSON: () => ({})
+      } as DOMRectReadOnly,
+      intersectionRect: {
+        bottom: 100,
+        height: 100,
+        left: 0,
+        right: 100,
+        top: 0,
+        width: 100,
+        x: 0,
+        y: 0,
+        toJSON: () => ({})
+      } as DOMRectReadOnly,
+      rootBounds: null,
+      time: Date.now()
+    };
+    
+    // Use a longer timeout to ensure the React hook has properly set up
+    setTimeout(() => {
+      if (this._observedElements.has(target)) {
+        this._callback([entry], this);
+      }
+    }, 100);
   }
 
-  unobserve(_target: Element): void {
-    // Mock implementation - no-op for tests
+  unobserve(target: Element): void {
+    this._observedElements.delete(target);
   }
 
   takeRecords(): IntersectionObserverEntry[] {
@@ -112,6 +151,68 @@ Object.defineProperty(window, 'scrollTo', {
   writable: true,
   value: jest.fn(),
 });
+
+// Mock requestAnimationFrame
+global.requestAnimationFrame = jest.fn((cb) => {
+  setTimeout(cb, 0);
+  return 1;
+});
+
+// Mock cancelAnimationFrame
+global.cancelAnimationFrame = jest.fn();
+
+// Mock dispatchEvent
+Object.defineProperty(window, 'dispatchEvent', {
+  writable: true,
+  value: jest.fn(),
+});
+
+// Mock Service Worker API
+Object.defineProperty(navigator, 'serviceWorker', {
+  writable: true,
+  value: {
+    register: jest.fn(),
+    ready: Promise.resolve({
+      showNotification: jest.fn(),
+      pushManager: {
+        subscribe: jest.fn(),
+        getSubscription: jest.fn(),
+      },
+      update: jest.fn(),
+      unregister: jest.fn(),
+      active: {
+        postMessage: jest.fn(),
+      },
+      addEventListener: jest.fn(),
+    }),
+    addEventListener: jest.fn(),
+    controller: null,
+  },
+});
+
+// Mock Notification API
+global.Notification = class MockNotification {
+  static permission: NotificationPermission = 'default';
+  static requestPermission = jest.fn(() => Promise.resolve('granted' as NotificationPermission));
+  
+  constructor(public title: string, public options?: NotificationOptions) {}
+} as any;
+
+// Mock caches API
+global.caches = {
+  keys: jest.fn(() => Promise.resolve([])),
+  delete: jest.fn(() => Promise.resolve(true)),
+  open: jest.fn(() => Promise.resolve({
+    match: jest.fn(),
+    add: jest.fn(),
+    addAll: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+    keys: jest.fn(),
+  })),
+  match: jest.fn(),
+  has: jest.fn(),
+} as any;
 
 // Mock localStorage
 const localStorageMock = {
@@ -181,6 +282,38 @@ MockResponse.redirect = jest.fn((url, status = 302) => ({
 }));
 
 global.Response = MockResponse;
+
+// Mock URL constructor for API client and other URL usage
+global.URL = class MockURL {
+  public href: string;
+  public origin: string;
+  public pathname: string;
+  public search: string;
+  public hash: string;
+  
+  constructor(url: string, base?: string) {
+    if (base && !url.startsWith('http')) {
+      this.href = base.endsWith('/') ? base + url : base + '/' + url;
+    } else {
+      this.href = url;
+    }
+    
+    // Parse basic URL components
+    const urlParts = this.href.split('?');
+    const pathParts = urlParts[0].split('#');
+    this.pathname = pathParts[0].replace(/^https?:\/\/[^\/]+/, '') || '/';
+    this.search = urlParts[1] ? '?' + urlParts[1].split('#')[0] : '';
+    this.hash = this.href.includes('#') ? '#' + this.href.split('#').pop() : '';
+    this.origin = this.href.split('/').slice(0, 3).join('/');
+  }
+  
+  toString() {
+    return this.href;
+  }
+  
+  static createObjectURL = jest.fn(() => 'mocked-url');
+  static revokeObjectURL = jest.fn();
+} as any;
 
 // Mock URL.createObjectURL
 Object.defineProperty(URL, 'createObjectURL', {
@@ -265,18 +398,18 @@ jest.mock('react-error-boundary', () => ({
 
 // === ROUTER MOCKS ===
 
-// Mock react-router-dom for components that use navigation
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useNavigate: () => jest.fn(),
-  useLocation: () => ({
-    pathname: '/',
-    search: '',
-    hash: '',
-    state: null,
-  }),
-  useParams: () => ({}),
-}));
+// Default mock for react-router-dom (can be overridden in specific tests)
+const mockNavigate = jest.fn();
+const mockLocation = {
+  pathname: '/',
+  search: '',
+  hash: '',
+  state: null,
+};
+const mockParams = {};
+
+// Export these for use in tests
+export { mockNavigate, mockLocation, mockParams };
 
 // === ANIMATION MOCKS ===
 
@@ -329,7 +462,9 @@ afterEach(() => {
   sessionStorageMock.clear();
   
   // Reset fetch mock
-  (global.fetch as jest.Mock).mockClear();
+  if (global.fetch && typeof (global.fetch as any).mockClear === 'function') {
+    (global.fetch as jest.Mock).mockClear();
+  }
 });
 
 // === TYPE DECLARATIONS ===
@@ -441,6 +576,15 @@ Object.defineProperty(global, 'crypto', {
     randomUUID: () => 'mocked-uuid-' + Math.random().toString(36).substring(2, 11),
   },
 });
+
+// Mock Canvas API for fingerprinting
+const mockCanvasContext = {
+  fillText: jest.fn(),
+  toDataURL: jest.fn(() => 'data:image/png;base64,mockcanvasdata'),
+};
+
+global.HTMLCanvasElement.prototype.getContext = jest.fn().mockReturnValue(mockCanvasContext);
+global.HTMLCanvasElement.prototype.toDataURL = jest.fn().mockReturnValue('data:image/png;base64,mockcanvasdata');
 
 // Mock File and FileReader for file upload tests
 global.File = class MockFile {

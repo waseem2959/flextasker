@@ -439,7 +439,7 @@ export const checkBusinessThresholds = (amount: number): {
  */
 export const formatCurrencyInput = (
   value: string,
-  previousValue: string = ''
+  _previousValue: string = '' // previousValue parameter renamed to indicate it's not used
 ): string => {
   // Remove non-numeric characters except decimal point
   let cleaned = value.replace(/[^\d.]/g, '');

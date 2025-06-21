@@ -1,8 +1,11 @@
 /**
  * Form Validation Utilities
  *
+ * This module re-exports validation utilities from the centralized validation module
+ * and provides client-specific form validation functionality.
+ * 
  * @deprecated Most validation utilities have been moved to @/lib/validation-utils
- * This file now re-exports from the centralized validation utilities.
+ * This file now primarily re-exports from the centralized validation utilities.
  */
 
 // Re-export validation utilities from centralized location
@@ -36,6 +39,16 @@ export interface ValidationResult {
    * Additional context for the error
    */
   context?: Record<string, any>;
+  
+  /**
+   * Alias for backward compatibility with server validation utils
+   */
+  isValid?: boolean;
+  
+  /**
+   * Array of error messages for backward compatibility
+   */
+  errors?: string[];
 }
 
 /**
@@ -137,6 +150,8 @@ export function createValidationResult(
 ): ValidationResult {
   return {
     valid,
+    isValid: valid, // Alias for compatibility
+    errors: valid ? [] : [message || 'Validation failed'], // Array for compatibility
     message,
     field,
     context
@@ -821,7 +836,6 @@ export const contactFormSchema = z.object({
   subject: z.string().min(5, { message: 'Subject must be at least 5 characters long' }),
   message: z.string().min(20, { message: 'Message must be at least 20 characters long' }),
 });
-
 
 /**
  * Re-export task validation schemas from shared validation

@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/92</span>
+                <span class='fraction'>0/93</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/84</span>
+                <span class='fraction'>0/86</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/21</span>
+                <span class='fraction'>0/22</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/92</span>
+                <span class='fraction'>0/93</span>
             </div>
         
             
@@ -427,7 +427,11 @@
 <a name='L362'></a><a href='#L362'>362</a>
 <a name='L363'></a><a href='#L363'>363</a>
 <a name='L364'></a><a href='#L364'>364</a>
-<a name='L365'></a><a href='#L365'>365</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L365'></a><a href='#L365'>365</a>
+<a name='L366'></a><a href='#L366'>366</a>
+<a name='L367'></a><a href='#L367'>367</a>
+<a name='L368'></a><a href='#L368'>368</a>
+<a name='L369'></a><a href='#L369'>369</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -522,7 +526,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -537,10 +540,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -823,7 +831,7 @@ import { useContext } from 'react';
 interface AuthResultWithTokens {
   success: boolean;
   message?: string;
-  user?: any;
+  user?: User;
   token?: string;
   refreshToken?: string;
 }
@@ -882,11 +890,18 @@ export function <span class="fstat-no" title="function not covered" >useRequireA
 }
 &nbsp;
 /**
+ * Type guard to ensure user is authenticated and has a user object
+ */
+function <span class="fstat-no" title="function not covered" >isAuthenticatedUser(</span>auth: AuthContextType): auth is AuthContextType &amp; { user: User } {
+<span class="cstat-no" title="statement not covered" >  return auth.isAuthenticated &amp;&amp; auth.user !== null;</span>
+}
+&nbsp;
+/**
  * Hook for checking if the current user is an admin
  */
 export function <span class="fstat-no" title="function not covered" >useIsAdmin(</span>): boolean {
   const auth = <span class="cstat-no" title="statement not covered" >useAuth();</span>
-<span class="cstat-no" title="statement not covered" >  return isAuthenticated(auth) &amp;&amp; (auth.user as any).role === UserRole.ADMIN;</span>
+<span class="cstat-no" title="statement not covered" >  return isAuthenticatedUser(auth) &amp;&amp; auth.user.role === UserRole.ADMIN;</span>
 }
 &nbsp;
 /**
@@ -894,18 +909,15 @@ export function <span class="fstat-no" title="function not covered" >useIsAdmin(
  */
 export function <span class="fstat-no" title="function not covered" >useIsTasker(</span>): boolean {
   const auth = <span class="cstat-no" title="statement not covered" >useAuth();</span>
-<span class="cstat-no" title="statement not covered" >  return isAuthenticated(auth) &amp;&amp; (auth.user as any).role === UserRole.TASKER;</span>
+<span class="cstat-no" title="statement not covered" >  return isAuthenticatedUser(auth) &amp;&amp; auth.user.role === UserRole.TASKER;</span>
 }
 &nbsp;
 /**
  * Hook for checking if the current user is a regular user
- * Fixed to use the correct enum value
  */
 export function <span class="fstat-no" title="function not covered" >useIsRegularUser(</span>): boolean {
   const auth = <span class="cstat-no" title="statement not covered" >useAuth();</span>
-  // Changed from UserRole.USER to UserRole.REGULAR_USER if that's what exists,
-  // or ensure UserRole.USER is defined in your enum
-<span class="cstat-no" title="statement not covered" >  return isAuthenticated(auth) &amp;&amp; (auth.user as any).role === UserRole.USER;</span>
+<span class="cstat-no" title="statement not covered" >  return isAuthenticatedUser(auth) &amp;&amp; auth.user.role === UserRole.USER;</span>
 }
 &nbsp;
 /**
@@ -913,7 +925,7 @@ export function <span class="fstat-no" title="function not covered" >useIsRegula
  */
 export function <span class="fstat-no" title="function not covered" >useHasRole(</span>requiredRole: UserRole): boolean {
   const auth = <span class="cstat-no" title="statement not covered" >useAuth();</span>
-<span class="cstat-no" title="statement not covered" >  return isAuthenticated(auth) &amp;&amp; (auth.user as any).role === requiredRole;</span>
+<span class="cstat-no" title="statement not covered" >  return isAuthenticatedUser(auth) &amp;&amp; auth.user.role === requiredRole;</span>
 }
 &nbsp;
 /**
@@ -922,10 +934,10 @@ export function <span class="fstat-no" title="function not covered" >useHasRole(
 export function <span class="fstat-no" title="function not covered" >useRequireRole(</span>requiredRole: UserRole): User {
   const user = <span class="cstat-no" title="statement not covered" >useRequireAuth();</span>
   
-<span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if ((user as any).role !== requiredRole) {</span>
+<span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (user.role !== requiredRole) {</span>
 <span class="cstat-no" title="statement not covered" >    throw new Error(</span>
       `This component requires a user with role ${requiredRole}, ` +
-      `but the current user has role ${(user as any).role}. ` +
+      `but the current user has role ${user.role}. ` +
       `Use a conditional or route guard to check roles before rendering this component.`
     );
   }
@@ -938,7 +950,7 @@ export function <span class="fstat-no" title="function not covered" >useRequireR
  */
 export function <span class="fstat-no" title="function not covered" >useHasAnyRole(</span>roles: UserRole[]): boolean {
   const auth = <span class="cstat-no" title="statement not covered" >useAuth();</span>
-<span class="cstat-no" title="statement not covered" >  return isAuthenticated(auth) &amp;&amp; roles.includes((auth.user as any).role);</span>
+<span class="cstat-no" title="statement not covered" >  return isAuthenticated(auth) &amp;&amp; roles.includes(auth.user.role);</span>
 }
 &nbsp;
 /**
@@ -947,10 +959,10 @@ export function <span class="fstat-no" title="function not covered" >useHasAnyRo
 export function <span class="fstat-no" title="function not covered" >useRequireAnyRole(</span>roles: UserRole[]): User {
   const user = <span class="cstat-no" title="statement not covered" >useRequireAuth();</span>
   
-<span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (!roles.includes((user as any).role)) {</span>
+<span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (!roles.includes(user.role)) {</span>
 <span class="cstat-no" title="statement not covered" >    throw new Error(</span>
       `This component requires a user with one of the following roles: ${roles.join(', ')}, ` +
-      `but the current user has role ${(user as any).role}. ` +
+      `but the current user has role ${user.role}. ` +
       `Use a conditional or route guard to check roles before rendering this component.`
     );
   }
@@ -1162,7 +1174,7 @@ export default useAuth;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-18T17:23:27.444Z
+                at 2025-06-20T04:32:32.883Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

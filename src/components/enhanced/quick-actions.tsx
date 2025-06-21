@@ -10,16 +10,11 @@ import {
   Heart, 
   Share2, 
   Zap, 
-  BookmarkPlus, 
-  MessageCircle, 
   Eye,
-  DollarSign,
   Clock,
-  MapPin,
   Flag,
   MoreHorizontal,
-  CheckCircle,
-  AlertTriangle
+  CheckCircle
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -34,8 +29,7 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+  DialogTitle
 } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -346,7 +340,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
             <DropdownMenuItem onClick={() => handleShare('copy')}>
               Copy Link
             </DropdownMenuItem>
-            {navigator.share && (
+            {typeof navigator !== 'undefined' && 'share' in navigator && (
               <DropdownMenuItem onClick={() => handleShare('native')}>
                 Share
               </DropdownMenuItem>
@@ -439,7 +433,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
               <DropdownMenuItem onClick={() => handleShare('copy')}>
                 Copy Link
               </DropdownMenuItem>
-              {navigator.share && (
+              {typeof navigator !== 'undefined' && 'share' in navigator && (
                 <DropdownMenuItem onClick={() => handleShare('native')}>
                   Native Share
                 </DropdownMenuItem>
@@ -498,7 +492,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
             <DropdownMenuItem onClick={() => handleShare('copy')}>
               Copy Link
             </DropdownMenuItem>
-            {navigator.share && (
+            {typeof navigator !== 'undefined' && 'share' in navigator && (
               <DropdownMenuItem onClick={() => handleShare('native')}>
                 Share
               </DropdownMenuItem>

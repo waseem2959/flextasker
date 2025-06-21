@@ -42,7 +42,7 @@ function ApiProvider({
   enableRealTimeSync = true,
   enableRateLimiting = true,
   enableOfflineSupport = true,
-  enableDevTools = import.meta.env.DEV,
+  enableDevTools = (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development'),
   enableConnectionStatus = true
 }: ApiProviderProps) {
   const queryClient = useQueryClient();

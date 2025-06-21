@@ -164,38 +164,88 @@
   }
 
   [data-theme="dark"] {
-    --color-background: 210 25% 8%; /* #0F1419 */
-    --color-surface: 206 29% 16%; /* #1C2C35 */
-    --color-text-primary: 210 40% 98%; /* #F8FAFC */
-    --color-primary: 187 73% 50%; /* #26C6DA */
+    /* Primary Brand Colors - Dark Mode Variants */
+    --color-primary-950: 177 92% 85%; /* Lightest for dark backgrounds */
+    --color-primary-900: 177 92% 75%; /* Very light, high contrast on dark */
+    --color-primary-800: 177 88% 65%; /* Light, good contrast */
+    --color-primary-700: 180 85% 55%; /* Medium light, active states */
+    --color-primary-600: 185 76% 45%; /* Bright teal, secondary actions */
+    --color-primary-500: 187 73% 50%; /* Primary brand color for dark mode */
+    --color-primary-400: 190 70% 40%; /* Darker cyan-mint, highlights */
+    --color-primary-300: 192 67% 30%; /* Dark mint, success states */
+    --color-primary-200: 194 64% 25%; /* Darker mint, subtle accents */
+    --color-primary-100: 196 61% 20%; /* Very dark mint, subtle backgrounds */
+    --color-primary-50: 198 58% 15%;  /* Darkest mint, card backgrounds */
+
+    /* Neutral Palette - Dark Mode */
+    --color-neutral-900: 210 40% 98%; /* Near white, primary text */
+    --color-neutral-800: 210 35% 92%; /* Very light gray, secondary text */
+    --color-neutral-700: 210 30% 85%; /* Light gray, muted text */
+    --color-neutral-600: 215 20% 65%; /* Medium gray, disabled text */
+    --color-neutral-500: 220 15% 45%; /* Mid gray, borders */
+    --color-neutral-400: 220 13% 35%; /* Dark gray, subtle borders */
+    --color-neutral-300: 215 15% 25%; /* Darker gray, hover backgrounds */
+    --color-neutral-200: 210 20% 20%; /* Very dark, section backgrounds */
+    --color-neutral-100: 206 29% 16%; /* Near black, subtle backgrounds */
+    --color-neutral-50: 210 25% 12%;  /* Dark gray, card backgrounds */
+    --color-neutral-0: 210 25% 8%;    /* Almost black, main background */
+
+    /* Supporting colors - Dark mode */
+    --color-text-primary: 210 40% 98%; /* neutral-900 - very light text */
+    --color-text-secondary: 215 20% 65%; /* neutral-600 - muted text */
+    --color-text-muted: 220 15% 45%; /* neutral-500 - very muted text */
+    --color-text-inverse: 210 25% 8%; /* neutral-0 - dark text for light backgrounds */
     
-    /* Legacy variables (for compatibility) */
+    /* Semantic colors - Dark mode variants */
+    --color-success-700: 142 71% 65%; /* Light green for dark backgrounds */
+    --color-success-500: 142 71% 45%; /* Medium green */
+    --color-success-300: 142 71% 25%; /* Dark green for subtle accents */
+    --color-success-100: 142 71% 15%; /* Very dark green for backgrounds */
+    
+    --color-error-700: 0 84% 75%; /* Light red for dark backgrounds */
+    --color-error-500: 0 84% 60%; /* Medium red */
+    --color-error-300: 0 84% 35%; /* Dark red for subtle accents */
+    --color-error-100: 0 84% 20%; /* Very dark red for backgrounds */
+    
+    --color-warning-700: 45 93% 75%; /* Light yellow for dark backgrounds */
+    --color-warning-500: 45 93% 58%; /* Medium yellow */
+    --color-warning-300: 45 93% 35%; /* Dark yellow for subtle accents */
+    --color-warning-100: 45 93% 20%; /* Very dark yellow for backgrounds */
+    
+    /* Background system - Dark mode */
+    --color-background: 210 25% 8%;  /* neutral-0 - main dark background */
+    --color-surface: 206 29% 16%;    /* neutral-100 - card/surface backgrounds */
+    --color-border: 220 13% 35%;     /* neutral-400 - borders */
+    
+    /* Legacy variables (for compatibility) - Dark mode */
     --background: 210 25% 8%;
     --foreground: 210 40% 98%;
-    --card: 210 25% 8%;
+    --card: 206 29% 16%;
     --card-foreground: 210 40% 98%;
-    --popover: 210 25% 8%;
+    --popover: 210 25% 12%;
     --popover-foreground: 210 40% 98%;
     --primary: 187 73% 50%;
     --primary-foreground: 210 25% 8%;
-    --secondary: 206 29% 16%;
+    --secondary: 210 20% 20%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 206 29% 16%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 206 29% 16%;
+    --muted: 210 20% 20%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 210 20% 20%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-    --border: 206 29% 16%;
-    --input: 206 29% 16%;
+    --border: 220 13% 35%;
+    --input: 220 13% 35%;
     --ring: 187 73% 50%;
+    
+    /* Sidebar - Dark mode */
     --sidebar-background: 210 25% 8%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 187 73% 50%;
     --sidebar-primary-foreground: 210 25% 8%;
-    --sidebar-accent: 206 29% 16%;
+    --sidebar-accent: 210 20% 20%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 206 29% 16%;
+    --sidebar-border: 220 13% 35%;
     --sidebar-ring: 187 73% 50%;
   }
 }

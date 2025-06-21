@@ -20,7 +20,18 @@ export enum LogLevel {
 }
 
 // Configurable minimum log level based on environment
-const DEFAULT_LOG_LEVEL = import.meta.env.PROD ? LogLevel.WARN : LogLevel.DEBUG;
+const DEFAULT_LOG_LEVEL = (() => {
+  // Check for Node/Jest environment first
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') {
+    return LogLevel.WARN;
+  }
+  // Check for test environment
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
+    return LogLevel.DEBUG;
+  }
+  // Default to debug for development
+  return LogLevel.DEBUG;
+})();
 
 interface LoggerOptions {
   minLevel?: LogLevel;
@@ -156,7 +167,8 @@ class LoggerService {
     _metadata?: Record<string, unknown>
   ): void {
     // Only send in production and for higher severity levels
-    if (!import.meta.env.PROD || level < LogLevel.WARN) {
+    const isProd = typeof process !== 'undefined' && process.env?.NODE_ENV === 'production';
+    if (!isProd || level < LogLevel.WARN) {
       return;
     }
 

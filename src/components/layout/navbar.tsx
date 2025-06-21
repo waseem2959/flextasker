@@ -1,6 +1,8 @@
 import { Menu, X } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { AnimatedButton, StaggeredList } from '@/components/ui/micro-interactions';
 
 export const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -21,7 +23,7 @@ export const Navbar: React.FC = () => {
               <div className="flex items-baseline">
                 <span className="text-3xl font-black tracking-tight">
                   {/* FLEX with custom styling and interactive animation */}
-                  <span className="text-blue-600 inline-flex">
+                  <span className="text-primary-600 inline-flex">
                     <span className="transform transition-all duration-300 hover:scale-y-110 inline-block origin-bottom">F</span>
                     <span className="transform transition-all duration-300 hover:scale-y-110 inline-block origin-bottom delay-75">L</span>
                     <span className="transform transition-all duration-300 hover:scale-y-110 inline-block origin-bottom delay-100">E</span>
@@ -31,48 +33,52 @@ export const Navbar: React.FC = () => {
                   <span className="text-gray-900 ml-0.5">TASKER</span>
                 </span>
                 {/* Small animated indicator dot - adds personality and energy */}
-                <span className="ml-2 inline-block w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span>
+                <span className="ml-2 inline-block w-2 h-2 bg-primary-600 rounded-full animate-pulse"></span>
               </div>
             </Link>
 
             {/* Desktop Navigation Links */}
             <div className="hidden lg:flex lg:items-center lg:space-x-6">
               {/* Post Task as a prominent button matching Join FlexTasker style */}
-              <button
+              <AnimatedButton
                 onClick={() => navigate('/post-task')}
-                className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg transition-all duration-200 hover:bg-blue-700 hover:shadow-lg transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                variant="primary"
+                size="sm"
+                className="px-5 py-2 text-sm font-semibold"
               >
                 Post Task
-              </button>
+              </AnimatedButton>
               <Link
                 to="/find-tasks"
-                className="text-base font-medium text-gray-700 transition-colors duration-200 hover:text-blue-600"
+                className="text-base font-medium text-neutral-700 transition-colors duration-200 hover:text-primary-600"
               >
-                Browse Task
+                Browse Tasks
               </Link>
               <Link
                 to="/how-it-works"
-                className="text-base font-medium text-gray-700 transition-colors duration-200 hover:text-blue-600"
+                className="text-base font-medium text-neutral-700 transition-colors duration-200 hover:text-primary-600"
               >
                 How It Works
               </Link>
             </div>
           </div>
 
-          {/* Right Section: Auth Buttons */}
+          {/* Right Section: Theme Toggle & Auth Buttons */}
           <div className="hidden lg:flex lg:items-center lg:space-x-4">
+            <ThemeToggle />
             <button
               onClick={() => navigate('/login')}
-              className="px-4 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:text-blue-600"
+              className="px-4 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:text-primary-600"
             >
               Log in
             </button>
-            <button
+            <AnimatedButton
               onClick={() => navigate('/register')}
-              className="px-6 py-2.5 text-base font-medium text-white bg-blue-600 rounded-lg transition-all duration-200 hover:bg-blue-700 hover:shadow-lg transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              variant="primary"
+              className="px-6 py-2.5 text-base font-medium"
             >
               Join FlexTasker
-            </button>
+            </AnimatedButton>
           </div>
 
           {/* Mobile Menu Button */}
@@ -93,54 +99,60 @@ export const Navbar: React.FC = () => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="py-4 border-t border-gray-200 lg:hidden">
-            <div className="space-y-3">
+            <StaggeredList className="space-y-3">
               {/* Post Task button maintains same style on mobile */}
-              <button
+              <AnimatedButton
                 onClick={() => {
                   navigate('/post-task');
                   setIsMenuOpen(false);
                 }}
-                className="block w-full px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg transition-all duration-200 hover:bg-blue-700 text-center"
+                variant="primary"
+                size="sm"
+                className="block w-full px-5 py-2.5 text-sm font-semibold text-center"
               >
                 Post Task
-              </button>
+              </AnimatedButton>
               <Link
                 to="/find-tasks"
-                className="block px-4 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-blue-600 rounded-lg"
+                className="block px-4 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600 rounded-lg"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Browse Task
+                Browse Tasks
               </Link>
               <Link
                 to="/how-it-works"
-                className="block px-4 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-blue-600 rounded-lg"
+                className="block px-4 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600 rounded-lg"
                 onClick={() => setIsMenuOpen(false)}
               >
                 How It Works
               </Link>
               
-              {/* Mobile Auth Buttons */}
+              {/* Mobile Theme Toggle & Auth Buttons */}
               <div className="pt-4 mt-4 border-t border-gray-200 space-y-3">
+                <div className="flex items-center justify-center pb-2">
+                  <ThemeToggle />
+                </div>
                 <button
                   onClick={() => {
                     navigate('/login');
                     setIsMenuOpen(false);
                   }}
-                  className="block w-full px-4 py-2 text-base font-medium text-gray-700 text-center transition-colors duration-200 hover:text-blue-600"
+                  className="block w-full px-4 py-2 text-base font-medium text-gray-700 text-center transition-colors duration-200 hover:text-primary-600"
                 >
                   Log in
                 </button>
-                <button
+                <AnimatedButton
                   onClick={() => {
                     navigate('/register');
                     setIsMenuOpen(false);
                   }}
-                  className="block w-full px-4 py-2.5 text-base font-medium text-white bg-blue-600 rounded-lg text-center transition-all duration-200 hover:bg-blue-700"
+                  variant="primary"
+                  className="block w-full px-4 py-2.5 text-base font-medium text-center"
                 >
                   Join FlexTasker
-                </button>
+                </AnimatedButton>
               </div>
-            </div>
+            </StaggeredList>
           </div>
         )}
       </div>

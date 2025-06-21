@@ -142,8 +142,9 @@ describe('Input Component', () => {
       await userEvent.click(input);
 
       expect(input).toHaveFocus();
-      expect(input).toHaveClass('focus:border-[hsl(185,76%,35%)]');
+      expect(input).toHaveClass('focus:border-primary-500');
       expect(input).toHaveClass('focus:ring-2');
+      expect(input).toHaveClass('focus:ring-primary-100');
     });
   });
 

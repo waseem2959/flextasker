@@ -21,7 +21,7 @@ const Skeleton: React.FC<SkeletonProps> = ({
   return (
     <div
       className={cn(
-        'bg-slate-200 rounded-md',
+        'bg-neutral-200 dark:bg-neutral-700 rounded-md',
         animate && 'animate-pulse',
         className
       )}
@@ -31,7 +31,7 @@ const Skeleton: React.FC<SkeletonProps> = ({
 
 // Card skeleton for task cards
 const TaskCardSkeleton: React.FC<{ className?: string }> = ({ className }) => (
-  <div className={cn('border border-slate-200 rounded-lg p-6 space-y-4', className)}>
+  <div className={cn('border border-neutral-200 dark:border-neutral-700 rounded-lg p-6 space-y-4', className)}>
     {/* Header */}
     <div className="space-y-2">
       <Skeleton className="h-6 w-3/4" />
@@ -57,7 +57,7 @@ const TaskCardSkeleton: React.FC<{ className?: string }> = ({ className }) => (
     </div>
 
     {/* Footer */}
-    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+    <div className="flex items-center justify-between pt-4 border-t border-neutral-100 dark:border-neutral-600">
       <div className="flex items-center space-x-2">
         <Skeleton className="h-8 w-8 rounded-full" />
         <div className="space-y-1">
@@ -181,11 +181,11 @@ const ChartSkeleton: React.FC<{
       {type === 'bar' && (
         <div className="flex items-end justify-between h-full space-x-2">
           {Array.from({ length: 7 }, (_, i) => (
-            <Skeleton
-              key={i}
-              className="w-8"
-              style={{ height: `${Math.random() * 80 + 20}%` }}
-            />
+            <div key={i} style={{ height: `${Math.random() * 80 + 20}%` }}>
+              <Skeleton
+                className="w-8 h-full"
+              />
+            </div>
           ))}
         </div>
       )}
@@ -196,10 +196,11 @@ const ChartSkeleton: React.FC<{
           <div className="absolute inset-4 flex items-end">
             {Array.from({ length: 10 }, (_, i) => (
               <div key={i} className="flex-1 flex justify-center">
-                <Skeleton
-                  className="w-2 h-2 rounded-full"
-                  style={{ marginBottom: `${Math.random() * 60}%` }}
-                />
+                <div style={{ marginBottom: `${Math.random() * 60}%` }}>
+                  <Skeleton
+                    className="w-2 h-2 rounded-full"
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -276,7 +277,7 @@ const DashboardSkeleton: React.FC<{ className?: string }> = ({ className }) => (
     {/* Stats grid */}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {Array.from({ length: 4 }, (_, i) => (
-        <div key={i} className="border border-slate-200 rounded-lg p-6 space-y-4">
+        <div key={i} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-6 space-y-4">
           <div className="flex items-center justify-between">
             <Skeleton className="h-4 w-20" />
             <Skeleton className="h-5 w-5 rounded" />
@@ -289,16 +290,16 @@ const DashboardSkeleton: React.FC<{ className?: string }> = ({ className }) => (
 
     {/* Content grid */}
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="border border-slate-200 rounded-lg p-6">
+      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
         <ChartSkeleton type="bar" />
       </div>
-      <div className="border border-slate-200 rounded-lg p-6">
+      <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
         <ChartSkeleton type="line" />
       </div>
     </div>
 
     {/* Table */}
-    <div className="border border-slate-200 rounded-lg p-6">
+    <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
       <div className="space-y-4">
         <Skeleton className="h-6 w-32" />
         <TableSkeleton rows={8} columns={5} />
@@ -391,7 +392,7 @@ const NotificationSkeleton: React.FC<{
 }) => (
   <div className={cn('space-y-2', className)}>
     {Array.from({ length: count }, (_, i) => (
-      <div key={i} className="flex items-start space-x-3 p-3 hover:bg-slate-50 rounded-lg">
+      <div key={i} className="flex items-start space-x-3 p-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-lg">
         <Skeleton className="w-10 h-10 rounded-full flex-shrink-0" />
         <div className="flex-1 space-y-1">
           <Skeleton className="h-4 w-3/4" />

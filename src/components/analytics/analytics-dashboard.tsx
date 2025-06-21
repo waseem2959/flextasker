@@ -5,24 +5,16 @@
  * business intelligence insights, and customizable reporting.
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { 
   TrendingUp, 
-  TrendingDown, 
   Users, 
   DollarSign, 
   Briefcase, 
   Target,
-  Calendar,
   Download,
-  Filter,
   RefreshCw,
-  BarChart3,
-  LineChart,
-  PieChart,
   Activity,
-  Zap,
-  Eye,
   Clock,
   ArrowUpRight,
   ArrowDownRight
@@ -42,8 +34,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenuTrigger
 } from '../ui/dropdown-menu';
 import { DatePickerWithRange } from '../ui/date-range-picker';
 import { Progress } from '../ui/progress';
@@ -66,7 +57,7 @@ import {
   Funnel,
   LabelList
 } from 'recharts';
-import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import { subDays, startOfDay, endOfDay } from 'date-fns';
 import { useAnalytics } from '../../hooks/use-analytics';
 
 interface MetricCard {
@@ -110,8 +101,6 @@ const TIME_RANGES = [
 ];
 
 const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
-  userRole = 'admin',
-  customizable = true,
   realTimeUpdates = true,
   exportEnabled = true,
   className = ''
@@ -125,24 +114,21 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     from: startOfDay(subDays(new Date(), 30)),
     to: endOfDay(new Date())
   });
-  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
+  const [selectedMetrics] = useState<string[]>([
     'revenue',
     'users',
     'tasks',
     'conversion'
   ]);
-  const [isLoading, setIsLoading] = useState(false);
+  // Loading state managed by useAnalytics hook
   const [activeTab, setActiveTab] = useState('overview');
 
   // Analytics hook
   const {
     businessMetrics,
-    realtimeAnalytics,
     chartData,
     funnelData,
-    cohortData,
     isLoadingMetrics,
-    error,
     refreshData
   } = useAnalytics({
     timeRange: selectedTimeRange === 'custom' ? customDateRange : {
@@ -153,17 +139,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     realTime: realTimeUpdates
   });
 
-  // Calculate date range
-  const dateRange = useMemo(() => {
-    if (selectedTimeRange === 'custom') {
-      return customDateRange;
-    }
-    const days = TIME_RANGES.find(r => r.value === selectedTimeRange)?.days || 30;
-    return {
-      from: subDays(new Date(), days),
-      to: new Date()
-    };
-  }, [selectedTimeRange, customDateRange]);
+  // Date range is calculated in useAnalytics hook
 
   // Format number with appropriate suffix
   const formatNumber = useCallback((value: number, format?: 'currency' | 'percentage' | 'number') => {
@@ -270,14 +246,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
   // Handle export
   const handleExport = useCallback(async (format: 'pdf' | 'csv' | 'excel') => {
-    setIsLoading(true);
     try {
       // Implementation for export functionality
       console.log(`Exporting analytics data as ${format}`);
     } catch (error) {
       console.error('Export failed:', error);
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -393,7 +366,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 labelLine
               >
                 <LabelList position="center" fill="#fff" stroke="none" />
-                {config.data.map((entry, index) => (
+                {config.data.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Funnel>
@@ -401,7 +374,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           );
         
         default:
-          return null;
+          return <div>Unsupported chart type</div>;
       }
     };
 
@@ -458,7 +431,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           {selectedTimeRange === 'custom' && (
             <DatePickerWithRange
               date={customDateRange}
-              onDateChange={setCustomDateRange}
+              onDateChange={(date) => {
+                if (date && date.from && date.to) {
+                  setCustomDateRange({ from: date.from, to: date.to });
+                }
+              }}
             />
           )}
 

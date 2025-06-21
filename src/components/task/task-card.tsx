@@ -1,8 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { TaskImage } from '@/components/ui/progressive-image';
-import { cn, truncateText } from '@/lib/utils';
+import { OptimizedTaskImage } from '@/components/ui/enhanced-image';
+import { HoverLift, PulseIndicator } from '@/components/ui/micro-interactions';
+import { cn, truncate } from '@/lib/utils';
 import { Task } from '@/types';
 import { formatTaskBudget } from '@/utils/budget-utils';
 import { getCategoryDefaultImage } from '@/utils/category-utils';
@@ -49,13 +50,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     false;
 
   return (
-    <Card className="task-card h-full flex flex-col group cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:border-primary-300 bg-neutral-0 border border-neutral-200">
-      <div className="relative h-40 overflow-hidden rounded-t-xl">
-        <TaskImage
-          src={taskImages[0]}
+    <HoverLift className="h-full">
+      <Card className="task-card h-full flex flex-col group cursor-pointer bg-neutral-0 border border-neutral-200">
+        <div className="relative h-40 overflow-hidden rounded-t-xl">
+        <OptimizedTaskImage
+          src={taskImages[0] || getCategoryDefaultImage(typeof task.category === 'object' ? task.category.name : task.category)}
           alt={task.title}
-          category={typeof task.category === 'object' ? task.category.name : task.category}
           className="w-full h-full transition-transform duration-500 group-hover:scale-110"
+          aspectRatio={16/9}
         />
         {/* Enhanced gradient overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
@@ -76,22 +78,28 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
 
           {/* Urgency indicator */}
           {task.isUrgent && (
-            <Badge
-              variant="destructive"
-              className="font-medium bg-red-500/90 text-white border-red-400 shadow-sm animate-pulse"
-            >
-              Urgent
-            </Badge>
+            <div className="flex items-center gap-1">
+              <PulseIndicator color="error" size="sm" />
+              <Badge
+                variant="destructive"
+                className="font-medium bg-red-500/90 text-white border-red-400 shadow-sm"
+              >
+                Urgent
+              </Badge>
+            </div>
           )}
 
           {/* New task indicator */}
           {isNewTask && (
-            <Badge
-              variant="secondary"
-              className="font-medium bg-green-500/90 text-white border-green-400 shadow-sm"
-            >
-              New
-            </Badge>
+            <div className="flex items-center gap-1">
+              <PulseIndicator color="success" size="sm" />
+              <Badge
+                variant="secondary"
+                className="font-medium bg-green-500/90 text-white border-green-400 shadow-sm"
+              >
+                New
+              </Badge>
+            </div>
           )}
         </div>
       </div>
@@ -120,7 +128,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
 
         {/* Enhanced description with better typography */}
         <p className="text-sm text-neutral-600 font-body leading-relaxed mb-4 line-clamp-3">
-          {truncateText(task.description, 120)}
+          {truncate(task.description, 120)}
         </p>
 
         {/* Status and activity indicators */}
@@ -166,6 +174,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
           </Link>
         </Button>
       </CardFooter>
-    </Card>
+      </Card>
+    </HoverLift>
   );
 };

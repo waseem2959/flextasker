@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator for Flextasker</title>
+</head>
+<body>
+    <h1>Flextasker PWA Icon Generator</h1>
+    <p>This generates placeholder icons for the PWA. In production, replace these with proper branded icons.</p>
+    
+    <canvas id="canvas"></canvas>
+    
+    <script>
+        // Icon sizes needed for PWA
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        
+        function generateIcon(size) {
+            const canvas = document.getElementById('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Background - Primary color
+            ctx.fillStyle = '#0891b2';
+            ctx.fillRect(0, 0, size, size);
+            
+            // White circle in center
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size * 0.35, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // "F" letter in center
+            ctx.fillStyle = '#0891b2';
+            ctx.font = `bold ${size * 0.4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('F', size/2, size/2);
+            
+            // Convert to blob and download
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon-${size}x${size}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        // Generate all icons with delay
+        let delay = 0;
+        sizes.forEach(size => {
+            setTimeout(() => {
+                generateIcon(size);
+                console.log(`Generated icon-${size}x${size}.png`);
+            }, delay);
+            delay += 500;
+        });
+        
+        // Also generate special icons
+        setTimeout(() => {
+            // Badge icon (smaller)
+            const canvas = document.getElementById('canvas');
+            canvas.width = 72;
+            canvas.height = 72;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#0891b2';
+            ctx.beginPath();
+            ctx.arc(36, 36, 36, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 40px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('F', 36, 36);
+            
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'badge-72x72.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }, delay + 500);
+    </script>
+    
+    <div style="margin-top: 20px;">
+        <h2>Instructions:</h2>
+        <ol>
+            <li>Open this file in a browser</li>
+            <li>Icons will auto-download</li>
+            <li>Move downloaded icons to /public/icons/</li>
+            <li>In production, replace with professional icons</li>
+        </ol>
+        
+        <h3>Required Icons:</h3>
+        <ul>
+            <li>icon-72x72.png</li>
+            <li>icon-96x96.png</li>
+            <li>icon-128x128.png</li>
+            <li>icon-144x144.png</li>
+            <li>icon-152x152.png</li>
+            <li>icon-192x192.png</li>
+            <li>icon-384x384.png</li>
+            <li>icon-512x512.png</li>
+            <li>badge-72x72.png</li>
+        </ul>
+    </div>
+</body>
+</html>

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useAuth } from './use-auth';
+// import { useAuth } from './use-auth'; // Not currently used
 import { useToast } from './use-toast';
 
 interface AnalyticsTimeRange {
@@ -131,7 +131,7 @@ interface UseAnalyticsReturn {
 }
 
 export const useAnalytics = (options: UseAnalyticsOptions): UseAnalyticsReturn => {
-  const { user } = useAuth();
+  // const { user } = useAuth(); // Not currently used
   const { toast } = useToast();
   
   // State
@@ -154,7 +154,7 @@ export const useAnalytics = (options: UseAnalyticsOptions): UseAnalyticsReturn =
   // Options with defaults
   const {
     timeRange,
-    metrics,
+    // metrics, // Not currently used in implementation
     realTime = false,
     refreshInterval = 30000, // 30 seconds
     enableCaching = true

@@ -52,7 +52,7 @@ export const Footer: React.FC = () => {
                   </li>
                   <li>
                     <Link to="/tasks" className="text-base text-gray-600 hover:text-blue-600 transition-colors duration-200">
-                      Browse Taskers
+                      Browse Tasksers
                     </Link>
                   </li>
                   <li>

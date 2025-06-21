@@ -58,11 +58,11 @@ interface QueryMetrics {
 
 class QueryCacheService {
   private config: QueryCacheConfig;
-  private queryClient: QueryClient;
+  private queryClient: QueryClient = new QueryClient();
   private strategies = new Map<string, CacheStrategy>();
   private prefetchRules: PrefetchRule[] = [];
   private metrics: QueryMetrics;
-  private onlineQueries = new Set<string>();
+  // private onlineQueries = new Set<string>(); // Not currently used
   private offlineQueries = new Map<string, { query: QueryKey; data: any; timestamp: number }>();
 
   constructor(config?: Partial<QueryCacheConfig>) {
@@ -110,7 +110,7 @@ class QueryCacheService {
       defaultOptions: {
         queries: {
           staleTime: this.config.defaultStaleTime,
-          cacheTime: this.config.defaultCacheTime,
+          gcTime: this.config.defaultCacheTime,
           refetchOnMount: this.config.retryOnMount,
           refetchOnWindowFocus: this.config.retryOnWindowFocus,
           refetchOnReconnect: this.config.retryOnReconnect,
@@ -157,7 +157,7 @@ class QueryCacheService {
    * Enhanced query function with caching and monitoring
    */
   private async enhancedQueryFunction(context: any): Promise<any> {
-    const { queryKey, signal } = context;
+    const { queryKey } = context; // signal not currently used
     const cacheKey = this.generateCacheKey(queryKey);
     const startTime = performance.now();
 
@@ -559,12 +559,12 @@ class QueryCacheService {
     return str.length > 100 ? str.substring(0, 100) + '...' : str;
   }
 
-  private isStale(data: any, cacheKey: string): boolean {
+  private isStale(data: any, _cacheKey: string): boolean { // cacheKey parameter renamed to indicate it's not used
     // Simple staleness check - in production, implement more sophisticated logic
     return Date.now() - (data.timestamp || 0) > this.config.defaultStaleTime;
   }
 
-  private getOriginalQueryFunction(queryKey: QueryKey): QueryFunction | null {
+  private getOriginalQueryFunction(_queryKey: QueryKey): QueryFunction | null { // queryKey parameter renamed to indicate it's not used
     // This would typically be stored in a registry
     // For now, return null as queries should be registered separately
     return null;
@@ -576,12 +576,12 @@ class QueryCacheService {
       this.metrics.networkRequests;
   }
 
-  private handleOptimisticUpdate(variables: any): any {
+  private handleOptimisticUpdate(_variables: any): any { // variables parameter renamed to indicate it's not used
     // Placeholder for optimistic update logic
     return { previous: null };
   }
 
-  private handleMutationError(error: any, variables: any, context: any): void {
+  private handleMutationError(error: any, variables: any, _context: any): void { // context parameter renamed to indicate it's not used
     console.error('Mutation error:', error);
     errorTracker.reportError(error, {
       customTags: {
@@ -592,7 +592,7 @@ class QueryCacheService {
     });
   }
 
-  private handleMutationSettled(data: any, error: any, variables: any, context: any): void {
+  private handleMutationSettled(_data: any, error: any, _variables: any, _context: any): void { // unused parameters renamed
     // Cleanup and analytics after mutation completes
     if (error) {
       // Rollback optimistic updates if needed

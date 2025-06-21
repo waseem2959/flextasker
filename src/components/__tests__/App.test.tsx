@@ -8,7 +8,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import App from '../../App';
 
-// Mock react-router-dom to avoid Router nesting issues
+// Mock react-router-dom hooks but keep Router components functional
 const mockNavigate = jest.fn();
 const mockLocation = {
   pathname: '/',
@@ -17,13 +17,15 @@ const mockLocation = {
   state: null,
 };
 
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useNavigate: () => mockNavigate,
-  useLocation: () => mockLocation,
-  useParams: () => ({}),
-  BrowserRouter: ({ children }: { children: React.ReactNode }) => <div data-testid="router">{children}</div>,
-}));
+jest.mock('react-router-dom', () => {
+  const actual = jest.requireActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+    useLocation: () => mockLocation,
+    useParams: () => ({}),
+  };
+});
 
 // Mock the lazy-loaded components
 jest.mock('../../pages/Index', () => {
@@ -38,7 +40,7 @@ jest.mock('../../pages/Login', () => {
   };
 });
 
-jest.mock('../../pages/register', () => {
+jest.mock('../../pages/Register', () => {
   return function MockRegister() {
     return <div data-testid="register-page">Register Page</div>;
   };
@@ -69,16 +71,59 @@ jest.mock('../../components/ui/tooltip', () => ({
   TooltipProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
+// Mock the auth hook
+jest.mock('../../hooks/use-auth', () => ({
+  useAuth: () => ({
+    user: { id: 'test-user', role: 'USER' },
+    isAuthenticated: true,
+    loading: false,
+  }),
+}));
+
+// Mock security utils
+jest.mock('../../utils/security', () => ({
+  setupSecurityEventListeners: jest.fn(),
+}));
+
+// Mock PWA components
+jest.mock('../../components/pwa/install-prompt', () => {
+  return function MockInstallPrompt() {
+    return <div data-testid="install-prompt" />;
+  };
+});
+
+jest.mock('../../components/pwa/pwa-status', () => {
+  return function MockPWAStatus() {
+    return <div data-testid="pwa-status" />;
+  };
+});
+
+// Mock dev components
+jest.mock('../../components/dev/performance-monitor', () => ({
+  PerformanceMonitor: () => <div data-testid="performance-monitor" />,
+}));
+
+jest.mock('../../components/dev/image-performance-dashboard', () => ({
+  ImagePerformanceToggle: () => <div data-testid="image-performance-toggle" />,
+}));
+
 describe('App Component', () => {
-  const renderApp = (initialEntries = ['/']) => {
-    // Since App already includes BrowserRouter, we'll render it directly
-    // and mock the router hooks instead
+  const renderApp = (initialEntries?: string[]) => {
+    // Update mock location based on route
+    if (initialEntries && initialEntries.length > 0) {
+      mockLocation.pathname = initialEntries[0];
+    } else {
+      mockLocation.pathname = '/';
+    }
+    
     return render(<App />);
   };
 
   beforeEach(() => {
     // Clear all mocks before each test
     jest.clearAllMocks();
+    // Reset location to default
+    mockLocation.pathname = '/';
   });
 
   describe('Routing', () => {

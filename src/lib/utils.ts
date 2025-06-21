@@ -283,15 +283,6 @@ export function truncate(str: string, length: number, ending: string = '...'): s
   return str.substring(0, length - ending.length) + ending;
 }
 
-/**
- * Alias for truncate function with different parameter name for compatibility
- * 
- * @example
- * truncateText('This is a long string', 10) // => 'This is a...'
- */
-export function truncateText(text: string, maxLength: number): string {
-  return truncate(text, maxLength);
-}
 
 /**
  * Deep clone an object

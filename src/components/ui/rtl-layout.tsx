@@ -70,8 +70,8 @@ export const RTLLayout: React.FC<RTLLayoutProps> = ({
   );
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children, {
-      className: cn(baseClasses, children.props.className),
+    return React.cloneElement(children as React.ReactElement<any>, {
+      className: cn(baseClasses, (children.props as any).className),
       dir: isRTL ? 'rtl' : 'ltr'
     });
   }

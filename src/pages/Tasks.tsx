@@ -21,13 +21,13 @@ const Tasks = () => {
           url: 'https://flextasker.com/tasks'
         }}
       />
-      <div className="py-10 bg-white min-h-screen font-primary">
+      <div className="py-10 bg-neutral-50 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
-            <h1 className="text-3xl font-extrabold text-[hsl(206,33%,16%)] sm:text-4xl font-primary">
+            <h1 className="text-3xl font-extrabold text-neutral-900 sm:text-4xl font-display">
               Find Tasks Near You
             </h1>
-            <p className="mt-4 text-xl text-[hsl(220,14%,46%)] font-primary">
+            <p className="mt-4 text-xl text-neutral-600 font-primary">
               Browse available tasks and place your bid today
             </p>
           </div>

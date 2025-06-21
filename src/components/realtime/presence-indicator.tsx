@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Circle, Clock, Phone, Video, MessageCircle, Zap } from 'lucide-react';
+import { Circle, Clock, Phone, Video, MessageCircle } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { 
   Tooltip, 

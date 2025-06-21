@@ -13,6 +13,19 @@ jest.mock('../../../config', () => ({
   },
 }));
 
+// Mock AuthSecurity
+jest.mock('../../../utils/security', () => ({
+  ...jest.requireActual('../../../utils/security'),
+  AuthSecurity: {
+    getAuthData: jest.fn().mockResolvedValue({ accessToken: null, refreshToken: null }),
+    isTokenExpired: jest.fn().mockReturnValue(false),
+    clearAuthData: jest.fn(),
+  },
+  CSRFProtection: {
+    getHeaders: jest.fn().mockReturnValue({}),
+  },
+}));
+
 import { apiClient } from '../api-client';
 
 // Mock fetch

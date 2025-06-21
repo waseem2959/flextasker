@@ -5,27 +5,23 @@
  * visual indicators, and responsive design.
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Clock, 
   MapPin, 
-  DollarSign, 
-  User, 
   Star, 
   Eye,
   MessageSquare,
   Zap,
   Calendar,
   Tag,
-  TrendingUp,
   Shield,
-  Award,
-  ChevronRight
+  Award
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
+// Button import removed as it's not used
 import { Avatar } from '../ui/avatar';
 import QuickActions from './quick-actions';
 import { TaskImage } from './responsive-image';
@@ -108,7 +104,7 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
   onShare,
   onClick
 }) => {
-  const [imageError, setImageError] = useState(false);
+  // Image error state removed as it's not used
 
   // Calculate urgency and time-related info
   const isNewTask = differenceInHours(new Date(), new Date(task.createdAt)) <= 24;

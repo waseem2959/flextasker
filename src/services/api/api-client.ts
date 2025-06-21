@@ -118,7 +118,7 @@ export class ApiClient {
   /**
    * Create a new request with the default options
    */
-  private createRequest(endpoint: string, options: EnhancedRequestInit = {}): Request {
+  private async createRequest(endpoint: string, options: EnhancedRequestInit = {}): Promise<Request> {
     const url = new URL(endpoint, this.baseUrl);
     
     // Check rate limiting before creating request
@@ -158,7 +158,8 @@ export class ApiClient {
     }
     
     // Add auth token if available (prefer current instance token over stored)
-    const currentToken = this.authToken || AuthSecurity.getAuthData()?.token;
+    const authData = await AuthSecurity.getAuthData();
+    const currentToken = this.authToken || authData?.accessToken;
     if (currentToken && !AuthSecurity.isTokenExpired(currentToken)) {
       headers.set('Authorization', `Bearer ${currentToken}`);
     } else if (currentToken && AuthSecurity.isTokenExpired(currentToken)) {
@@ -357,7 +358,7 @@ export class ApiClient {
       ]);
       
       const endTime = performance.now();
-      const responseTime = endTime - startTime;
+      // const responseTime = endTime - startTime; // Not currently used
       
       // Track API performance
       performanceMonitor.trackAPICall(
@@ -634,7 +635,7 @@ export class ApiClient {
     }
     
     // Create the request
-    const request = this.createRequest(url, {
+    const request = await this.createRequest(url, {
       method: 'GET',
       ...options,
     });
@@ -651,7 +652,7 @@ export class ApiClient {
     options: EnhancedRequestInit = {}
   ): Promise<ApiResponse<T>> {
     // Create the request
-    const request = this.createRequest(endpoint, {
+    const request = await this.createRequest(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
       ...options,
@@ -669,7 +670,7 @@ export class ApiClient {
     options: EnhancedRequestInit = {}
   ): Promise<ApiResponse<T>> {
     // Create the request
-    const request = this.createRequest(endpoint, {
+    const request = await this.createRequest(endpoint, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
       ...options,
@@ -687,7 +688,7 @@ export class ApiClient {
     options: EnhancedRequestInit = {}
   ): Promise<ApiResponse<T>> {
     // Create the request
-    const request = this.createRequest(endpoint, {
+    const request = await this.createRequest(endpoint, {
       method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined,
       ...options,
@@ -704,7 +705,7 @@ export class ApiClient {
     options: EnhancedRequestInit = {}
   ): Promise<ApiResponse<T>> {
     // Create the request
-    const request = this.createRequest(endpoint, {
+    const request = await this.createRequest(endpoint, {
       method: 'DELETE',
       ...options,
     });
@@ -735,7 +736,7 @@ export class ApiClient {
     
     // Create the request with modified headers for FormData
     const { headers, ...restOptions } = options;
-    const request = this.createRequest(endpoint, {
+    const request = await this.createRequest(endpoint, {
       method: 'POST',
       body: formData,
       ...restOptions,
@@ -752,7 +753,7 @@ export class ApiClient {
     options: EnhancedRequestInit = {}
   ): Promise<Blob> {
     // Create the request
-    const request = this.createRequest(endpoint, {
+    const request = await this.createRequest(endpoint, {
       method: 'GET',
       ...options,
     });

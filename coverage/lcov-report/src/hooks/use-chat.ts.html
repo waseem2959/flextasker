@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/68</span>
+                <span class='fraction'>0/69</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/64</span>
+                <span class='fraction'>0/65</span>
             </div>
         
             
@@ -438,14 +438,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -477,7 +477,7 @@ import { apiClient as consolidatedApiClient } from '@/services/api/api-client';
 import { toast } from '@/hooks/use-toast';
 import { realtimeService as socketService } from '@/services/realtime/socket-service';
 import { User } from '@/types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 &nbsp;
 /**
  * Message interface for chat functionality
@@ -531,7 +531,7 @@ export function <span class="fstat-no" title="function not covered" >useChat(</s
   // Handler for typing start events
   const handleTypingStart = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >({</span> user }: { user: User }) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    setTypingUsers(<span class="fstat-no" title="function not covered" >(p</span>revUsers) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!prevUsers.some(<span class="fstat-no" title="function not covered" >(u</span>) =&gt; (<span class="cstat-no" title="statement not covered" >u as any).id === (user as any).id)</span>) {</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!prevUsers.some(<span class="fstat-no" title="function not covered" >(u</span>) =&gt; <span class="cstat-no" title="statement not covered" >u.id === user.id)</span>) {</span>
 <span class="cstat-no" title="statement not covered" >        return [...prevUsers, user];</span>
       }
 <span class="cstat-no" title="statement not covered" >      return prevUsers;</span>
@@ -541,7 +541,7 @@ export function <span class="fstat-no" title="function not covered" >useChat(</s
   // Handler for typing stop events
   const handleTypingStop = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >({</span> user }: { user: User }) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    setTypingUsers(<span class="fstat-no" title="function not covered" >(p</span>revUsers) =&gt; </span>
-<span class="cstat-no" title="statement not covered" >      prevUsers.filter(<span class="fstat-no" title="function not covered" >(u</span>) =&gt; (<span class="cstat-no" title="statement not covered" >u as any).id !== (user as any).id)</span></span>
+<span class="cstat-no" title="statement not covered" >      prevUsers.filter(<span class="fstat-no" title="function not covered" >(u</span>) =&gt; <span class="cstat-no" title="statement not covered" >u.id !== user.id)</span></span>
     );
   }, []);
   
@@ -623,37 +623,37 @@ export function <span class="fstat-no" title="function not covered" >useChat(</s
     [conversationId, setTyping]
   );
   
-  // Debounced typing function for better UX
-  const [typingTimeout, setTypingTimeout] = <span class="cstat-no" title="statement not covered" >useState&lt;NodeJS.Timeout | null&gt;(null);</span>
+  // Debounced typing function for better UX using useRef for stable timeout management
+  const typingTimeoutRef = <span class="cstat-no" title="statement not covered" >useRef&lt;NodeJS.Timeout | null&gt;(null);</span>
   
   const handleTyping = <span class="cstat-no" title="statement not covered" >useCallback(</span>
 <span class="fstat-no" title="function not covered" >    () =</span>&gt; {
       // Clear existing timeout
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (typingTimeout) {</span>
-<span class="cstat-no" title="statement not covered" >        clearTimeout(typingTimeout);</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (typingTimeoutRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >        clearTimeout(typingTimeoutRef.current);</span>
       }
       
       // Set typing status to true
 <span class="cstat-no" title="statement not covered" >      setTyping(true);</span>
       
       // Set a new timeout to stop typing after 2 seconds of inactivity
-      const timeout = <span class="cstat-no" title="statement not covered" >setTimeout(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      typingTimeoutRef.current = setTimeout(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
 <span class="cstat-no" title="statement not covered" >        setTyping(false);</span>
+<span class="cstat-no" title="statement not covered" >        typingTimeoutRef.current = null;</span>
       }, 2000);
-      
-<span class="cstat-no" title="statement not covered" >      setTypingTimeout(timeout as unknown as NodeJS.Timeout);</span>
     },
-    [setTyping, typingTimeout]
+    [setTyping]
   );
   
   // Cleanup typing timeout on unmount
 <span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    return <span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (typingTimeout) {</span>
-<span class="cstat-no" title="statement not covered" >        clearTimeout(typingTimeout);</span>
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (typingTimeoutRef.current) {</span>
+<span class="cstat-no" title="statement not covered" >        clearTimeout(typingTimeoutRef.current);</span>
+<span class="cstat-no" title="statement not covered" >        typingTimeoutRef.current = null;</span>
       }
     };
-  }, [typingTimeout]);
+  }, []);
   
 <span class="cstat-no" title="statement not covered" >  return {</span>
     messages,
@@ -673,7 +673,7 @@ export default useChat;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-18T17:23:27.444Z
+                at 2025-06-20T04:32:32.883Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

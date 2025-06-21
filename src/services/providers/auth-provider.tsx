@@ -31,15 +31,21 @@ const AuthProvider = ({ children }: { readonly children: ReactNode }) => {
   const [activeRole, setActiveRole] = useState<UserRole | null>(null);
   const [availableRoles, setAvailableRoles] = useState<UserRole[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [token, setToken] = useState<string | null>(() => {
-    const authData = AuthSecurity.getAuthData();
-    return authData?.token || null;
-  });
-  const [refreshToken, setRefreshToken] = useState<string | null>(() => {
-    const authData = AuthSecurity.getAuthData();
-    return authData?.refreshToken || null;
-  });
+  const [token, setToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Initialize tokens from storage
+  useEffect(() => {
+    const initializeTokens = async () => {
+      const authData = await AuthSecurity.getAuthData();
+      if (authData) {
+        if (authData.accessToken) setToken(authData.accessToken);
+        if (authData.refreshToken) setRefreshToken(authData.refreshToken);
+      }
+    };
+    initializeTokens();
+  }, []);
 
   // Fetch the current user (if authenticated)
   const { data: userData, isLoading: isUserLoading } = useQuery({
@@ -62,15 +68,11 @@ const AuthProvider = ({ children }: { readonly children: ReactNode }) => {
   }, []);
 
   const getToken = useCallback(() => {
-    if (token) return token;
-    const authData = AuthSecurity.getAuthData();
-    return authData?.token || null;
+    return token;
   }, [token]);
 
   const getRefreshToken = useCallback(() => {
-    if (refreshToken) return refreshToken;
-    const authData = AuthSecurity.getAuthData();
-    return authData?.refreshToken || null;
+    return refreshToken;
   }, [refreshToken]);
 
   // Auth state management methods

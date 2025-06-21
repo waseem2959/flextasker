@@ -14,7 +14,8 @@ import React, {
   ReactNode 
 } from 'react';
 import { useIntersectionObserver } from '../../hooks/use-intersection-observer';
-import { useVirtualizer } from '@tanstack/react-virtual';
+// useVirtualizer import commented out - dependency not available
+// import { useVirtualizer } from '@tanstack/react-virtual';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '../ui/button';
 import { TaskCardSkeleton } from './skeleton-loader';
@@ -42,8 +43,8 @@ interface InfiniteScrollProps<T> {
   rootMargin?: string;
   loadMoreOnScroll?: boolean;
   enableVirtualization?: boolean;
-  estimateSize?: number;
-  overscan?: number;
+  // estimateSize?: number; // Not used due to missing @tanstack/react-virtual dependency
+  // overscan?: number; // Not used due to missing @tanstack/react-virtual dependency
   
   // Styling
   className?: string;
@@ -76,8 +77,8 @@ const InfiniteScroll = <T extends any>({
   rootMargin = '50px',
   loadMoreOnScroll = true,
   enableVirtualization = false,
-  estimateSize = 100,
-  overscan = 5,
+  // estimateSize = 100, // Commented out - not used due to missing dependency
+  // overscan = 5, // Commented out - not used due to missing dependency
   className = '',
   containerClassName = '',
   itemClassName = '',
@@ -88,7 +89,6 @@ const InfiniteScroll = <T extends any>({
   prefetchThreshold = 3
 }: InfiniteScrollProps<T>) => {
   const [retryCount, setRetryCount] = useState(0);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastLoadTime = useRef<number>(0);
 
@@ -107,18 +107,17 @@ const InfiniteScroll = <T extends any>({
   }, [hasNextPage, isLoading, isError, onLoadMore, debounceMs]);
 
   // Intersection observer for automatic loading
-  const { isIntersecting } = useIntersectionObserver(loadMoreRef, {
+  const [setLoadMoreRef, entry] = useIntersectionObserver({
     threshold,
-    rootMargin,
-    enabled: loadMoreOnScroll && hasNextPage && !isLoading && !isError
+    rootMargin
   });
 
   // Load more when intersection observer triggers
   useEffect(() => {
-    if (isIntersecting && loadMoreOnScroll) {
+    if (entry?.isIntersecting && loadMoreOnScroll && hasNextPage && !isLoading && !isError) {
       debouncedLoadMore();
     }
-  }, [isIntersecting, loadMoreOnScroll, debouncedLoadMore]);
+  }, [entry?.isIntersecting, loadMoreOnScroll, hasNextPage, isLoading, isError, debouncedLoadMore]);
 
   // Prefetch logic - load more when approaching the end
   useEffect(() => {
@@ -130,14 +129,14 @@ const InfiniteScroll = <T extends any>({
     }
   }, [items.length, prefetchThreshold, hasNextPage, isLoading, isError, loadMoreOnScroll, debouncedLoadMore]);
 
-  // Virtual scrolling setup
-  const virtualizer = useVirtualizer({
-    count: items.length,
-    getScrollElement: () => containerRef.current,
-    estimateSize: () => estimateSize,
-    overscan,
-    enabled: enableVirtualization
-  });
+  // Virtual scrolling setup - commented out due to missing dependency
+  // const virtualizer = useVirtualizer({
+  //   count: items.length,
+  //   getScrollElement: () => containerRef.current,
+  //   estimateSize: () => estimateSize,
+  //   overscan,
+  //   enabled: enableVirtualization
+  // });
 
   // Handle retry with exponential backoff
   const handleRetry = useCallback(() => {
@@ -234,48 +233,23 @@ const InfiniteScroll = <T extends any>({
     );
   }, [renderLoadingMore]);
 
-  // Render virtualized items
+  // Render virtualized items - fallback to standard rendering due to missing dependency
   const renderVirtualizedItems = useMemo(() => {
-    const virtualItems = virtualizer.getVirtualItems();
-    
+    // Virtualizer is not available, fallback to standard rendering
     return (
       <div
         ref={containerRef}
         className={`relative overflow-auto ${containerClassName}`}
         style={{ height: '100%' }}
       >
-        <div
-          style={{
-            height: virtualizer.getTotalSize(),
-            width: '100%',
-            position: 'relative'
-          }}
-        >
-          {virtualItems.map(virtualItem => {
-            const item = items[virtualItem.index];
-            if (!item) return null;
-            
-            return (
-              <div
-                key={virtualItem.index}
-                className={itemClassName}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: `${virtualItem.size}px`,
-                  transform: `translateY(${virtualItem.start}px)`
-                }}
-              >
-                {renderItem(item, virtualItem.index)}
-              </div>
-            );
-          })}
-        </div>
+        {items.map((item, index) => (
+          <div key={index} className={itemClassName}>
+            {renderItem(item, index)}
+          </div>
+        ))}
       </div>
     );
-  }, [virtualizer, items, renderItem, containerClassName, itemClassName]);
+  }, [items, renderItem, containerClassName, itemClassName]);
 
   // Render standard items
   const renderStandardItems = useMemo(() => {
@@ -372,7 +346,7 @@ const InfiniteScroll = <T extends any>({
       {/* Intersection observer target */}
       {loadMoreOnScroll && hasNextPage && !isError && (
         <div
-          ref={loadMoreRef}
+          ref={setLoadMoreRef}
           className="h-10 flex items-center justify-center"
           aria-hidden="true"
         />

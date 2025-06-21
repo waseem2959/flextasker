@@ -49,9 +49,9 @@ class SecurityMonitorService {
   private maxEvents = 1000;
   private isEnabled = true;
   private patterns: ThreatPattern[] = [];
-  private rateLimitMap = new Map<string, number[]>();
-  private suspiciousIPs = new Set<string>();
-  private blockedIPs = new Set<string>();
+  // private rateLimitMap = new Map<string, number[]>(); // Not currently used
+  // private suspiciousIPs = new Set<string>(); // Not currently used
+  // private blockedIPs = new Set<string>(); // Not currently used
 
   constructor() {
     this.initializeThreatPatterns();
@@ -298,20 +298,23 @@ class SecurityMonitorService {
     localStorage.setItem = (key: string, value: string) => {
       storageAccessCount++;
       
-      // Check for suspicious data patterns
-      this.analyzeThreatPatterns(value);
-      
-      // Monitor excessive storage access
-      if (storageAccessCount > 100) {
-        this.reportSecurityEvent({
-          type: SecurityEventType.DATA_EXFILTRATION,
-          severity: 'medium',
-          details: {
-            accessCount: storageAccessCount,
-            key: key.substring(0, 50),
-            message: 'Excessive localStorage access detected'
-          }
-        });
+      // Avoid infinite loops - don't monitor security/error tracking keys
+      if (!key.startsWith('security_') && !key.startsWith('error_') && !key.startsWith('monitoring_')) {
+        // Check for suspicious data patterns
+        this.analyzeThreatPatterns(value);
+        
+        // Monitor excessive storage access
+        if (storageAccessCount > 100) {
+          this.reportSecurityEvent({
+            type: SecurityEventType.DATA_EXFILTRATION,
+            severity: 'medium',
+            details: {
+              accessCount: storageAccessCount,
+              key: key.substring(0, 50),
+              message: 'Excessive localStorage access detected'
+            }
+          });
+        }
       }
 
       return originalSetItem.call(localStorage, key, value);
@@ -409,7 +412,7 @@ class SecurityMonitorService {
     }
 
     // Check for performance anomalies that might indicate attacks
-    if (performance.memory) {
+    if ('memory' in performance) {
       const memory = (performance as any).memory;
       if (memory.usedJSHeapSize > memory.jsHeapSizeLimit * 0.9) {
         this.reportSecurityEvent({
@@ -616,7 +619,7 @@ class SecurityMonitorService {
   /**
    * Notify user of security event
    */
-  private notifyUser(event: SecurityEvent): void {
+  private notifyUser(_event: SecurityEvent): void { // event parameter renamed to indicate it's not used
     // Create user notification
     const notification = document.createElement('div');
     notification.style.cssText = `

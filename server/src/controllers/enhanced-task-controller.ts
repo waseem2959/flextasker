@@ -430,7 +430,7 @@ export class EnhancedTaskController extends BaseController {
   /**
    * Helper method to invalidate task-related caches
    */
-  private async invalidateTaskCaches(taskId?: string): Promise<void> => {
+  private async invalidateTaskCaches(taskId?: string): Promise<void> {
     try {
       // Clear general task list caches
       await cacheManager.delete('tasks:*');

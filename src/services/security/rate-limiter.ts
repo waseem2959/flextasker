@@ -244,7 +244,7 @@ class RateLimiterService {
   /**
    * Check if identifier should be globally blocked
    */
-  private checkForRepeatOffender(key: string, rule: RateLimitRule): void {
+  private checkForRepeatOffender(key: string, _rule: RateLimitRule): void { // rule parameter renamed to indicate it's not used
     const offenseKey = `${key}_offenses`;
     const offenseWindow = 60 * 60 * 1000; // 1 hour
     
@@ -322,9 +322,12 @@ class RateLimiterService {
   private generateBrowserFingerprint(): string {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    ctx!.textBaseline = 'top';
-    ctx!.font = '14px Arial';
-    ctx!.fillText('Browser fingerprint', 2, 2);
+    
+    if (ctx) {
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillText('Browser fingerprint', 2, 2);
+    }
     
     const fingerprint = [
       navigator.userAgent,

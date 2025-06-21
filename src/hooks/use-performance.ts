@@ -225,11 +225,13 @@ export function useMemoryMonitor() {
   const updateMemoryInfo = useCallback(() => {
     if ('memory' in performance) {
       const memory = (performance as any).memory;
-      setMemoryInfo({
-        usedJSHeapSize: memory.usedJSHeapSize,
-        totalJSHeapSize: memory.totalJSHeapSize,
-        jsHeapSizeLimit: memory.jsHeapSizeLimit,
-      });
+      if (memory) {
+        setMemoryInfo({
+          usedJSHeapSize: memory.usedJSHeapSize,
+          totalJSHeapSize: memory.totalJSHeapSize,
+          jsHeapSizeLimit: memory.jsHeapSizeLimit,
+        });
+      }
     }
   }, []);
 

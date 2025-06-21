@@ -11,11 +11,12 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { useAccessibility } from '../accessibility/accessibility-provider';
 import { LanguageSwitcher } from '../ui/language-switcher';
+import { ThemeToggle } from '../ui/theme-toggle';
 import { i18nService } from '../../../shared/services/i18n-service';
 
 interface NavItem {
@@ -32,12 +33,13 @@ interface AccessibleNavbarProps {
 
 export const AccessibleNavbar: React.FC<AccessibleNavbarProps> = ({ className = '' }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [currentLanguage, setCurrentLanguage] = useState(i18nService.getCurrentLanguage());
+  // const [activeDropdown, setActiveDropdown] = useState<string | null>(null); // Not read anywhere
+  // const [currentLanguage, setCurrentLanguage] = useState(i18nService.getCurrentLanguage()); // Not read anywhere
   
   const navigate = useNavigate();
   const location = useLocation();
-  const { settings, actions } = useAccessibility();
+  const { state, actions } = useAccessibility();
+  const settings = state.settings;
   
   // Refs for focus management
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -78,7 +80,7 @@ export const AccessibleNavbar: React.FC<AccessibleNavbarProps> = ({ className = 
   // Handle language changes
   useEffect(() => {
     const handleLanguageChange = () => {
-      setCurrentLanguage(i18nService.getCurrentLanguage());
+      // setCurrentLanguage(i18nService.getCurrentLanguage()); // Commented out since variable is not used
     };
 
     window.addEventListener('languageChanged', handleLanguageChange);
@@ -117,7 +119,7 @@ export const AccessibleNavbar: React.FC<AccessibleNavbarProps> = ({ className = 
   // Close menu and manage focus
   const closeMenu = useCallback(() => {
     setIsMenuOpen(false);
-    setActiveDropdown(null);
+    // setActiveDropdown(null); // Commented out since activeDropdown is not used
     
     // Return focus to menu button when closing
     if (menuButtonRef.current) {
@@ -230,14 +232,14 @@ export const AccessibleNavbar: React.FC<AccessibleNavbarProps> = ({ className = 
             <Link 
               to="/" 
               className={cn(
-                'flex items-center group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg',
+                'flex items-center group focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-lg',
                 animationClasses
               )}
               aria-label={i18nService.translate('navigation.home')}
             >
               <div className="flex items-baseline">
                 <span className="text-3xl font-black tracking-tight">
-                  <span className="text-blue-600 inline-flex">
+                  <span className="text-primary-600 inline-flex">
                     <span className={cn(
                       'inline-block origin-bottom',
                       !settings.reducedMotion && 'transform transition-all duration-300 hover:scale-y-110'
@@ -259,7 +261,7 @@ export const AccessibleNavbar: React.FC<AccessibleNavbarProps> = ({ className = 
                 </span>
                 <span 
                   className={cn(
-                    'ml-2 inline-block w-2 h-2 bg-blue-600 rounded-full',
+                    'ml-2 inline-block w-2 h-2 bg-primary-600 rounded-full',
                     !settings.reducedMotion && 'animate-pulse'
                   )}
                   aria-hidden="true"
@@ -274,11 +276,11 @@ export const AccessibleNavbar: React.FC<AccessibleNavbarProps> = ({ className = 
                   key={item.href}
                   to={item.href}
                   className={cn(
-                    'px-3 py-2 text-base font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+                    'px-3 py-2 text-base font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
                     animationClasses,
                     isActiveRoute(item.href)
-                      ? 'text-blue-600 bg-blue-50'
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      ? 'text-primary-600 bg-primary-50'
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                   )}
                   aria-current={isActiveRoute(item.href) ? 'page' : undefined}
                 >
@@ -288,8 +290,9 @@ export const AccessibleNavbar: React.FC<AccessibleNavbarProps> = ({ className = 
             </div>
           </div>
 
-          {/* Desktop Auth & Language */}
+          {/* Desktop Auth, Theme & Language */}
           <div className="hidden lg:flex lg:items-center lg:space-x-4">
+            <ThemeToggle />
             <LanguageSwitcher variant="compact" />
             
             {authItems.map((item) => (
@@ -300,8 +303,8 @@ export const AccessibleNavbar: React.FC<AccessibleNavbarProps> = ({ className = 
                   'px-4 py-2 text-base font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2',
                   animationClasses,
                   item.variant === 'primary'
-                    ? 'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 hover:shadow-lg transform hover:-translate-y-0.5'
-                    : 'text-gray-700 hover:text-blue-600 focus:ring-gray-500'
+                    ? 'text-white bg-primary-600 hover:bg-primary-700 focus:ring-primary-500 hover:shadow-lg transform hover:-translate-y-0.5'
+                    : 'text-gray-700 hover:text-primary-600 focus:ring-gray-500'
                 )}
                 type="button"
               >
@@ -358,11 +361,11 @@ export const AccessibleNavbar: React.FC<AccessibleNavbarProps> = ({ className = 
                   to={item.href}
                   onClick={() => handleNavClick(item.href, item.onClick)}
                   className={cn(
-                    'block px-4 py-3 text-base font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
+                    'block px-4 py-3 text-base font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
                     animationClasses,
                     isActiveRoute(item.href)
-                      ? 'text-blue-600 bg-blue-50'
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+                      ? 'text-primary-600 bg-primary-50'
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                   )}
                   role="menuitem"
                   aria-current={isActiveRoute(item.href) ? 'page' : undefined}
@@ -372,8 +375,11 @@ export const AccessibleNavbar: React.FC<AccessibleNavbarProps> = ({ className = 
               ))}
             </div>
 
-            {/* Language Switcher */}
-            <div className="px-4 py-2">
+            {/* Theme Toggle & Language Switcher */}
+            <div className="px-4 py-2 space-y-3">
+              <div className="flex items-center justify-center">
+                <ThemeToggle />
+              </div>
               <LanguageSwitcher variant="compact" className="w-full" />
             </div>
 
@@ -388,8 +394,8 @@ export const AccessibleNavbar: React.FC<AccessibleNavbarProps> = ({ className = 
                     'focus:outline-none focus:ring-2 focus:ring-offset-2',
                     animationClasses,
                     item.variant === 'primary'
-                      ? 'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
-                      : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50 focus:ring-gray-500'
+                      ? 'text-white bg-primary-600 hover:bg-primary-700 focus:ring-primary-500'
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50 focus:ring-gray-500'
                   )}
                   type="button"
                   role="menuitem"

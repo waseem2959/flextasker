@@ -52,14 +52,17 @@ export interface AppConfig extends EnvironmentConfig {
  * Safe environment variable access for both Vite and Jest environments
  */
 const getEnvVar = (key: string, defaultValue?: string) => {
-  // Check for Vite environment variables
-  if (typeof import.meta !== 'undefined' && import.meta.env?.[key]) {
-    return import.meta.env[key] ?? defaultValue;
-  }
-  // Fallback to process.env for Jest/Node environments (only if process is available)
+  // In Jest/Node environment, check process.env first
   if (typeof process !== 'undefined' && process.env?.[key]) {
     return process.env[key] ?? defaultValue;
   }
+  
+  // In Vite environment, try to access import.meta.env
+  // This will be handled by Vite's define plugin during build
+  if (typeof window !== 'undefined' && (window as any).__VITE_ENV__?.[key]) {
+    return (window as any).__VITE_ENV__[key] ?? defaultValue;
+  }
+  
   return defaultValue;
 };
 

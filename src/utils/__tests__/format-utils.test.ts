@@ -1,34 +1,14 @@
 /**
  * Format Utilities Tests
  * 
- * Tests for various formatting utility functions
+ * Tests for various formatting utility functions imported from the main utils library
  */
 
-// Simple format utilities for testing
-export const formatCurrency = (amount: number, currency: string = 'USD'): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency,
-  }).format(amount);
-};
+import { formatCurrency, formatFileSize, truncate } from '../../lib/utils';
 
-export const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes';
-  
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
+// Additional test-only utility for percentage formatting
 export const formatPercent = (value: number, decimals: number = 1): string => {
   return `${(value * 100).toFixed(decimals)}%`;
-};
-
-export const truncateText = (text: string, maxLength: number): string => {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength).trim() + '...';
 };
 
 describe('Format Utilities', () => {
@@ -103,33 +83,33 @@ describe('Format Utilities', () => {
     });
   });
 
-  describe('truncateText', () => {
+  describe('truncate', () => {
     it('should truncate long text', () => {
       const longText = 'This is a very long text that should be truncated';
-      expect(truncateText(longText, 20)).toBe('This is a very long...');
+      expect(truncate(longText, 20)).toBe('This is a very lo...');
     });
 
     it('should not truncate short text', () => {
       const shortText = 'Short text';
-      expect(truncateText(shortText, 20)).toBe('Short text');
+      expect(truncate(shortText, 20)).toBe('Short text');
     });
 
     it('should handle text equal to max length', () => {
       const text = 'Exactly twenty chars';
-      expect(truncateText(text, 20)).toBe('Exactly twenty chars');
+      expect(truncate(text, 20)).toBe('Exactly twenty chars');
     });
 
     it('should handle empty text', () => {
-      expect(truncateText('', 10)).toBe('');
+      expect(truncate('', 10)).toBe('');
     });
 
     it('should handle zero max length', () => {
-      expect(truncateText('Some text', 0)).toBe('...');
+      expect(truncate('Some text', 0)).toBe('...');
     });
 
-    it('should trim whitespace before adding ellipsis', () => {
+    it('should handle custom ending', () => {
       const text = 'This has trailing spaces   ';
-      expect(truncateText(text, 10)).toBe('This has...');
+      expect(truncate(text, 10, '---')).toBe('This ha---');
     });
   });
 });

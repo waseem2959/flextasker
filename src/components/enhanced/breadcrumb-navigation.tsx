@@ -140,7 +140,7 @@ const BreadcrumbNavigation: React.FC<BreadcrumbNavigationProps> = ({
                   to={item.href}
                   className="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-150"
                 >
-                  {item.icon && (
+                  {'icon' in item && item.icon && (
                     <span className="mr-1">{item.icon}</span>
                   )}
                   <span>{item.label}</span>
@@ -154,7 +154,7 @@ const BreadcrumbNavigation: React.FC<BreadcrumbNavigationProps> = ({
                   }`}
                   aria-current={isLast ? 'page' : undefined}
                 >
-                  {item.icon && (
+                  {'icon' in item && item.icon && (
                     <span className="mr-1">{item.icon}</span>
                   )}
                   <span>{item.label}</span>

@@ -21,7 +21,7 @@ const router = Router();
  */
 router.get('/',
   authenticateToken,
-  
+  [
     query('page')
       .optional()
       .isInt({ min: 1 })
@@ -35,7 +35,8 @@ router.get('/',
     query('unreadOnly')
       .optional()
       .isBoolean()
-      .withMessage('unreadOnly must be a boolean'),
+      .withMessage('unreadOnly must be a boolean')
+  ],
   notificationController.getUserNotifications
 );
 
@@ -45,8 +46,9 @@ router.get('/',
  */
 router.patch('/:id/read',
   authenticateToken,
-  
+  [
     param('id').isUUID().withMessage('Invalid notification ID')
+  ],
   notificationController.markAsRead
 );
 
@@ -65,11 +67,12 @@ router.patch('/read-all',
  */
 router.put('/preferences',
   authenticateToken,
-  
+  [
     body('email').optional().isBoolean().withMessage('Email must be a boolean'),
     body('push').optional().isBoolean().withMessage('Push must be a boolean'),
     body('inApp').optional().isBoolean().withMessage('InApp must be a boolean'),
     body('types').optional().isObject().withMessage('Types must be an object')
+  ],
   notificationController.updatePreferences
 );
 
@@ -88,8 +91,9 @@ router.get('/count',
  */
 router.delete('/:id',
   authenticateToken,
-  
+  [
     param('id').isUUID().withMessage('Invalid notification ID')
+  ],
   notificationController.deleteNotification
 );
 

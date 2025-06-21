@@ -1,7 +1,8 @@
 /**
- * Validation Utilities
+ * Unified Validation Utilities
  * 
- * This module provides reusable validation functions and utilities
+ * This module provides comprehensive validation functions and schemas
+ * consolidating logic from form-validation.ts and validation-utils.ts
  * to ensure consistent data validation across the application.
  */
 
@@ -9,7 +10,74 @@ import { Request } from 'express';
 import { z } from 'zod';
 import { BidStatus, BudgetType, TaskPriority, TaskStatus, UserRole } from '../../../shared/types/common/enums';
 import { logger } from './logger';
-import { validationResult, ValidationChain, ValidationError } from 'express-validator';
+import { validationResult, ValidationChain, ValidationError as ExpressValidationError } from 'express-validator';
+
+// Create our own ValidationError class for consistency
+export class ValidationError extends Error {
+  public errors: Record<string, string[]>;
+  
+  constructor(message: string, errors: Record<string, string[]> = {}) {
+    super(message);
+    this.name = 'ValidationError';
+    this.errors = errors;
+  }
+}
+
+// =============================================================================
+// TYPES AND INTERFACES
+// =============================================================================
+
+/**
+ * Result of a validation operation
+ */
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  message?: string; // First error message for backward compatibility
+  valid?: boolean; // Alias for isValid for backward compatibility
+  field?: string; // Field name that failed validation
+  context?: Record<string, any>; // Additional context for the error
+}
+
+/**
+ * Map of field errors
+ */
+export type FieldErrors<T> = Partial<Record<keyof T, string[]>>;
+
+/**
+ * Result of validating a form
+ */
+export interface FormValidationResult<T> {
+  valid: boolean;
+  errors: FieldErrors<T>;
+  getErrorMessages: () => string[];
+  getValidationError: () => ValidationError;
+  addError: <K extends keyof T>(field: K, message: string) => void;
+  hasError: <K extends keyof T>(field: K) => boolean;
+  getFieldErrors: <K extends keyof T>(field: K) => string[];
+}
+
+/**
+ * Options for a validation function
+ */
+export interface ValidationOptions {
+  trim?: boolean;
+  message?: string;
+  context?: Record<string, any>;
+  required?: boolean;
+}
+
+/**
+ * Validation function type
+ */
+export type ValidatorFn<T = any> = (
+  value: T,
+  options?: ValidationOptions
+) => ValidationResult;
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
 
 // Note: validation-schemas.ts has been consolidated into this file
 // All schemas are now defined in the ValidationSchemas object below
@@ -375,7 +443,7 @@ export function validateRequest(req: Request): {
   if (!errors.isEmpty()) {
     const errorMap: Record<string, string> = {};
     
-    errors.array().forEach((error: ValidationError) => {
+    errors.array().forEach((error: ExpressValidationError) => {
       // Extract the field name safely - validation error structure may vary
       let fieldName = 'unknown';
       if ('path' in error) {
@@ -451,20 +519,165 @@ export function sanitizeObject<T extends Record<string, any>>(
 }
 
 /**
- * Validate email format
- * 
- * @param email Email to validate
- * @returns Boolean indicating if email is valid
- * @deprecated Use validateEmail from client lib/validation-utils for consistent validation
+ * Create a validation result
  */
-export function isValidEmail(email: string): boolean {
-  // Consistent email regex pattern across frontend and backend
-  return /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(email);
+export function createValidationResult(
+  valid: boolean,
+  message?: string,
+  field?: string,
+  context?: Record<string, any>
+): ValidationResult {
+  return {
+    isValid: valid,
+    valid, // Alias for backward compatibility
+    errors: valid ? [] : [message || 'Validation failed'],
+    message,
+    field,
+    context
+  };
 }
 
 /**
- * Validate password strength
- * 
+ * Create a form validation result
+ */
+export function createFormValidationResult<T>(
+  initialErrors: FieldErrors<T> = {}
+): FormValidationResult<T> {
+  const errors: FieldErrors<T> = { ...initialErrors };
+  
+  // Check if any errors exist
+  const hasErrors = (): boolean => {
+    return Object.values(errors).some(fieldErrors =>
+      Array.isArray(fieldErrors) && fieldErrors.length > 0
+    );
+  };
+
+  // Get all error messages as a flat array
+  const getErrorMessages = (): string[] => {
+    return Object.values(errors).flatMap(fieldErrors =>
+      Array.isArray(fieldErrors) ? fieldErrors : []
+    );
+  };
+  
+  // Create a ValidationError instance
+  const getValidationError = (): ValidationError => {
+    const formattedErrors: Record<string, string[]> = {};
+    
+    Object.entries(errors).forEach(([key, value]) => {
+      if (value && Array.isArray(value) && value.length > 0) {
+        formattedErrors[key] = value;
+      }
+    });
+    
+    return new ValidationError(
+      'Form validation failed',
+      formattedErrors
+    );
+  };
+  
+  // Add an error for a field
+  const addError = <K extends keyof T>(field: K, message: string): void => {
+    if (!errors[field]) {
+      errors[field] = [];
+    }
+    errors[field]!.push(message);
+  };
+  
+  // Check if a field has errors
+  const hasError = <K extends keyof T>(field: K): boolean => {
+    return Boolean(errors[field] && errors[field]?.length > 0);
+  };
+  
+  // Get errors for a field
+  const getFieldErrors = <K extends keyof T>(field: K): string[] => {
+    return errors[field] || [];
+  };
+  
+  return {
+    valid: !hasErrors(),
+    errors,
+    getErrorMessages,
+    getValidationError,
+    addError,
+    hasError,
+    getFieldErrors
+  };
+}
+
+// =============================================================================
+// CORE VALIDATION FUNCTIONS
+// =============================================================================
+
+/**
+ * Unified email validation
+ * Consolidates email validation from both validation-utils files
+ */
+export function validateEmail(email: string): ValidationResult {
+  const errors: string[] = [];
+  
+  if (!email?.trim()) {
+    errors.push('Email is required');
+  } else {
+    // RFC 5322 Official Standard Email Regex - consistent across frontend and backend
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+    if (!emailRegex.test(email.trim())) {
+      errors.push('Please enter a valid email address');
+    }
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    valid: errors.length === 0,
+    errors,
+    message: errors.length > 0 ? errors[0] : undefined,
+  };
+}
+
+/**
+ * Legacy email validation for backward compatibility
+ * @deprecated Use validateEmail instead
+ */
+export function isValidEmail(email: string): boolean {
+  return validateEmail(email).isValid;
+}
+
+/**
+ * Unified password validation
+ * Consolidates password validation from both validation-utils files
+ */
+export function validatePassword(password: string): ValidationResult {
+  const errors: string[] = [];
+  
+  if (!password) {
+    errors.push('Password is required');
+  } else {
+    if (password.length < 8) {
+      errors.push('Password must be at least 8 characters long');
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push('Password must contain at least one uppercase letter');
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push('Password must contain at least one lowercase letter');
+    }
+    if (!/\d/.test(password)) {
+      errors.push('Password must contain at least one number');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push('Password must contain at least one special character');
+    }
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    valid: errors.length === 0,
+    errors,
+    message: errors.length > 0 ? errors[0] : undefined,
+  };
+}
+
+/**
+ * Enhanced password strength validation with scoring
  * @param password Password to validate
  * @returns Validation result with strength score and feedback
  */
@@ -527,6 +740,605 @@ export function validatePasswordStrength(password: string): {
   };
 }
 
+/**
+ * Phone number validation
+ */
+export function validatePhoneNumber(phone: string): ValidationResult {
+  const errors: string[] = [];
+  const phoneRegex = /^\+?[\d\s\-()]{10,}$/;
+
+  if (!phone) {
+    errors.push('Phone number is required');
+  } else if (!phoneRegex.test(phone)) {
+    errors.push('Please enter a valid phone number');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    valid: errors.length === 0,
+    errors,
+    message: errors.length > 0 ? errors[0] : undefined,
+  };
+}
+
+/**
+ * Amount validation for payments
+ */
+export function validateAmount(amount: number, min = 0, max = Infinity): ValidationResult {
+  const errors: string[] = [];
+  
+  if (isNaN(amount)) {
+    errors.push('Amount must be a valid number');
+  } else if (amount < min) {
+    errors.push(`Amount must be at least ${min}`);
+  } else if (amount > max) {
+    errors.push(`Amount cannot exceed ${max}`);
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    valid: errors.length === 0,
+    errors,
+    message: errors.length > 0 ? errors[0] : undefined,
+  };
+}
+
+/**
+ * File validation for document uploads
+ */
+export function validateFile(
+  file: File,
+  allowedTypes: string[] = ['image/jpeg', 'image/png', 'application/pdf'],
+  maxSizeMB = 10
+): ValidationResult {
+  const errors: string[] = [];
+
+  if (!file) {
+    errors.push('File is required');
+    return { isValid: false, valid: false, errors, message: 'File is required' };
+  }
+
+  if (!allowedTypes.includes(file.type)) {
+    errors.push(`File type not allowed. Allowed types: ${allowedTypes.join(', ')}`);
+  }
+
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  if (file.size > maxSizeBytes) {
+    errors.push(`File size cannot exceed ${maxSizeMB}MB`);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    valid: errors.length === 0,
+    errors,
+    message: errors.length > 0 ? errors[0] : undefined,
+  };
+}
+
+/**
+ * Address validation
+ */
+export function validateAddress(address: {
+  street?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+}): ValidationResult {
+  const errors: string[] = [];
+  
+  if (!address.street?.trim()) {
+    errors.push('Street address is required');
+  }
+  
+  if (!address.city?.trim()) {
+    errors.push('City is required');
+  }
+  
+  if (!address.state?.trim()) {
+    errors.push('State/Province is required');
+  }
+  
+  if (!address.postalCode?.trim()) {
+    errors.push('Postal code is required');
+  }
+  
+  if (!address.country?.trim()) {
+    errors.push('Country is required');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    valid: errors.length === 0,
+    errors,
+    message: errors.length > 0 ? errors[0] : undefined,
+  };
+}
+
+/**
+ * Date validation
+ */
+export function validateDate(date: string | Date, minAge = 18): ValidationResult {
+  const errors: string[] = [];
+
+  if (!date) {
+    errors.push('Date is required');
+    return { isValid: false, valid: false, errors, message: 'Date is required' };
+  }
+
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+  if (isNaN(dateObj.getTime())) {
+    errors.push('Please enter a valid date');
+    return { isValid: false, valid: false, errors, message: 'Please enter a valid date' };
+  }
+  
+  // Check minimum age for date of birth
+  if (minAge > 0) {
+    const today = new Date();
+    const age = today.getFullYear() - dateObj.getFullYear();
+    const monthDiff = today.getMonth() - dateObj.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dateObj.getDate())) {
+      if (age - 1 < minAge) {
+        errors.push(`You must be at least ${minAge} years old`);
+      }
+    } else if (age < minAge) {
+      errors.push(`You must be at least ${minAge} years old`);
+    }
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    valid: errors.length === 0,
+    errors,
+    message: errors.length > 0 ? errors[0] : undefined,
+  };
+}
+
+/**
+ * Text validation with length constraints
+ */
+export function validateText(
+  text: string,
+  minLength = 0,
+  maxLength = Infinity,
+  fieldName = 'Field'
+): ValidationResult {
+  const errors: string[] = [];
+
+  if (!text?.trim() && minLength > 0) {
+    errors.push(`${fieldName} is required`);
+  } else if (text) {
+    if (text.length < minLength) {
+      errors.push(`${fieldName} must be at least ${minLength} characters long`);
+    }
+    if (text.length > maxLength) {
+      errors.push(`${fieldName} cannot exceed ${maxLength} characters`);
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    valid: errors.length === 0,
+    errors,
+    message: errors.length > 0 ? errors[0] : undefined,
+  };
+}
+
+/**
+ * Rating validation (1-5 scale)
+ */
+export function validateRating(rating: number): ValidationResult {
+  const errors: string[] = [];
+
+  if (isNaN(rating) || rating < 1 || rating > 5) {
+    errors.push('Rating must be between 1 and 5');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    valid: errors.length === 0,
+    errors,
+    message: errors.length > 0 ? errors[0] : undefined,
+  };
+}
+
+/**
+ * Batch validation utility
+ */
+export function validateFields(validations: ValidationResult[]): ValidationResult {
+  const allErrors = validations.flatMap(v => v.errors);
+
+  return {
+    isValid: allErrors.length === 0,
+    valid: allErrors.length === 0,
+    errors: allErrors,
+    message: allErrors.length > 0 ? allErrors[0] : undefined,
+  };
+}
+
+/**
+ * Sanitize input to prevent XSS
+ */
+export function sanitizeInput(input: string): string {
+  return input
+    .replace(/[<>]/g, '') // Remove < and > characters
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+=/gi, '') // Remove event handlers
+    .trim();
+}
+
+/**
+ * Format validation errors for display
+ */
+export function formatValidationErrors(errors: string[]): string {
+  if (errors.length === 0) return '';
+  if (errors.length === 1) return errors[0];
+  
+  return `• ${errors.join('\n• ')}`;
+}
+
+// =============================================================================
+// FUNCTIONAL VALIDATOR FUNCTIONS (for use with validation chains)
+// =============================================================================
+
+/**
+ * Required field validator
+ */
+export const required: ValidatorFn = (value, options = {}) => {
+  const { message = 'This field is required', context } = options;
+  
+  const isEmpty = 
+    value === undefined || 
+    value === null || 
+    value === '' || 
+    (Array.isArray(value) && value.length === 0) ||
+    (typeof value === 'object' && Object.keys(value).length === 0);
+  
+  return createValidationResult(!isEmpty, isEmpty ? message : undefined, undefined, context);
+};
+
+/**
+ * Minimum length validator
+ */
+export const minLength = (min: number): ValidatorFn<string> => (value, options = {}) => {
+  const { 
+    trim = true, 
+    message = `Must be at least ${min} characters`, 
+    context,
+    required: isRequired = true
+  } = options;
+  
+  if ((value === undefined || value === null || value === '') && !isRequired) {
+    return createValidationResult(true);
+  }
+  
+  const strValue = String(value || '');
+  const trimmedValue = trim ? strValue.trim() : strValue;
+  const valid = trimmedValue.length >= min;
+  
+  return createValidationResult(valid, valid ? undefined : message, undefined, context);
+};
+
+/**
+ * Maximum length validator
+ */
+export const maxLength = (max: number): ValidatorFn<string> => (value, options = {}) => {
+  const { 
+    trim = true, 
+    message = `Must be no more than ${max} characters`, 
+    context,
+    required: isRequired = true
+  } = options;
+  
+  if ((value === undefined || value === null || value === '') && !isRequired) {
+    return createValidationResult(true);
+  }
+  
+  const strValue = String(value || '');
+  const trimmedValue = trim ? strValue.trim() : strValue;
+  const valid = trimmedValue.length <= max;
+  
+  return createValidationResult(valid, valid ? undefined : message, undefined, context);
+};
+
+/**
+ * Email validator
+ */
+export const email: ValidatorFn<string> = (value, options = {}) => {
+  const { 
+    trim = true, 
+    message = 'Please enter a valid email address', 
+    context,
+    required: isRequired = true
+  } = options;
+  
+  if ((value === undefined || value === null || value === '') && !isRequired) {
+    return createValidationResult(true);
+  }
+  
+  const trimmedValue = trim ? (value || '').trim() : (value || '');
+  const result = validateEmail(trimmedValue);
+  
+  return createValidationResult(result.isValid, result.isValid ? undefined : message, undefined, context);
+};
+
+/**
+ * URL validator
+ */
+export const url: ValidatorFn<string> = (value, options = {}) => {
+  const { 
+    trim = true, 
+    message = 'Please enter a valid URL', 
+    context,
+    required: isRequired = true
+  } = options;
+  
+  if ((value === undefined || value === null || value === '') && !isRequired) {
+    return createValidationResult(true);
+  }
+  
+  const trimmedValue = trim ? (value || '').trim() : (value || '');
+  
+  try {
+    new URL(trimmedValue);
+    return createValidationResult(true, undefined, undefined, context);
+  } catch (error) {
+    return createValidationResult(false, message, undefined, context);
+  }
+};
+
+/**
+ * Pattern validator
+ */
+export const pattern = (regex: RegExp, patternDescription?: string): ValidatorFn<string> => 
+  (value, options = {}) => {
+    const { 
+      trim = true, 
+      message, 
+      context,
+      required: isRequired = true
+    } = options;
+    
+    if ((value === undefined || value === null || value === '') && !isRequired) {
+      return createValidationResult(true);
+    }
+    
+    const trimmedValue = trim ? (value || '').trim() : (value || '');
+    const valid = regex.test(trimmedValue);
+    
+    const defaultMessage = patternDescription 
+      ? `Must match format: ${patternDescription}`
+      : 'Invalid format';
+    
+    return createValidationResult(
+      valid, 
+      valid ? undefined : (message ?? defaultMessage), 
+      undefined, 
+      context
+    );
+  };
+
+/**
+ * Number range validator
+ */
+export const numberRange = (min?: number, max?: number): ValidatorFn<number> => 
+  (value, options = {}) => {
+    const { 
+      message, 
+      context,
+      required: isRequired = true
+    } = options;
+    
+    if ((value === undefined || value === null || String(value) === '') && !isRequired) {
+      return createValidationResult(true);
+    }
+    
+    const numValue = Number(value);
+    
+    if (isNaN(numValue)) {
+      return createValidationResult(false, 'Must be a valid number', undefined, context);
+    }
+    
+    let valid = true;
+    let errorMessage = '';
+    
+    if (min !== undefined && max !== undefined) {
+      valid = numValue >= min && numValue <= max;
+      errorMessage = `Must be between ${min} and ${max}`;
+    } else if (min !== undefined) {
+      valid = numValue >= min;
+      errorMessage = `Must be at least ${min}`;
+    } else if (max !== undefined) {
+      valid = numValue <= max;
+      errorMessage = `Must be no more than ${max}`;
+    }
+    
+    return createValidationResult(
+      valid, 
+      valid ? undefined : (message ?? errorMessage), 
+      undefined, 
+      context
+    );
+  };
+
+/**
+ * Match another field validator
+ */
+export const matches = <T>(otherValue: T, otherFieldName?: string): ValidatorFn<T> => 
+  (value, options = {}) => {
+    const { 
+      message, 
+      context,
+      required: isRequired = true
+    } = options;
+    
+    if ((value === undefined || value === null || value === '') && !isRequired) {
+      return createValidationResult(true);
+    }
+    
+    const valid = value === otherValue;
+    const fieldText = otherFieldName ? ` ${otherFieldName}` : '';
+    const defaultMessage = `Must match${fieldText}`;
+    
+    return createValidationResult(
+      valid, 
+      valid ? undefined : (message ?? defaultMessage), 
+      undefined, 
+      context
+    );
+  };
+
+/**
+ * Date range validator
+ */
+export const dateRange = (
+  minDate?: Date | string | number,
+  maxDate?: Date | string | number
+): ValidatorFn<Date | string | number> => (value, options = {}) => {
+  const { 
+    message, 
+    context,
+    required: isRequired = true
+  } = options;
+  
+  if ((value === undefined || value === null || value === '') && !isRequired) {
+    return createValidationResult(true);
+  }
+  
+  const valueDate = new Date(value);
+  const minDateObj = minDate ? new Date(minDate) : undefined;
+  const maxDateObj = maxDate ? new Date(maxDate) : undefined;
+  
+  if (isNaN(valueDate.getTime())) {
+    return createValidationResult(false, 'Must be a valid date', undefined, context);
+  }
+  
+  let valid = true;
+  let errorMessage = '';
+  
+  if (minDateObj && maxDateObj) {
+    valid = valueDate >= minDateObj && valueDate <= maxDateObj;
+    errorMessage = `Must be between ${minDateObj.toLocaleDateString()} and ${maxDateObj.toLocaleDateString()}`;
+  } else if (minDateObj) {
+    valid = valueDate >= minDateObj;
+    errorMessage = `Must be on or after ${minDateObj.toLocaleDateString()}`;
+  } else if (maxDateObj) {
+    valid = valueDate <= maxDateObj;
+    errorMessage = `Must be on or before ${maxDateObj.toLocaleDateString()}`;
+  }
+  
+  return createValidationResult(
+    valid, 
+    valid ? undefined : (message ?? errorMessage), 
+    undefined, 
+    context
+  );
+};
+
+/**
+ * Custom validator
+ */
+export const custom = <T>(validatorFn: (value: T) => boolean, errorMessage: string): ValidatorFn<T> => 
+  (value, options = {}) => {
+    const { 
+      context,
+      required: isRequired = true
+    } = options;
+    
+    if ((value === undefined || value === null || value === '') && !isRequired) {
+      return createValidationResult(true);
+    }
+    
+    const valid = validatorFn(value);
+    
+    return createValidationResult(
+      valid, 
+      valid ? undefined : (options.message ?? errorMessage), 
+      undefined, 
+      context
+    );
+  };
+
+/**
+ * Compose multiple validators
+ */
+export const compose = <T>(validators: ValidatorFn<T>[]): ValidatorFn<T> => 
+  (value, options = {}) => {
+    for (const validator of validators) {
+      const result = validator(value, options);
+      
+      if (!result.valid) {
+        return result;
+      }
+    }
+    
+    return createValidationResult(true);
+  };
+
+/**
+ * Validate an object using a validation schema
+ */
+export function validateObject<T extends Record<string, any>>(
+  values: T,
+  schema: Record<keyof T, ValidatorFn | ValidatorFn[]>
+): FormValidationResult<T> {
+  const result = createFormValidationResult<T>();
+  
+  Object.entries(schema).forEach(([key, validators]) => {
+    const field = key as keyof T;
+    const value = values[field];
+    const validatorList = Array.isArray(validators) ? validators : [validators];
+    
+    for (const validator of validatorList) {
+      const validationResult = validator(value);
+      
+      if (!validationResult.valid) {
+        result.addError(field, validationResult.message ?? 'Invalid value');
+        break;
+      }
+    }
+  });
+  
+  return result;
+}
+
+// =============================================================================
+// SIMPLE VALIDATION RULES (for quick use)
+// =============================================================================
+
+export const ValidationRules = {
+  required: (message = 'This field is required') =>
+    (value: any) => (value === undefined || value === null || value === '') ? message : null,
+
+  min: (min: number, message = `Must be at least ${min}`) =>
+    (value: number) => (value < min) ? message : null,
+
+  max: (max: number, message = `Must be at most ${max}`) =>
+    (value: number) => (value > max) ? message : null,
+
+  minLength: (minLength: number, message = `Must be at least ${minLength} characters`) =>
+    (value: string) => (value.length < minLength) ? message : null,
+
+  maxLength: (maxLength: number, message = `Must be at most ${maxLength} characters`) =>
+    (value: string) => (value.length > maxLength) ? message : null,
+
+  pattern: (pattern: RegExp, message = 'Invalid format') =>
+    (value: string) => (!pattern.test(value)) ? message : null,
+
+  email: (message = 'Invalid email address') =>
+    (value: string) => (!/^\S+@\S+\.\S+$/.test(value)) ? message : null,
+
+  matches: (field: string, message = 'Fields must match') =>
+    (value: any, formValues?: Record<string, any>) =>
+      (formValues && formValues[field] !== value) ? message : null,
+};
+
+// =============================================================================
+// ZOD VALIDATION FUNCTIONS
+// =============================================================================
+
 // Individual schema exports for backward compatibility
 export const UserSchemas = ValidationSchemas.User;
 export const TaskSchemas = ValidationSchemas.Task;
@@ -540,13 +1352,52 @@ export const CategorySchemas = ValidationSchemas.Category;
 export const HealthCheckSchemas = ValidationSchemas.HealthCheck;
 
 export default {
+  // Zod utilities
   validateWithZod,
   formatZodErrors,
   validateRequest,
   composeValidators,
-  sanitizeObject,
-  validatePasswordStrength,
   initializeValidation,
+  
+  // Core validation functions
+  validateEmail,
+  validatePassword,
+  validatePasswordStrength,
+  validatePhoneNumber,
+  validateAmount,
+  validateFile,
+  validateAddress,
+  validateDate,
+  validateText,
+  validateRating,
+  validateFields,
+  sanitizeInput,
+  formatValidationErrors,
+  
+  // Functional validators
+  required,
+  minLength,
+  maxLength,
+  email,
+  url,
+  pattern,
+  numberRange,
+  matches,
+  dateRange,
+  custom,
+  compose,
+  
+  // Form utilities
+  createValidationResult,
+  createFormValidationResult,
+  validateObject,
+  ValidationRules,
+  
+  // Legacy utilities
+  sanitizeObject,
+  isValidEmail,
+  
+  // Schemas
   ValidationSchemas,
   UserSchemas,
   TaskSchemas,

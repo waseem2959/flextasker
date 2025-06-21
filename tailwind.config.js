@@ -4,6 +4,8 @@ module.exports = {
     './src/**/*.{js,ts,jsx,tsx}',
     './index.html'
   ],
+  // Enable dark mode support
+  darkMode: 'class',
   // Enable JIT mode for faster builds and smaller CSS
   mode: 'jit',
   theme: {

@@ -9,6 +9,9 @@ import { SEO } from '../utils/seo';
 import { AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PageLoading } from '../components/ui/loading-spinner';
+import { StaggeredList } from '@/components/ui/micro-interactions';
+// import { PageLayout } from '../components/ui/page-header'; // Not currently used
 
 // Import dashboard components
 import { DashboardStats } from '../components/dashboard/dashboard-stats';
@@ -46,7 +49,7 @@ const Dashboard = () => {
   if (isError) {
     return (
       <Layout>
-        <div className="py-8 bg-white min-h-screen font-primary">
+        <div className="py-8 bg-neutral-50 min-h-screen">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Card className="p-8 text-center">
               <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
@@ -71,18 +74,16 @@ const Dashboard = () => {
         description="Manage your tasks, view your stats, check messages and track your progress on Flextasker."
         canonicalUrl="https://flextasker.com/dashboard"
       />
-      <div className="py-8 bg-white min-h-screen font-primary">
+      <div className="py-8 bg-neutral-50 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="container mx-auto py-6 max-w-7xl">
             {isLoading && (
-              <div className="flex items-center justify-center h-40">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(196,80%,43%)]"></div>
-              </div>
+              <PageLoading message="Loading your dashboard..." />
             )}
-            <h1 className="text-2xl font-bold mb-4 text-[hsl(206,33%,16%)] font-primary">
+            <h1 className="text-3xl font-bold mb-4 text-neutral-900 font-display">
               Welcome, {userWithDetails.firstName || 'User'}!
             </h1>
-            <p className="mt-1 text-[hsl(220,14%,46%)] font-primary">
+            <p className="mt-1 text-neutral-600 font-primary">
               Welcome back, {userWithDetails.firstName || userWithDetails.email?.split('@')[0] || 'User'}
             </p>
           </div>
@@ -100,14 +101,16 @@ const Dashboard = () => {
             
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-6">
-              {/* Quick Stats */}
-              <DashboardStats user={user} myTasks={myTasks} />
-              
-              {/* Recent Activity */}
-              <RecentActivity user={user} />
-              
-              {/* Quick Links */}
-              <QuickLinks user={user} />
+              <StaggeredList staggerDelay={0.15}>
+                {/* Quick Stats */}
+                <DashboardStats user={user} myTasks={myTasks} />
+                
+                {/* Recent Activity */}
+                <RecentActivity user={user} />
+                
+                {/* Quick Links */}
+                <QuickLinks user={user} />
+              </StaggeredList>
             </TabsContent>
             
             {/* Tasks/Bids Tab */}

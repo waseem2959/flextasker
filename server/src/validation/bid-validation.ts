@@ -2,34 +2,23 @@
  * Bid Validation Schemas
  * 
  * Zod validation schemas for bid-related operations
+ * Uses centralized validation schemas with route-specific wrappers
  */
 
 import { z } from 'zod';
-import { BidStatus } from '../../../../shared/types/common/enums';
+import { BidStatus } from '../../../shared/types/common/enums';
+import { ValidationSchemas } from '../utils/validation-utils';
 
-// Create bid schema
+// Route-specific wrappers for centralized bid schemas
 export const createBidSchema = z.object({
-  body: z.object({
-    taskId: z.string().uuid('Invalid task ID format'),
-    amount: z.number().min(0.01, 'Amount must be greater than 0'),
-    message: z.string().min(1, 'Message is required').max(1000, 'Message too long'),
-    estimatedCompletionTime: z.string().optional(),
-    timeline: z.string().min(1, 'Timeline is required').max(500, 'Timeline too long'),
-    attachments: z.array(z.string()).optional()
-  })
+  body: ValidationSchemas.Bid.create
 });
 
-// Update bid schema
 export const updateBidSchema = z.object({
   params: z.object({
     id: z.string().uuid('Invalid bid ID format')
   }),
-  body: z.object({
-    amount: z.number().min(0.01, 'Amount must be greater than 0').optional(),
-    message: z.string().min(1, 'Message is required').max(1000, 'Message too long').optional(),
-    estimatedCompletionTime: z.string().optional(),
-    timeline: z.string().min(1, 'Timeline is required').max(500, 'Timeline too long').optional()
-  })
+  body: ValidationSchemas.Bid.update
 });
 
 // Get bid by ID schema

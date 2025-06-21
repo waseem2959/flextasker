@@ -6,7 +6,7 @@
  */
 
 import { cacheManager } from './cache-manager';
-import { queryCache } from './query-cache';
+// import { queryCache } from './query-cache'; // Not currently used
 import { performanceMonitor } from '../monitoring/performance-monitor';
 import { errorTracker } from '../monitoring/error-tracking';
 
@@ -654,11 +654,11 @@ class CacheWarmerService {
     return [];
   }
 
-  private async fetchNearbyTasks(location: any): Promise<any> {
+  private async fetchNearbyTasks(_location: any): Promise<any> { // location parameter renamed to indicate it's not used
     return [];
   }
 
-  private async fetchLocalTaskers(location: any): Promise<any> {
+  private async fetchLocalTaskers(_location: any): Promise<any> { // location parameter renamed to indicate it's not used
     return [];
   }
 

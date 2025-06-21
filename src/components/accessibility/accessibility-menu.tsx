@@ -9,24 +9,16 @@ import React, { useState, useEffect } from 'react';
 import {
   Settings,
   Eye,
-  Volume2,
-  Keyboard,
-  Globe,
   Sun,
   Moon,
   Monitor,
   ZoomIn,
-  ZoomOut,
   MousePointer,
   Brain,
   Headphones,
-  Languages,
   RotateCcw,
-  X,
   Check,
-  Info,
-  ChevronDown,
-  ChevronUp
+  Info
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -48,7 +40,6 @@ import {
   DialogTitle,
   DialogTrigger
 } from '../ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Separator } from '../ui/separator';
 import { cn } from '../../lib/utils';
 import { useAccessibility, AccessibilitySettings } from './accessibility-provider';
@@ -58,7 +49,6 @@ import { LanguageSwitcher } from '../ui/language-switcher';
 interface AccessibilityMenuProps {
   className?: string;
   trigger?: React.ReactNode;
-  position?: 'bottom' | 'top' | 'left' | 'right';
 }
 
 interface SettingSection {
@@ -80,8 +70,7 @@ interface SettingSection {
 
 const AccessibilityMenu: React.FC<AccessibilityMenuProps> = ({
   className = '',
-  trigger,
-  position = 'bottom'
+  trigger
 }) => {
   const { state, actions } = useAccessibility();
   const [isOpen, setIsOpen] = useState(false);

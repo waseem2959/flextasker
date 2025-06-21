@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/154</span>
+                <span class='fraction'>0/151</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/152</span>
+                <span class='fraction'>0/149</span>
             </div>
         
             
@@ -680,11 +680,7 @@
 <a name='L615'></a><a href='#L615'>615</a>
 <a name='L616'></a><a href='#L616'>616</a>
 <a name='L617'></a><a href='#L617'>617</a>
-<a name='L618'></a><a href='#L618'>618</a>
-<a name='L619'></a><a href='#L619'>619</a>
-<a name='L620'></a><a href='#L620'>620</a>
-<a name='L621'></a><a href='#L621'>621</a>
-<a name='L622'></a><a href='#L622'>622</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L618'></a><a href='#L618'>618</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -709,7 +705,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1054,7 +1049,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1219,7 +1213,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1252,7 +1245,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1317,7 +1309,6 @@
 &nbsp;
 import { User, UserRole } from '@/types';
 // Error handler removed for simplicity
-import { isValidEmail, validatePassword } from '@/utils/validation';
 import axios from 'axios';
 import { apiClient } from '../api/api-client';
 import {
@@ -1625,7 +1616,7 @@ export const credentialUtils = <span class="cstat-no" title="statement not cover
     rememberMe: boolean = <span class="branch-0 cbranch-no" title="branch not covered" >false</span>
   ): LoginCredentials {
     // Validate email
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!email || !isValidEmail(email)) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!email || !email.includes('@')) {</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('Please enter a valid email address');</span>
     }
     
@@ -1670,14 +1661,13 @@ export const credentialUtils = <span class="cstat-no" title="statement not cover
     }
     
     // Validate email
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!email || !isValidEmail(email)) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!email || !email.includes('@')) {</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('Please enter a valid email address');</span>
     }
     
     // Validate password
-    const passwordValidation = <span class="cstat-no" title="statement not covered" >validatePassword(password);</span>
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!passwordValidation.isValid) {</span>
-<span class="cstat-no" title="statement not covered" >      throw new Error(passwordValidation.message ?? 'Invalid password');</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!password || password.length &lt; 8) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error('Password must be at least 8 characters long');</span>
     }
     
     // Create the registration data
@@ -1820,7 +1810,7 @@ export const authService = <span class="cstat-no" title="statement not covered" 
    * @param email User's email
    */
 <span class="fstat-no" title="function not covered" >  async </span>forgotPassword(email: string): Promise&lt;void&gt; {
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!email || !isValidEmail(email)) {</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!email || !email.includes('@')) {</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error('Please enter a valid email address');</span>
     }
     
@@ -1838,9 +1828,8 @@ export const authService = <span class="cstat-no" title="statement not covered" 
 <span class="cstat-no" title="statement not covered" >      throw new Error('Invalid password reset token');</span>
     }
     
-    const passwordValidation = <span class="cstat-no" title="statement not covered" >validatePassword(password);</span>
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!passwordValidation.isValid) {</span>
-<span class="cstat-no" title="statement not covered" >      throw new Error(passwordValidation.message ?? 'Invalid password');</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!password || password.length &lt; 8) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error('Password must be at least 8 characters long');</span>
     }
     
 <span class="cstat-no" title="statement not covered" >    await apiClient.post('/auth/reset-password', { token, password });</span>
@@ -1873,9 +1862,8 @@ export const authService = <span class="cstat-no" title="statement not covered" 
 <span class="cstat-no" title="statement not covered" >      throw new Error('Current password is required');</span>
     }
     
-    const passwordValidation = <span class="cstat-no" title="statement not covered" >validatePassword(newPassword);</span>
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!passwordValidation.isValid) {</span>
-<span class="cstat-no" title="statement not covered" >      throw new Error(passwordValidation.message ?? 'Invalid new password');</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!newPassword || newPassword.length &lt; 8) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error('New password must be at least 8 characters long');</span>
     }
     
 <span class="cstat-no" title="statement not covered" >    await apiClient.put('/users/me/password', { </span>
@@ -1933,7 +1921,7 @@ export function <span class="fstat-no" title="function not covered" >cleanupAuth
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-18T17:23:27.444Z
+                at 2025-06-20T04:32:32.883Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

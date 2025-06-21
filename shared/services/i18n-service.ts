@@ -716,7 +716,7 @@ class I18nService {
    * Get all supported languages
    */
   getSupportedLanguages(): SupportedLanguage[] {
-    return UAE_BUSINESS_CONFIG.languages.supported;
+    return UAE_BUSINESS_CONFIG.languages.supported as SupportedLanguage[];
   }
 
   /**

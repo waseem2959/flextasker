@@ -2,15 +2,17 @@
  * User Validation Schemas
  * 
  * Zod validation schemas for user-related operations
+ * Uses centralized validation schemas with route-specific wrappers where applicable
  */
 
 import { z } from 'zod';
 import { UserRole } from '../../../shared/types/common/enums';
+import { ValidationSchemas } from '../utils/validation-utils';
 
 // Get user by ID schema
 export const getUserByIdSchema = z.object({
   params: z.object({
-    id: z.string().uuid('Invalid user ID format')
+    id: ValidationSchemas.Common.uuid
   })
 });
 
@@ -24,41 +26,19 @@ export const searchUsersSchema = z.object({
     page: z.coerce.number().min(1).optional(),
     limit: z.coerce.number().min(1).max(100).optional(),
     sortBy: z.string().optional(),
-    sortDir: z.enum(['asc', 'desc']).optional()
+    sortDir: ValidationSchemas.Common.sortOrder.optional()
   })
 });
 
-// Update profile schema
+// Update profile schema - using centralized user update schema
 export const updateProfileSchema = z.object({
-  body: z.object({
-    firstName: z.string().min(1).max(50).optional(),
-    lastName: z.string().min(1).max(50).optional(),
-    bio: z.string().max(500).optional(),
-    phone: z.string().regex(/^\+?\d{10,15}$/).optional(),
-    location: z.string().max(100).optional(),
-    city: z.string().max(50).optional(),
-    state: z.string().max(50).optional(),
-    country: z.string().max(50).optional(),
-    zipCode: z.string().max(20).optional(),
-    website: z.string().url().optional(),
-    linkedin: z.string().url().optional(),
-    portfolio: z.string().url().optional()
-  })
+  body: ValidationSchemas.User.update
 });
 
-// Change password schema
-export const changePasswordSchema = z.object({
-  body: z.object({
-    currentPassword: z.string().min(1, 'Current password is required'),
-    newPassword: z.string().min(8, 'Password must be at least 8 characters long')
-      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 
-        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
-    confirmPassword: z.string()
-  }).refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  })
-});
+// Import change password schema from auth validation to avoid duplication
+import { changePasswordSchema } from './auth-validation';
+// Re-export for external use
+export { changePasswordSchema };
 
 // Update preferences schema
 export const updatePreferencesSchema = z.object({

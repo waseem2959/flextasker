@@ -345,7 +345,31 @@
 <a name='L280'></a><a href='#L280'>280</a>
 <a name='L281'></a><a href='#L281'>281</a>
 <a name='L282'></a><a href='#L282'>282</a>
-<a name='L283'></a><a href='#L283'>283</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L283'></a><a href='#L283'>283</a>
+<a name='L284'></a><a href='#L284'>284</a>
+<a name='L285'></a><a href='#L285'>285</a>
+<a name='L286'></a><a href='#L286'>286</a>
+<a name='L287'></a><a href='#L287'>287</a>
+<a name='L288'></a><a href='#L288'>288</a>
+<a name='L289'></a><a href='#L289'>289</a>
+<a name='L290'></a><a href='#L290'>290</a>
+<a name='L291'></a><a href='#L291'>291</a>
+<a name='L292'></a><a href='#L292'>292</a>
+<a name='L293'></a><a href='#L293'>293</a>
+<a name='L294'></a><a href='#L294'>294</a>
+<a name='L295'></a><a href='#L295'>295</a>
+<a name='L296'></a><a href='#L296'>296</a>
+<a name='L297'></a><a href='#L297'>297</a>
+<a name='L298'></a><a href='#L298'>298</a>
+<a name='L299'></a><a href='#L299'>299</a>
+<a name='L300'></a><a href='#L300'>300</a>
+<a name='L301'></a><a href='#L301'>301</a>
+<a name='L302'></a><a href='#L302'>302</a>
+<a name='L303'></a><a href='#L303'>303</a>
+<a name='L304'></a><a href='#L304'>304</a>
+<a name='L305'></a><a href='#L305'>305</a>
+<a name='L306'></a><a href='#L306'>306</a>
+<a name='L307'></a><a href='#L307'>307</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -464,6 +488,30 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -659,10 +707,10 @@ export interface User extends Omit&lt;BaseUser, 'createdAt' | 'updatedAt'&gt; {
   // Computed property for full name
   name?: string;
 &nbsp;
-  // Frontend-specific optional fields
-  avatar?: string | null;
-  phone?: string | null;
-  bio?: string | null;
+  // Frontend-specific optional fields  
+  avatar?: string;
+  phone?: string;
+  bio?: string;
   trustScore?: number;
   emailVerified?: boolean;
   phoneVerified?: boolean;
@@ -673,9 +721,9 @@ export interface User extends Omit&lt;BaseUser, 'createdAt' | 'updatedAt'&gt; {
   lastActive?: Date | null;
 &nbsp;
   // Optional location fields (flattened from shared structure)
-  city?: string | null;
-  state?: string | null;
-  country?: string | null;
+  city?: string;
+  state?: string;
+  country?: string;
 &nbsp;
   // Computed fields for UI
   averageRating?: number;
@@ -715,16 +763,16 @@ export class UserImpl implements User {
 &nbsp;
   // Frontend-specific fields
 <span class="cstat-no" title="statement not covered" >  name?: string;</span>
-<span class="cstat-no" title="statement not covered" >  avatar?: string | null;</span>
+<span class="cstat-no" title="statement not covered" >  avatar?: string;</span>
 <span class="cstat-no" title="statement not covered" >  trustScore?: number;</span>
 <span class="cstat-no" title="statement not covered" >  emailVerified?: boolean;</span>
 <span class="cstat-no" title="statement not covered" >  phoneVerified?: boolean;</span>
 <span class="cstat-no" title="statement not covered" >  lastActive?: Date | null;</span>
-<span class="cstat-no" title="statement not covered" >  bio?: string | null;</span>
-<span class="cstat-no" title="statement not covered" >  phone?: string | null;</span>
-<span class="cstat-no" title="statement not covered" >  city?: string | null;</span>
-<span class="cstat-no" title="statement not covered" >  state?: string | null;</span>
-<span class="cstat-no" title="statement not covered" >  country?: string | null;</span>
+<span class="cstat-no" title="statement not covered" >  bio?: string;</span>
+<span class="cstat-no" title="statement not covered" >  phone?: string;</span>
+<span class="cstat-no" title="statement not covered" >  city?: string;</span>
+<span class="cstat-no" title="statement not covered" >  state?: string;</span>
+<span class="cstat-no" title="statement not covered" >  country?: string;</span>
 <span class="cstat-no" title="statement not covered" >  averageRating?: number;</span>
 <span class="cstat-no" title="statement not covered" >  totalReviews?: number;</span>
 <span class="cstat-no" title="statement not covered" >  completedTasks?: number;</span>
@@ -746,7 +794,7 @@ export class UserImpl implements User {
 <span class="fstat-no" title="function not covered" >  static </span>fromApiResponse(apiUser: ApiUserResponse): User {
     const role = (<span class="cstat-no" title="statement not covered" >apiUser as any).role ?? UserRole.USER;</span>
 <span class="cstat-no" title="statement not covered" >    return new UserImpl({</span>
-      ...apiUser,
+      ...(apiUser as any),
       // Convert string dates to Date objects
       createdAt: apiUser.createdAt ? new Date(apiUser.createdAt) : new Date(),
       updatedAt: apiUser.updatedAt ? new Date(apiUser.updatedAt) : new Date(),
@@ -823,6 +871,30 @@ export interface Task {
   owner: User;
   assignee?: User | null;
   bidCount?: number;
+  
+  // Status-specific properties
+  startedAt?: Date;
+  taskerName?: string;
+  cancelledAt?: Date;
+  cancellationReason?: string;
+  disputeReason?: string;
+  clientName?: string;
+  bids?: any[];
+  dueDate?: Date;
+  acceptedBidId?: string;
+  acceptedAt?: Date;
+  taskerId?: string;
+  taskerAvatar?: string;
+  startByDate?: Date;
+  estimatedCompletionDate?: Date;
+  progress?: number;
+  rating?: number;
+  review?: string;
+  cancelledBy?: string;
+  disputedAt?: Date;
+  disputeResolution?: string;
+  clientId?: string;
+  clientAvatar?: string;
 }
 &nbsp;
 /**
@@ -916,7 +988,7 @@ export interface AuthContextType {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-18T17:23:27.444Z
+                at 2025-06-20T04:32:32.883Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

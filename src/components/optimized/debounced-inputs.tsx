@@ -67,6 +67,7 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
 export interface DebouncedSearchInputProps {
   value?: string;
   onSearch: (query: string) => void;
+  onClear?: () => void;
   placeholder?: string;
   delay?: number;
   className?: string;
@@ -79,6 +80,7 @@ export interface DebouncedSearchInputProps {
 export const DebouncedSearchInput = React.memo<DebouncedSearchInputProps>(({
   value = '',
   onSearch,
+  onClear,
   placeholder = 'Search...',
   delay = 300,
   className = '',
@@ -108,7 +110,10 @@ export const DebouncedSearchInput = React.memo<DebouncedSearchInputProps>(({
   const handleClear = useCallback(() => {
     setLocalValue('');
     onSearch('');
-  }, [onSearch]);
+    if (onClear) {
+      onClear();
+    }
+  }, [onSearch, onClear]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -122,11 +127,15 @@ export const DebouncedSearchInput = React.memo<DebouncedSearchInputProps>(({
   return (
     <div className={`relative ${className}`}>
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <Search className={`h-4 w-4 ${loading ? 'animate-spin' : ''} text-gray-400`} />
+        <Search 
+          className={`h-4 w-4 ${loading ? 'animate-spin' : ''} text-gray-400`}
+          data-testid={loading ? 'search-loading' : undefined}
+        />
       </div>
       
       <Input
-        type="text"
+        type="search"
+        role="searchbox"
         value={localValue}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
@@ -233,7 +242,7 @@ export const DebouncedTextInput = React.memo<DebouncedTextInputProps>(({
 DebouncedTextInput.displayName = 'DebouncedTextInput';
 
 // Debounced textarea props
-export interface DebouncedTextareaProps {
+export interface DebouncedTextareaProps extends Omit<React.HTMLProps<HTMLTextAreaElement>, 'onChange' | 'value'> {
   value?: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -257,8 +266,10 @@ export const DebouncedTextarea = React.memo<DebouncedTextareaProps>(({
   rows = 4,
   maxLength,
   showCharCount = false,
-  autoResize = false
+  autoResize = false,
+  ...restProps
 }) => {
+  const { className: restClassName, ...otherProps } = restProps as any;
   const [localValue, setLocalValue] = useState(value);
   const debouncedValue = useDebounce(localValue, delay);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -310,7 +321,7 @@ export const DebouncedTextarea = React.memo<DebouncedTextareaProps>(({
   }, [localValue.length, maxLength, showCharCount]);
 
   return (
-    <div className={className}>
+    <div>
       <Textarea
         ref={textareaRef}
         value={localValue}
@@ -320,6 +331,8 @@ export const DebouncedTextarea = React.memo<DebouncedTextareaProps>(({
         rows={autoResize ? undefined : rows}
         maxLength={maxLength}
         style={autoResize ? { resize: 'none', overflow: 'hidden' } : undefined}
+        className={className}
+        {...otherProps}
       />
       {charCountDisplay}
     </div>

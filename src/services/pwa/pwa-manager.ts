@@ -5,6 +5,7 @@
  * offline capabilities, app installation, and background sync.
  */
 
+import React from 'react';
 import { errorTracker } from '../monitoring/error-tracking';
 
 interface PWAConfig {
@@ -20,14 +21,14 @@ interface PWAConfig {
   criticalAssets: string[];
 }
 
-interface InstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-    platform: string;
-  }>;
-  prompt(): Promise<void>;
-}
+// interface InstallPromptEvent extends Event { // Not currently used
+//   readonly platforms: string[];
+//   readonly userChoice: Promise<{
+//     outcome: 'accepted' | 'dismissed';
+//     platform: string;
+//   }>;
+//   prompt(): Promise<void>;
+// }
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -388,7 +389,7 @@ class PWAManagerService {
    * Get VAPID public key (should be configured in environment)
    */
   private getVapidPublicKey(): Uint8Array {
-    const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
+    const vapidKey = (typeof process !== 'undefined' && process.env?.VITE_VAPID_PUBLIC_KEY) || '';
     
     if (!vapidKey) {
       console.warn('VAPID public key not configured');
@@ -793,6 +794,107 @@ class PWAManagerService {
       }
     }
   }
+
+  /**
+   * Handle beforeinstallprompt event (for testing)
+   */
+  public handleBeforeInstallPrompt(event: BeforeInstallPromptEvent): void {
+    event.preventDefault();
+    this.installPrompt = event;
+    this.status.installPromptAvailable = true;
+    this.status.isInstallable = true;
+    window.dispatchEvent(new CustomEvent('pwa:install-available'));
+  }
+
+  /**
+   * Get offline queue (for testing)
+   */
+  public getOfflineQueue(): OfflineTask[] {
+    return [...this.offlineTasks];
+  }
+
+  /**
+   * Process offline queue (for testing)
+   */
+  public async processOfflineQueue(): Promise<void> {
+    await this.processOfflineTasks();
+  }
+
+  /**
+   * Clear app cache
+   */
+  public async clearCache(): Promise<void> {
+    if (!('caches' in window)) {
+      throw new Error('Cache API not supported');
+    }
+
+    try {
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames.map(cacheName => caches.delete(cacheName))
+      );
+      console.log('All caches cleared');
+    } catch (error) {
+      console.error('Failed to clear cache:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Show notification
+   */
+  public async showNotification(title: string, options?: NotificationOptions): Promise<void> {
+    if (!('Notification' in window)) {
+      throw new Error('Notifications not supported');
+    }
+
+    if (Notification.permission !== 'granted') {
+      throw new Error('Notification permission not granted');
+    }
+
+    if (this.serviceWorker?.active) {
+      await this.serviceWorker.showNotification(title, options);
+    } else {
+      new Notification(title, options);
+    }
+  }
+
+  /**
+   * Unsubscribe from push notifications
+   */
+  public async unsubscribeFromNotifications(): Promise<void> {
+    if (!this.serviceWorker) {
+      throw new Error('Service worker not registered');
+    }
+
+    try {
+      const subscription = await this.serviceWorker.pushManager.getSubscription();
+      if (subscription) {
+        await subscription.unsubscribe();
+        console.log('Push notification subscription removed');
+      }
+    } catch (error) {
+      console.error('Failed to unsubscribe from notifications:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Register background sync
+   */
+  public async registerBackgroundSync(tag: string): Promise<void> {
+    if (!this.serviceWorker || !('sync' in ServiceWorkerRegistration.prototype)) {
+      throw new Error('Background sync not supported');
+    }
+
+    try {
+      await (this.serviceWorker as any).sync.register(tag);
+      console.log(`Background sync registered: ${tag}`);
+    } catch (error) {
+      console.error('Background sync registration failed:', error);
+      throw error;
+    }
+  }
 }
 
 // Create global instance
@@ -815,5 +917,85 @@ export function usePWA() {
   };
 }
 
-export type { PWAConfig, PWAStatus, OfflineTask };
+// React hook for PWA installation
+export function usePWAInstall() {
+  const [isInstallable, setIsInstallable] = React.useState(false);
+  const [isInstalled, setIsInstalled] = React.useState(false);
+
+  React.useEffect(() => {
+    const status = pwaManager.getStatus();
+    setIsInstallable(status.isInstallable);
+    setIsInstalled(status.isInstalled);
+
+    const handleInstallAvailable = () => setIsInstallable(true);
+    const handleInstalled = () => {
+      setIsInstalled(true);
+      setIsInstallable(false);
+    };
+
+    window.addEventListener('pwa:install-available', handleInstallAvailable);
+    window.addEventListener('pwa:installed', handleInstalled);
+
+    return () => {
+      window.removeEventListener('pwa:install-available', handleInstallAvailable);
+      window.removeEventListener('pwa:installed', handleInstalled);
+    };
+  }, []);
+
+  const install = async () => {
+    try {
+      return await pwaManager.showInstallPrompt();
+    } catch (error) {
+      console.error('Failed to show install prompt:', error);
+      return false;
+    }
+  };
+
+  return { isInstallable, isInstalled, install };
+}
+
+// React hook for PWA status
+export function usePWAStatus() {
+  const [status, setStatus] = React.useState<PWAStatus>(pwaManager.getStatus());
+
+  React.useEffect(() => {
+    const updateStatus = () => setStatus(pwaManager.getStatus());
+
+    const handleConnectionChange = () => updateStatus();
+    const handleUpdateAvailable = () => updateStatus();
+    const handleInstallAvailable = () => updateStatus();
+    const handleInstalled = () => updateStatus();
+
+    window.addEventListener('pwa:connection-change', handleConnectionChange);
+    window.addEventListener('pwa:update-available', handleUpdateAvailable);
+    window.addEventListener('pwa:install-available', handleInstallAvailable);
+    window.addEventListener('pwa:installed', handleInstalled);
+
+    // Initial status update
+    updateStatus();
+
+    return () => {
+      window.removeEventListener('pwa:connection-change', handleConnectionChange);
+      window.removeEventListener('pwa:update-available', handleUpdateAvailable);
+      window.removeEventListener('pwa:install-available', handleInstallAvailable);
+      window.removeEventListener('pwa:installed', handleInstalled);
+    };
+  }, []);
+
+  const requestNotificationPermission = async () => {
+    const permission = await pwaManager.requestNotificationPermission();
+    updateStatus();
+    return permission;
+  };
+
+  const updateStatus = () => setStatus(pwaManager.getStatus());
+
+  return {
+    ...status,
+    requestNotificationPermission,
+    clearCache: () => pwaManager.clearCache()
+  };
+}
+
+export type { PWAConfig, PWAStatus, OfflineTask, BeforeInstallPromptEvent };
 export default pwaManager;

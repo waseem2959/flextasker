@@ -5,7 +5,7 @@
  * forecasting, churn prediction, and business recommendations.
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   Brain,
   TrendingUp,
@@ -15,15 +15,9 @@ import {
   Target,
   Users,
   DollarSign,
-  Calendar,
-  Activity,
-  Zap,
-  Eye,
-  Star,
   ArrowRight,
   ChevronRight,
   RefreshCw,
-  Download,
   Settings
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -39,23 +33,15 @@ import {
   SelectValue
 } from '../ui/select';
 import { 
-  LineChart,
   AreaChart,
-  BarChart,
-  ScatterChart,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Line,
-  Area,
-  Bar,
-  Scatter,
-  ReferenceLine
+  Area
 } from 'recharts';
-import { cn } from '../../lib/utils';
 import { useAnalytics } from '../../hooks/use-analytics';
 
 interface PredictiveModel {
@@ -193,7 +179,7 @@ const PredictiveInsights: React.FC<PredictiveInsightsProps> = ({
     
     try {
       // Load predictions for selected model
-      const predictionsData = await executeQuery({
+      await executeQuery({
         metrics: ['predictions'],
         filters: [
           { field: 'model_type', operator: 'eq', value: selectedModel },
@@ -206,7 +192,7 @@ const PredictiveInsights: React.FC<PredictiveInsightsProps> = ({
       });
 
       // Load forecasts
-      const forecastsData = await executeQuery({
+      await executeQuery({
         metrics: ['forecasts'],
         filters: [
           { field: 'model_type', operator: 'eq', value: selectedModel },
@@ -628,7 +614,7 @@ const PredictiveInsights: React.FC<PredictiveInsightsProps> = ({
             </SelectContent>
           </Select>
           
-          <Select value={selectedTimeHorizon} onValueChange={setSelectedTimeHorizon}>
+          <Select value={selectedTimeHorizon} onValueChange={(value) => setSelectedTimeHorizon(value as 'week' | 'month' | 'quarter' | 'year')}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>

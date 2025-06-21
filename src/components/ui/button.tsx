@@ -1,6 +1,7 @@
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 import * as React from "react"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -12,8 +13,8 @@ import { cn } from "@/lib/utils"
 // THIS IS THE FUNCTION THAT NEEDS TO BE EXPORTED
 // The 'export' keyword here makes buttonVariants available to other files
 export const buttonVariants = cva(
-  // Base classes that apply to all button variants - Project-map aligned
-  "inline-flex items-center justify-center whitespace-nowrap rounded-xl font-heading font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-95",
+  // Base classes that apply to all button variants - Project-map aligned with accessibility
+  "inline-flex items-center justify-center whitespace-nowrap rounded-xl font-heading font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-95 min-h-[44px] min-w-[44px]",
   {
     variants: {
       // Different visual styles for the button - Project-map specifications
@@ -55,6 +56,12 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  loading?: boolean
+  loadingText?: string
+  icon?: React.ReactNode
+  iconPosition?: "left" | "right"
+  ariaLabel?: string
+  ariaDescribedBy?: string
 }
 
 // EDUCATIONAL CONCEPT #3: The Polymorphic Component Pattern
@@ -62,14 +69,85 @@ export interface ButtonProps
 // while maintaining the same styling and behavior. It's like having a chameleon
 // component that can adapt to different contexts while keeping its core identity.
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ 
+    className, 
+    variant, 
+    size, 
+    asChild = false, 
+    loading = false,
+    loadingText,
+    icon,
+    iconPosition = "left",
+    ariaLabel,
+    ariaDescribedBy,
+    disabled,
+    children,
+    ...props 
+  }, ref) => {
     const Comp = asChild ? Slot : "button"
+    
+    // Handle loading or disabled state
+    const isDisabled = disabled || loading
+    
+    // Generate unique ID for ARIA
+    const buttonId = React.useId()
+    
+    // Determine button content with accessibility features
+    const buttonContent = React.useMemo(() => {
+      if (loading) {
+        return (
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+            <span>{loadingText || 'Loading...'}</span>
+          </div>
+        )
+      }
+
+      if (icon && children) {
+        return (
+          <div className={cn(
+            "flex items-center gap-2",
+            iconPosition === "right" && "flex-row-reverse"
+          )}>
+            <span aria-hidden="true">{icon}</span>
+            <span>{children}</span>
+          </div>
+        )
+      }
+
+      if (icon && !children) {
+        return (
+          <>
+            <span aria-hidden="true">{icon}</span>
+            <span className="sr-only">{ariaLabel || 'Button'}</span>
+          </>
+        )
+      }
+
+      return children
+    }, [loading, loadingText, icon, children, iconPosition, ariaLabel])
+
+    // Enhanced ARIA attributes
+    const ariaAttributes = React.useMemo(() => {
+      return {
+        'aria-label': ariaLabel,
+        'aria-describedby': ariaDescribedBy,
+        'aria-disabled': isDisabled,
+        'aria-busy': loading
+      }
+    }, [ariaLabel, ariaDescribedBy, isDisabled, loading])
+    
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
-        {...(props as any)}
-      />
+        id={buttonId}
+        className={cn(buttonVariants({ variant, size, className }))}
+        disabled={isDisabled}
+        {...ariaAttributes}
+        {...props}
+      >
+        {buttonContent}
+      </Comp>
     )
   }
 )

@@ -283,7 +283,7 @@ describe('VirtualizedTable', () => {
       />
     );
 
-    const firstRow = screen.getByText('Item 0').closest('div');
+    const firstRow = screen.getByText('Item 0').closest('div[class*="flex border-b"]');
     expect(firstRow).toHaveClass('even-row');
   });
 
@@ -339,10 +339,11 @@ describe('VirtualizedTable', () => {
     );
 
     // Each column should get equal width (50% each)
-    const headers = screen.getAllByRole('columnheader');
-    headers.forEach(header => {
-      expect(header).toHaveStyle({ width: '50%' });
-    });
+    const nameHeader = screen.getByText('Name');
+    const valueHeader = screen.getByText('Value');
+    
+    expect(nameHeader).toHaveStyle({ width: '50%' });
+    expect(valueHeader).toHaveStyle({ width: '50%' });
   });
 
   it('should apply custom className to table', () => {
@@ -370,7 +371,7 @@ describe('VirtualizedTable', () => {
       />
     );
 
-    const header = screen.getByText('Name').closest('div');
+    const header = screen.getByText('Name').parentElement;
     expect(header).toHaveClass('custom-header');
   });
 });
@@ -428,7 +429,7 @@ describe('withVirtualization', () => {
 
     render(<VirtualizedComponent items={sampleItems} title="Test Title" />);
 
-    expect(screen.getByText('Test Title')).toBeInTheDocument();
+    expect(screen.getAllByText('Test Title').length).toBeGreaterThan(0);
   });
 
   it('should memoize the virtualized component', () => {

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/49</span>
+                <span class='fraction'>0/47</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/28</span>
+                <span class='fraction'>0/27</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/47</span>
+                <span class='fraction'>0/45</span>
             </div>
         
             
@@ -419,14 +419,7 @@
 <a name='L354'></a><a href='#L354'>354</a>
 <a name='L355'></a><a href='#L355'>355</a>
 <a name='L356'></a><a href='#L356'>356</a>
-<a name='L357'></a><a href='#L357'>357</a>
-<a name='L358'></a><a href='#L358'>358</a>
-<a name='L359'></a><a href='#L359'>359</a>
-<a name='L360'></a><a href='#L360'>360</a>
-<a name='L361'></a><a href='#L361'>361</a>
-<a name='L362'></a><a href='#L362'>362</a>
-<a name='L363'></a><a href='#L363'>363</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L357'></a><a href='#L357'>357</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -492,8 +485,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -511,9 +502,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -790,13 +778,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useState, useMemo } from 'react';
 import { UserRole } from '../../../shared/types/common/enums';
 import { useAdminUsers, useAdmin } from '../../hooks/use-admin-query';
-import { Layout } from '../../components/layout/Layout';
+import { Layout } from '../../components/layout/layout';
 import { SEO } from '../../utils/seo';
 import { usePerformance } from '../../hooks/use-performance';
 &nbsp;
 // Import our components
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 &nbsp;
@@ -815,7 +802,7 @@ import { DebouncedSearchInput } from '../../components/optimized/debounced-input
 import { VirtualizedTable } from '../../components/optimized/virtualized-list';
 &nbsp;
 // Import Lucide icons
-import { Eye, AlertCircle, Users, UserCheck, UserX } from 'lucide-react';
+import { AlertCircle, Users, UserCheck, UserX } from 'lucide-react';
 &nbsp;
 // Badge styling moved to memoized components for better performance
 &nbsp;
@@ -827,7 +814,7 @@ const AdminUsersPage = <span class="cstat-no" title="statement not covered" ><sp
   const [rowsPerPage, setRowsPerPage] = <span class="cstat-no" title="statement not covered" >useState(10);</span>
   
   // Performance monitoring
-  const { metrics } = <span class="cstat-no" title="statement not covered" >usePerformance({</span>
+  const { } = <span class="cstat-no" title="statement not covered" >usePerformance({</span>
     componentName: 'AdminUsersPage',
     enabled: process.env.NODE_ENV === 'development'
   });
@@ -851,10 +838,8 @@ const AdminUsersPage = <span class="cstat-no" title="statement not covered" ><sp
 &nbsp;
   const {
     updateUserStatus,
-    updateUserRole,
     deleteUser,
     isUpdatingStatus,
-    isUpdatingRole,
     isDeleting
   } = <span class="cstat-no" title="statement not covered" >useAdmin();</span>
 &nbsp;
@@ -874,9 +859,6 @@ const AdminUsersPage = <span class="cstat-no" title="statement not covered" ><sp
 <span class="cstat-no" title="statement not covered" >    updateUserStatus(userId, !currentStatus);</span>
   };
 &nbsp;
-  const handleUpdateUserRole = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(u</span>serId: string, newRole: UserRole) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    updateUserRole(userId, newRole);</span>
-  };
 &nbsp;
   const handleDeleteUser = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(u</span>serId: string) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (window.confirm('Are you sure you want to delete this user?')) {</span>
@@ -1156,7 +1138,7 @@ export default AdminUsersPage;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-18T17:23:27.444Z
+                at 2025-06-20T04:32:32.883Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

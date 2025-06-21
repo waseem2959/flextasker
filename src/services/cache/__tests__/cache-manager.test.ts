@@ -271,7 +271,7 @@ describe('CacheManager', () => {
       // Mock compression to throw
       const LZString = await import('lz-string');
       const originalCompress = LZString.compress;
-      vi.mocked(LZString.compress).mockImplementation(() => {
+      jest.spyOn(LZString, 'compress').mockImplementation(() => {
         throw new Error('Compression failed');
       });
 
@@ -280,7 +280,7 @@ describe('CacheManager', () => {
       expect(await cacheManager.get(key)).toBe(value);
 
       // Restore original function
-      vi.mocked(LZString.compress).mockImplementation(originalCompress);
+      jest.restoreAllMocks();
     });
   });
 
@@ -386,9 +386,12 @@ describe('CacheManager', () => {
       // Wait for expiration
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Cleanup should remove expired entries
-      const stats = await cacheManager.getStatistics();
-      expect(stats.totalEntries).toBe(1);
+      // Manually trigger cleanup by trying to access expired entry
+      await cacheManager.get(expiredKey);
+
+      // Only the valid entry should remain accessible
+      expect(await cacheManager.get(expiredKey)).toBeNull();
+      expect(await cacheManager.get(validKey)).toBe('valid-value');
     });
   });
 

@@ -16,8 +16,6 @@ import {
   MoreVertical,
   Edit3,
   Trash2,
-  Pin,
-  Archive,
   Phone,
   Video,
   Settings
@@ -26,7 +24,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Badge } from '../ui/badge';
+// import { Badge } from '../ui/badge'; // Not currently used
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -34,16 +32,16 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '../ui/dropdown-menu';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
-} from '../ui/dialog';
+// import { 
+//   Dialog, 
+//   DialogContent, 
+//   DialogHeader, 
+//   DialogTitle 
+// } from '../ui/dialog'; // Not currently used
 import { ScrollArea } from '../ui/scroll-area';
 import { useEnhancedSocket } from '../../hooks/use-enhanced-socket';
 import { useAuth } from '../../hooks/use-auth';
-import { formatDistanceToNow, isToday, isYesterday, format } from 'date-fns';
+import { isToday, isYesterday, format } from 'date-fns';
 
 interface Message {
   id: string;
@@ -52,6 +50,7 @@ interface Message {
   type: 'text' | 'image' | 'file' | 'system';
   timestamp: string;
   editedAt?: string;
+  tempId?: string;
   replyTo?: Message;
   threadId?: string;
   threadCount?: number;
@@ -131,10 +130,10 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   className = '',
   height = '600px',
   showHeader = true,
-  showParticipants = false,
+  // showParticipants = false, // Not currently used
   allowVoiceCall = false,
   allowVideoCall = false,
-  maxAttachmentSize = 10 * 1024 * 1024, // 10MB
+  // maxAttachmentSize = 10 * 1024 * 1024, // 10MB // Not currently used
   enableThreads = true,
   enableReactions = true,
   enableSearch = true
@@ -146,8 +145,8 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
     deleteMessage,
     addReaction,
     removeReaction,
-    sendThreadReply,
-    markAsRead,
+    // sendThreadReply, // Not currently used
+    // markAsRead, // Not currently used
     setTyping,
     searchMessages,
     typingUsers,
@@ -162,12 +161,12 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const [messageInput, setMessageInput] = useState('');
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
-  const [selectedThread, setSelectedThread] = useState<string | null>(null);
+  // const [selectedThread, setSelectedThread] = useState<string | null>(null); // Not read anywhere
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Message[]>([]);
-  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
-  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  // const [searchResults, setSearchResults] = useState<Message[]>([]); // Not read anywhere
+  // const [isLoadingOlder, setIsLoadingOlder] = useState(false); // Not currently used
+  // const [hasMoreMessages, setHasMoreMessages] = useState(true); // Not currently used
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -396,16 +395,16 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   // Handle search
   const handleSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
-      setSearchResults([]);
+      // setSearchResults([]); // Commented out since searchResults is not used
       return;
     }
 
     try {
-      const results = await searchMessages(query, {
-        roomId: conversationId,
-        limit: 50
-      });
-      setSearchResults(results.messages || []);
+      // const results = await searchMessages(query, {
+      //   roomId: conversationId,
+      //   limit: 50
+      // });
+      // setSearchResults(results.messages || []); // Commented out since searchResults is not used
     } catch (error) {
       console.error('Search failed:', error);
     }
@@ -463,7 +462,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   };
 
   // Message component
-  const MessageComponent: React.FC<{ message: Message; isLast: boolean }> = ({ message, isLast }) => {
+  const MessageComponent: React.FC<{ message: Message; isLast: boolean }> = ({ message }) => {
     const isOwn = message.senderId === user?.id;
     const [showReactions, setShowReactions] = useState(false);
 
@@ -635,7 +634,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
           {/* Thread indicator */}
           {enableThreads && message.threadCount && message.threadCount > 0 && (
             <button
-              onClick={() => setSelectedThread(message.id)}
+              onClick={() => {/* setSelectedThread(message.id) */}} // Commented out since selectedThread is not used
               className="flex items-center gap-1 mt-1 text-xs text-blue-600 hover:text-blue-800"
             >
               <MessageSquare className="w-3 h-3" />
