@@ -10,6 +10,8 @@ import { useAuth } from "./hooks/use-auth";
 import { UserRole } from "../shared/types/common/enums";
 import { setupSecurityEventListeners } from "./utils/security";
 import { ErrorBoundary } from "./components/error-boundary";
+import { initializeApp } from "./utils/app-initialization";
+import { isDev } from "./utils/env";
 
 // PWA Components
 import InstallPrompt from "./components/pwa/install-prompt";
@@ -21,6 +23,9 @@ import AuthProvider from "./services/providers/auth-provider";
 
 // Theme Provider
 import { ThemeProvider } from "./contexts/theme-context";
+
+// Notification Provider
+import { NotificationProvider } from "./contexts/notification-context";
 
 // Performance Monitor (dev only)
 import { PerformanceMonitor } from "./components/dev/performance-monitor";
@@ -88,12 +93,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 const App = () => {
   // Setup security event listeners and PWA on app initialization
   useEffect(() => {
-    setupSecurityEventListeners();
+    // Initialize app with performance optimizations
+    initializeApp();
     
-    // Initialize PWA manager (already happens in the module, but ensure it's ready)
-    if ('serviceWorker' in navigator) {
-      console.log('PWA features available');
-    }
+    // Setup security after critical initialization
+    setupSecurityEventListeners();
   }, []);
 
   return (
@@ -102,12 +106,13 @@ const App = () => {
         <BrowserRouter>
           <ReactQueryProvider>
             <AuthProvider>
-              <ThemeProvider>
-                <TooltipProvider>
+              <NotificationProvider>
+                <ThemeProvider>
+                  <TooltipProvider>
             <div className="min-h-screen bg-background">
               <Toaster />
-              <PerformanceMonitor />
-              <ImagePerformanceToggle />
+              {isDev() && <PerformanceMonitor />}
+              {isDev() && <ImagePerformanceToggle />}
               
               {/* PWA Components */}
               <InstallPrompt />
@@ -218,6 +223,7 @@ const App = () => {
             </div>
                 </TooltipProvider>
               </ThemeProvider>
+              </NotificationProvider>
             </AuthProvider>
           </ReactQueryProvider>
         </BrowserRouter>

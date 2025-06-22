@@ -204,10 +204,15 @@ export function useAsyncPerformance() {
     }
   }, [startOperation, endOperation]);
 
+  const clearOperations = useCallback(() => {
+    setOperations(new Map());
+  }, []);
+
   return {
     startOperation,
     endOperation,
     measureOperation,
+    clearOperations,
     activeOperations: Array.from(operations.keys()),
   };
 }

@@ -1,6 +1,7 @@
 module.exports = {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'jsdom',
+  setupFiles: ['<rootDir>/src/test-utils/import-meta-mock.js'],
   setupFilesAfterEnv: ['<rootDir>/src/test-utils/setup.ts'],
   globals: {
     'import.meta': {
@@ -22,21 +23,20 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: 'tsconfig.json',
-      useESM: true,
+      tsconfig: {
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+        jsx: 'react-jsx',
+        module: 'commonjs',
+        target: 'es2020'
+      },
+      useESM: false,
     }],
   },
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.(ts|tsx|js|jsx)',
     '<rootDir>/src/**/*.(test|spec).(ts|tsx|js|jsx)',
   ],
-  collectCoverageFrom: [
-    'src/**/*.(ts|tsx)',
-    '!src/**/*.d.ts',
-    '!src/main.tsx',
-    '!src/**/__tests__/**',
-  ],
-  coverageDirectory: 'coverage',
   verbose: true,
   clearMocks: true,
   testEnvironmentOptions: {

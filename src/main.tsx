@@ -1,19 +1,22 @@
 import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
 import './index.css';
-import { initializeAuth } from './utils';
 
-// Initialize authentication systems before rendering the app
-// This sets up proactive token refresh and other auth-related services
-initializeAuth();
-
-
-
-// Render the application
+// Render the application immediately for better FCP
 const rootElement = document.getElementById("root");
 
 if (rootElement) {
-  createRoot(rootElement).render(<App />);
+  // Start rendering immediately
+  const root = createRoot(rootElement);
+  
+  // Load App component
+  import('./App').then(({ default: App }) => {
+    root.render(<App />);
+  });
+  
+  // Initialize auth in parallel
+  import('./utils').then(({ initializeAuth }) => {
+    initializeAuth();
+  });
 } else {
   console.error('Root element not found - unable to render application');
 }

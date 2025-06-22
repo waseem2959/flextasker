@@ -10,7 +10,7 @@ import { SEO } from '../utils/seo';
 
 const Index = () => {
   return (
-    <Layout>
+    <Layout data-testid="index-page">
       <SEO
         title="Flextasker | Find Skilled Task Doers & Hire Local Services"
         description="Find trusted local professionals for any task. From home repairs to digital services, connect with skilled taskers in your area. Post a task or offer your skills today!"

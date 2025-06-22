@@ -30,7 +30,7 @@ const PerformanceMonitorComponent: React.FC<PerformanceMonitorProps> = ({
     const { metrics, resetMetrics, getPerformanceReport } = usePerformance({
       componentName: 'PerformanceMonitor',
       enabled: true,
-      logToConsole: true
+      logToConsole: process.env.NODE_ENV === 'development'
     });
 
     const { memoryInfo, getMemoryPressure } = useMemoryMonitor();

@@ -4,8 +4,7 @@
  * Utilities for implementing lazy loading, code splitting, and performance optimization
  */
 
-import { ComponentType, lazy, LazyExoticComponent, Suspense } from 'react';
-import React from 'react';
+import React, { ComponentType, lazy, LazyExoticComponent, Suspense } from 'react';
 
 // Lazy loading options
 export interface LazyLoadOptions {
@@ -255,6 +254,7 @@ export const bundleUtils = {
    */
   loadComponent: (importPath: string) => 
     import(
+      /* @vite-ignore */
       /* webpackChunkName: "[request]" */
       /* webpackPreload: true */
       importPath

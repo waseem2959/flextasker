@@ -68,7 +68,7 @@ export const HeroSection: React.FC = () => {
                 className="px-6 py-3 text-base font-medium rounded-full border border-transparent shadow-sm"
               >
                 Post a Task
-                <ArrowRight className="ml-2 w-4 h-4" />
+                <ArrowRight className="w-4 h-4 mr-3 -ml1 text-primary-600" />
               </AnimatedButton>
 
               {/* Secondary button with play icon */}
@@ -102,7 +102,7 @@ export const HeroSection: React.FC = () => {
                           from={0} 
                           to={stat.value} 
                           duration={2.5}
-                          prefix={stat.prefix || ''}
+                          prefix={stat.prefix ?? ''}
                           suffix={stat.suffix || ''}
                         />
                       </div>

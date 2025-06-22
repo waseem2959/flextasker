@@ -153,36 +153,8 @@ export const defaultSeoConfig: MetaTagProps = {
   language: 'en',
   additionalMetaTags: [
     {
-      name: 'viewport',
-      content: 'width=device-width, initial-scale=1, maximum-scale=5',
-    },
-    {
-      name: 'theme-color',
-      content: '#15919B',
-    },
-    {
-      name: 'application-name',
-      content: 'Flextasker',
-    },
-    {
-      name: 'apple-mobile-web-app-capable',
-      content: 'yes',
-    },
-    {
-      name: 'apple-mobile-web-app-status-bar-style',
-      content: 'default',
-    },
-    {
-      name: 'apple-mobile-web-app-title',
-      content: 'Flextasker',
-    },
-    {
       name: 'format-detection',
       content: 'telephone=no',
-    },
-    {
-      name: 'mobile-web-app-capable',
-      content: 'yes',
     },
   ],
 };
@@ -252,52 +224,6 @@ const buildRobotsContent = (config: MetaTagProps): string => {
   return directives.join(', ');
 };
 
-/**
- * Helper component for rendering article meta tags
- */
-const ArticleMetaTags: React.FC<{ config: MetaTagProps }> = ({ config }) => {
-  if (config.ogType !== 'article') return null;
-
-  return (
-    <>
-      {config.articlePublishedTime && (
-        <meta property="article:published_time" content={config.articlePublishedTime} />
-      )}
-      {config.articleModifiedTime && (
-        <meta property="article:modified_time" content={config.articleModifiedTime} />
-      )}
-      {config.articleAuthor && (
-        <meta property="article:author" content={config.articleAuthor} />
-      )}
-      {config.articleSection && (
-        <meta property="article:section" content={config.articleSection} />
-      )}
-      {config.articleTags?.map((tag) => (
-        <meta key={`article-tag-${tag}`} property="article:tag" content={tag} />
-      ))}
-    </>
-  );
-};
-
-/**
- * Helper component for rendering additional meta tags
- */
-const AdditionalMetaTags: React.FC<{ tags: MetaTagProps['additionalMetaTags'] }> = ({ tags }) => {
-  if (!tags) return null;
-
-  return (
-    <>
-      {tags.map((tag) => (
-        <meta
-          key={tag.key ?? `meta-${tag.name ?? tag.property}-${tag.content}`}
-          {...(tag.name ? { name: tag.name } : {})}
-          {...(tag.property ? { property: tag.property } : {})}
-          content={tag.content}
-        />
-      ))}
-    </>
-  );
-};
 
 /**
  * SEO Component for managing meta tags
@@ -327,7 +253,6 @@ export const SEO: React.FC<MetaTagProps> = (props) => {
       {config.description && <meta name="description" content={config.description} />}
       {config.canonicalUrl && <link rel="canonical" href={config.canonicalUrl} />}
       {robotsContent && <meta name="robots" content={robotsContent} />}
-      {config.language && <html lang={config.language} />}
 
       {/* Open Graph meta tags */}
       {ogTitle && <meta property="og:title" content={ogTitle} />}
@@ -345,10 +270,31 @@ export const SEO: React.FC<MetaTagProps> = (props) => {
       {config.ogImage && <meta name="twitter:image" content={config.ogImage} />}
 
       {/* Article meta tags */}
-      <ArticleMetaTags config={config} />
+      {config.ogType === 'article' && config.articlePublishedTime && (
+        <meta property="article:published_time" content={config.articlePublishedTime} />
+      )}
+      {config.ogType === 'article' && config.articleModifiedTime && (
+        <meta property="article:modified_time" content={config.articleModifiedTime} />
+      )}
+      {config.ogType === 'article' && config.articleAuthor && (
+        <meta property="article:author" content={config.articleAuthor} />
+      )}
+      {config.ogType === 'article' && config.articleSection && (
+        <meta property="article:section" content={config.articleSection} />
+      )}
+      {config.ogType === 'article' && config.articleTags?.map((tag) => (
+        <meta key={`article-tag-${tag}`} property="article:tag" content={tag} />
+      ))}
 
       {/* Additional meta tags */}
-      <AdditionalMetaTags tags={config.additionalMetaTags} />
+      {config.additionalMetaTags?.map((tag) => (
+        <meta
+          key={tag.key ?? `meta-${tag.name ?? tag.property}-${tag.content}`}
+          {...(tag.name ? { name: tag.name } : {})}
+          {...(tag.property ? { property: tag.property } : {})}
+          content={tag.content}
+        />
+      ))}
 
       {/* Structured data (JSON-LD) */}
       {config.structuredData && (

@@ -207,11 +207,11 @@ export const EnhancedImage = forwardRef<HTMLDivElement, EnhancedImageProps>(({
     if (!optimizedUrls) {
       return (
         <img
-          src={src}
           alt={alt}
           className={cn('w-full h-full', className)}
           style={imageStyle}
           {...imageProps}
+          src={src}
         />
       );
     }
@@ -266,7 +266,7 @@ export const EnhancedImage = forwardRef<HTMLDivElement, EnhancedImageProps>(({
       onClick={onClick}
     >
       {/* Intersection observer target */}
-      <div ref={intersectionRef as React.RefObject<HTMLDivElement>} className="absolute inset-0" />
+      <div ref={intersectionRef as unknown as React.RefObject<HTMLDivElement>} className="absolute inset-0" />
 
       {/* Placeholder */}
       <AnimatePresence>

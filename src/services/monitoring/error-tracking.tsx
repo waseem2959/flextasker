@@ -504,12 +504,9 @@ interface ErrorBoundaryProps {
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  private resetKeys: any[];
-
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
-    this.resetKeys = props.resetKeys || [];
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
@@ -520,7 +517,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     errorTracker.reportError(error, {
       customTags: {
         component: 'ErrorBoundary',
-        componentStack: errorInfo.componentStack
+        componentStack: errorInfo.componentStack || 'Unknown'
       }
     });
     

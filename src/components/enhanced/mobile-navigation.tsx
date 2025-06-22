@@ -46,7 +46,7 @@ import {
   SheetTrigger 
 } from '../ui/sheet';
 import { useAuth } from '../../hooks/use-auth';
-import { useNotifications } from '../../hooks/use-notifications';
+import { useNotifications } from '../../contexts/notification-context';
 
 interface NavigationItem {
   id: string;

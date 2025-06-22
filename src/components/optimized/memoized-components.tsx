@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserRole } from '../../../shared/types/common/enums';
-import { formatDate } from '@/lib/utils';
 
 // Memoized user avatar component
 export interface UserAvatarProps {

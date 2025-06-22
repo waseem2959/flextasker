@@ -8,7 +8,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { 
   Send, 
-  Paperclip, 
+ 
   Smile, 
   Search, 
   Reply, 
@@ -54,12 +54,6 @@ interface Message {
   replyTo?: Message;
   threadId?: string;
   threadCount?: number;
-  attachments?: Array<{
-    url: string;
-    type: string;
-    name: string;
-    size?: number;
-  }>;
   reactions?: Array<{
     id: string;
     userId: string;

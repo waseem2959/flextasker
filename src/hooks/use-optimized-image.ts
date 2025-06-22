@@ -71,8 +71,8 @@ export const useOptimizedImage = (options: UseOptimizedImageOptions): UseOptimiz
   const [retryCount, setRetryCount] = useState(0);
   const [shouldLoad, setShouldLoad] = useState(!lazy || priority);
 
-  const retryTimeoutRef = useRef<NodeJS.Timeout>();
-  const imageRef = useRef<HTMLImageElement>();
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
 
   // Intersection observer for lazy loading
   const [ref, entry] = useIntersectionObserver({
